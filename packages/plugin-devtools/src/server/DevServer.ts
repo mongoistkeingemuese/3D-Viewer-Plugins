@@ -63,10 +63,11 @@ export class DevServer {
   }
 
   private setupMiddleware(): void {
-    // CORS for 3DViewer access
+    // CORS for 3DViewer access - allow all origins in dev mode
+    // (needed for blob: iframes which have origin 'null')
     this.app.use(
       cors({
-        origin: [this.options.viewerUrl, 'http://localhost:5173', 'http://localhost:3000'],
+        origin: true,  // Allow all origins (dev server only!)
         credentials: true,
       })
     );
@@ -388,7 +389,8 @@ export class DevServer {
         platform: 'browser',
         target: 'es2020',
         sourcemap: true,
-        external: ['react', 'react-dom'],
+        // Note: We bundle React/ReactDOM into each plugin for dev simplicity.
+        // Production builds should use import maps or shared externals.
         define: {
           'process.env.NODE_ENV': '"development"',
         },

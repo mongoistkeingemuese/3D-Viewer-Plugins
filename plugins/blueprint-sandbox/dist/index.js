@@ -1,14 +1,391 @@
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __commonJS = (cb, mod) => function __require() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+
+// ../../node_modules/react/cjs/react.production.min.js
+var require_react_production_min = __commonJS({
+  "../../node_modules/react/cjs/react.production.min.js"(exports) {
+    "use strict";
+    var l = Symbol.for("react.element");
+    var n = Symbol.for("react.portal");
+    var p = Symbol.for("react.fragment");
+    var q = Symbol.for("react.strict_mode");
+    var r = Symbol.for("react.profiler");
+    var t = Symbol.for("react.provider");
+    var u = Symbol.for("react.context");
+    var v = Symbol.for("react.forward_ref");
+    var w = Symbol.for("react.suspense");
+    var x = Symbol.for("react.memo");
+    var y = Symbol.for("react.lazy");
+    var z = Symbol.iterator;
+    function A(a) {
+      if (null === a || "object" !== typeof a)
+        return null;
+      a = z && a[z] || a["@@iterator"];
+      return "function" === typeof a ? a : null;
+    }
+    var B = { isMounted: function() {
+      return false;
+    }, enqueueForceUpdate: function() {
+    }, enqueueReplaceState: function() {
+    }, enqueueSetState: function() {
+    } };
+    var C = Object.assign;
+    var D = {};
+    function E(a, b, e) {
+      this.props = a;
+      this.context = b;
+      this.refs = D;
+      this.updater = e || B;
+    }
+    E.prototype.isReactComponent = {};
+    E.prototype.setState = function(a, b) {
+      if ("object" !== typeof a && "function" !== typeof a && null != a)
+        throw Error("setState(...): takes an object of state variables to update or a function which returns an object of state variables.");
+      this.updater.enqueueSetState(this, a, b, "setState");
+    };
+    E.prototype.forceUpdate = function(a) {
+      this.updater.enqueueForceUpdate(this, a, "forceUpdate");
+    };
+    function F() {
+    }
+    F.prototype = E.prototype;
+    function G(a, b, e) {
+      this.props = a;
+      this.context = b;
+      this.refs = D;
+      this.updater = e || B;
+    }
+    var H = G.prototype = new F();
+    H.constructor = G;
+    C(H, E.prototype);
+    H.isPureReactComponent = true;
+    var I = Array.isArray;
+    var J = Object.prototype.hasOwnProperty;
+    var K = { current: null };
+    var L = { key: true, ref: true, __self: true, __source: true };
+    function M(a, b, e) {
+      var d, c = {}, k = null, h = null;
+      if (null != b)
+        for (d in void 0 !== b.ref && (h = b.ref), void 0 !== b.key && (k = "" + b.key), b)
+          J.call(b, d) && !L.hasOwnProperty(d) && (c[d] = b[d]);
+      var g = arguments.length - 2;
+      if (1 === g)
+        c.children = e;
+      else if (1 < g) {
+        for (var f = Array(g), m = 0; m < g; m++)
+          f[m] = arguments[m + 2];
+        c.children = f;
+      }
+      if (a && a.defaultProps)
+        for (d in g = a.defaultProps, g)
+          void 0 === c[d] && (c[d] = g[d]);
+      return { $$typeof: l, type: a, key: k, ref: h, props: c, _owner: K.current };
+    }
+    function N(a, b) {
+      return { $$typeof: l, type: a.type, key: b, ref: a.ref, props: a.props, _owner: a._owner };
+    }
+    function O(a) {
+      return "object" === typeof a && null !== a && a.$$typeof === l;
+    }
+    function escape(a) {
+      var b = { "=": "=0", ":": "=2" };
+      return "$" + a.replace(/[=:]/g, function(a2) {
+        return b[a2];
+      });
+    }
+    var P = /\/+/g;
+    function Q(a, b) {
+      return "object" === typeof a && null !== a && null != a.key ? escape("" + a.key) : b.toString(36);
+    }
+    function R(a, b, e, d, c) {
+      var k = typeof a;
+      if ("undefined" === k || "boolean" === k)
+        a = null;
+      var h = false;
+      if (null === a)
+        h = true;
+      else
+        switch (k) {
+          case "string":
+          case "number":
+            h = true;
+            break;
+          case "object":
+            switch (a.$$typeof) {
+              case l:
+              case n:
+                h = true;
+            }
+        }
+      if (h)
+        return h = a, c = c(h), a = "" === d ? "." + Q(h, 0) : d, I(c) ? (e = "", null != a && (e = a.replace(P, "$&/") + "/"), R(c, b, e, "", function(a2) {
+          return a2;
+        })) : null != c && (O(c) && (c = N(c, e + (!c.key || h && h.key === c.key ? "" : ("" + c.key).replace(P, "$&/") + "/") + a)), b.push(c)), 1;
+      h = 0;
+      d = "" === d ? "." : d + ":";
+      if (I(a))
+        for (var g = 0; g < a.length; g++) {
+          k = a[g];
+          var f = d + Q(k, g);
+          h += R(k, b, e, f, c);
+        }
+      else if (f = A(a), "function" === typeof f)
+        for (a = f.call(a), g = 0; !(k = a.next()).done; )
+          k = k.value, f = d + Q(k, g++), h += R(k, b, e, f, c);
+      else if ("object" === k)
+        throw b = String(a), Error("Objects are not valid as a React child (found: " + ("[object Object]" === b ? "object with keys {" + Object.keys(a).join(", ") + "}" : b) + "). If you meant to render a collection of children, use an array instead.");
+      return h;
+    }
+    function S(a, b, e) {
+      if (null == a)
+        return a;
+      var d = [], c = 0;
+      R(a, d, "", "", function(a2) {
+        return b.call(e, a2, c++);
+      });
+      return d;
+    }
+    function T(a) {
+      if (-1 === a._status) {
+        var b = a._result;
+        b = b();
+        b.then(function(b2) {
+          if (0 === a._status || -1 === a._status)
+            a._status = 1, a._result = b2;
+        }, function(b2) {
+          if (0 === a._status || -1 === a._status)
+            a._status = 2, a._result = b2;
+        });
+        -1 === a._status && (a._status = 0, a._result = b);
+      }
+      if (1 === a._status)
+        return a._result.default;
+      throw a._result;
+    }
+    var U = { current: null };
+    var V = { transition: null };
+    var W = { ReactCurrentDispatcher: U, ReactCurrentBatchConfig: V, ReactCurrentOwner: K };
+    function X() {
+      throw Error("act(...) is not supported in production builds of React.");
+    }
+    exports.Children = { map: S, forEach: function(a, b, e) {
+      S(a, function() {
+        b.apply(this, arguments);
+      }, e);
+    }, count: function(a) {
+      var b = 0;
+      S(a, function() {
+        b++;
+      });
+      return b;
+    }, toArray: function(a) {
+      return S(a, function(a2) {
+        return a2;
+      }) || [];
+    }, only: function(a) {
+      if (!O(a))
+        throw Error("React.Children.only expected to receive a single React element child.");
+      return a;
+    } };
+    exports.Component = E;
+    exports.Fragment = p;
+    exports.Profiler = r;
+    exports.PureComponent = G;
+    exports.StrictMode = q;
+    exports.Suspense = w;
+    exports.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = W;
+    exports.act = X;
+    exports.cloneElement = function(a, b, e) {
+      if (null === a || void 0 === a)
+        throw Error("React.cloneElement(...): The argument must be a React element, but you passed " + a + ".");
+      var d = C({}, a.props), c = a.key, k = a.ref, h = a._owner;
+      if (null != b) {
+        void 0 !== b.ref && (k = b.ref, h = K.current);
+        void 0 !== b.key && (c = "" + b.key);
+        if (a.type && a.type.defaultProps)
+          var g = a.type.defaultProps;
+        for (f in b)
+          J.call(b, f) && !L.hasOwnProperty(f) && (d[f] = void 0 === b[f] && void 0 !== g ? g[f] : b[f]);
+      }
+      var f = arguments.length - 2;
+      if (1 === f)
+        d.children = e;
+      else if (1 < f) {
+        g = Array(f);
+        for (var m = 0; m < f; m++)
+          g[m] = arguments[m + 2];
+        d.children = g;
+      }
+      return { $$typeof: l, type: a.type, key: c, ref: k, props: d, _owner: h };
+    };
+    exports.createContext = function(a) {
+      a = { $$typeof: u, _currentValue: a, _currentValue2: a, _threadCount: 0, Provider: null, Consumer: null, _defaultValue: null, _globalName: null };
+      a.Provider = { $$typeof: t, _context: a };
+      return a.Consumer = a;
+    };
+    exports.createElement = M;
+    exports.createFactory = function(a) {
+      var b = M.bind(null, a);
+      b.type = a;
+      return b;
+    };
+    exports.createRef = function() {
+      return { current: null };
+    };
+    exports.forwardRef = function(a) {
+      return { $$typeof: v, render: a };
+    };
+    exports.isValidElement = O;
+    exports.lazy = function(a) {
+      return { $$typeof: y, _payload: { _status: -1, _result: a }, _init: T };
+    };
+    exports.memo = function(a, b) {
+      return { $$typeof: x, type: a, compare: void 0 === b ? null : b };
+    };
+    exports.startTransition = function(a) {
+      var b = V.transition;
+      V.transition = {};
+      try {
+        a();
+      } finally {
+        V.transition = b;
+      }
+    };
+    exports.unstable_act = X;
+    exports.useCallback = function(a, b) {
+      return U.current.useCallback(a, b);
+    };
+    exports.useContext = function(a) {
+      return U.current.useContext(a);
+    };
+    exports.useDebugValue = function() {
+    };
+    exports.useDeferredValue = function(a) {
+      return U.current.useDeferredValue(a);
+    };
+    exports.useEffect = function(a, b) {
+      return U.current.useEffect(a, b);
+    };
+    exports.useId = function() {
+      return U.current.useId();
+    };
+    exports.useImperativeHandle = function(a, b, e) {
+      return U.current.useImperativeHandle(a, b, e);
+    };
+    exports.useInsertionEffect = function(a, b) {
+      return U.current.useInsertionEffect(a, b);
+    };
+    exports.useLayoutEffect = function(a, b) {
+      return U.current.useLayoutEffect(a, b);
+    };
+    exports.useMemo = function(a, b) {
+      return U.current.useMemo(a, b);
+    };
+    exports.useReducer = function(a, b, e) {
+      return U.current.useReducer(a, b, e);
+    };
+    exports.useRef = function(a) {
+      return U.current.useRef(a);
+    };
+    exports.useState = function(a) {
+      return U.current.useState(a);
+    };
+    exports.useSyncExternalStore = function(a, b, e) {
+      return U.current.useSyncExternalStore(a, b, e);
+    };
+    exports.useTransition = function() {
+      return U.current.useTransition();
+    };
+    exports.version = "18.3.1";
+  }
+});
+
+// ../../node_modules/react/index.js
+var require_react = __commonJS({
+  "../../node_modules/react/index.js"(exports, module) {
+    "use strict";
+    if (true) {
+      module.exports = require_react_production_min();
+    } else {
+      module.exports = null;
+    }
+  }
+});
+
+// ../../node_modules/react/cjs/react-jsx-runtime.production.min.js
+var require_react_jsx_runtime_production_min = __commonJS({
+  "../../node_modules/react/cjs/react-jsx-runtime.production.min.js"(exports) {
+    "use strict";
+    var f = require_react();
+    var k = Symbol.for("react.element");
+    var l = Symbol.for("react.fragment");
+    var m = Object.prototype.hasOwnProperty;
+    var n = f.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner;
+    var p = { key: true, ref: true, __self: true, __source: true };
+    function q(c, a, g) {
+      var b, d = {}, e = null, h = null;
+      void 0 !== g && (e = "" + g);
+      void 0 !== a.key && (e = "" + a.key);
+      void 0 !== a.ref && (h = a.ref);
+      for (b in a)
+        m.call(a, b) && !p.hasOwnProperty(b) && (d[b] = a[b]);
+      if (c && c.defaultProps)
+        for (b in a = c.defaultProps, a)
+          void 0 === d[b] && (d[b] = a[b]);
+      return { $$typeof: k, type: c, key: e, ref: h, props: d, _owner: n.current };
+    }
+    exports.Fragment = l;
+    exports.jsx = q;
+    exports.jsxs = q;
+  }
+});
+
+// ../../node_modules/react/jsx-runtime.js
+var require_jsx_runtime = __commonJS({
+  "../../node_modules/react/jsx-runtime.js"(exports, module) {
+    "use strict";
+    if (true) {
+      module.exports = require_react_jsx_runtime_production_min();
+    } else {
+      module.exports = null;
+    }
+  }
+});
+
 // src/components/ControlPanel.tsx
-import { useState, useCallback } from "react";
-import { jsx, jsxs } from "react/jsx-runtime";
+var import_react = __toESM(require_react());
+var import_jsx_runtime = __toESM(require_jsx_runtime());
 var ControlPanel = ({
   pluginId: _pluginId,
   boundNodes = [],
   globalConfig = {},
   onConfigChange
 }) => {
-  const [selectedNode, setSelectedNode] = useState(null);
-  const handleRefreshIntervalChange = useCallback(
+  const [selectedNode, setSelectedNode] = (0, import_react.useState)(null);
+  const handleRefreshIntervalChange = (0, import_react.useCallback)(
     (e) => {
       const value = parseInt(e.target.value, 10);
       if (!isNaN(value) && onConfigChange) {
@@ -17,7 +394,7 @@ var ControlPanel = ({
     },
     [onConfigChange]
   );
-  const handleColorChange = useCallback(
+  const handleColorChange = (0, import_react.useCallback)(
     (e) => {
       if (onConfigChange) {
         onConfigChange("defaultColor", e.target.value);
@@ -25,8 +402,8 @@ var ControlPanel = ({
     },
     [onConfigChange]
   );
-  return /* @__PURE__ */ jsxs("div", { className: "blueprint-control-panel", children: [
-    /* @__PURE__ */ jsx("style", { children: `
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "blueprint-control-panel", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
         .blueprint-control-panel {
           padding: 16px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -155,51 +532,51 @@ var ControlPanel = ({
           text-transform: uppercase;
         }
       ` }),
-    /* @__PURE__ */ jsxs("div", { className: "section", children: [
-      /* @__PURE__ */ jsx("div", { className: "section-title", children: "\xDCbersicht" }),
-      /* @__PURE__ */ jsxs("div", { className: "stats", children: [
-        /* @__PURE__ */ jsxs("div", { className: "stat-card", children: [
-          /* @__PURE__ */ jsx("div", { className: "stat-value", children: boundNodes.length }),
-          /* @__PURE__ */ jsx("div", { className: "stat-label", children: "Nodes" })
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "section-title", children: "\xDCbersicht" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "stats", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "stat-card", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "stat-value", children: boundNodes.length }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "stat-label", children: "Nodes" })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "stat-card", children: [
-          /* @__PURE__ */ jsx("div", { className: "stat-value", children: globalConfig.refreshInterval ? `${globalConfig.refreshInterval / 1e3}s` : "-" }),
-          /* @__PURE__ */ jsx("div", { className: "stat-label", children: "Intervall" })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "stat-card", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "stat-value", children: globalConfig.refreshInterval ? `${globalConfig.refreshInterval / 1e3}s` : "-" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "stat-label", children: "Intervall" })
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs("div", { className: "section", children: [
-      /* @__PURE__ */ jsxs("div", { className: "section-title", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "section-title", children: [
         "Gebundene Nodes (",
         boundNodes.length,
         ")"
       ] }),
-      boundNodes.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "empty-state", children: [
-        /* @__PURE__ */ jsx("div", { className: "empty-state-icon", children: "\u{1F527}" }),
-        /* @__PURE__ */ jsxs("div", { className: "empty-state-text", children: [
+      boundNodes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "empty-state", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "empty-state-icon", children: "\u{1F527}" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "empty-state-text", children: [
           "Keine Nodes gebunden.",
-          /* @__PURE__ */ jsx("br", {}),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("br", {}),
           "Klicke auf einen Node und w\xE4hle dieses Plugin."
         ] })
-      ] }) : /* @__PURE__ */ jsx("ul", { className: "node-list", children: boundNodes.map((node) => /* @__PURE__ */ jsxs(
+      ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", { className: "node-list", children: boundNodes.map((node) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
         "li",
         {
           className: `node-item ${selectedNode === node.id ? "selected" : ""}`,
           onClick: () => setSelectedNode(node.id === selectedNode ? null : node.id),
           children: [
-            /* @__PURE__ */ jsx("div", { className: "node-icon", children: "\u{1F4E6}" }),
-            /* @__PURE__ */ jsx("span", { className: "node-name", children: node.name }),
-            /* @__PURE__ */ jsx("div", { className: "node-status" })
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "node-icon", children: "\u{1F4E6}" }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "node-name", children: node.name }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "node-status" })
           ]
         },
         node.id
       )) })
     ] }),
-    /* @__PURE__ */ jsxs("div", { className: "section", children: [
-      /* @__PURE__ */ jsx("div", { className: "section-title", children: "Globale Einstellungen" }),
-      /* @__PURE__ */ jsxs("div", { className: "config-row", children: [
-        /* @__PURE__ */ jsx("span", { className: "config-label", children: "Aktualisierung" }),
-        /* @__PURE__ */ jsx(
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "section-title", children: "Globale Einstellungen" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "config-row", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "config-label", children: "Aktualisierung" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           "input",
           {
             type: "number",
@@ -211,11 +588,11 @@ var ControlPanel = ({
             step: 100
           }
         ),
-        /* @__PURE__ */ jsx("span", { style: { marginLeft: 8, color: "#888", fontSize: 12 }, children: "ms" })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { marginLeft: 8, color: "#888", fontSize: 12 }, children: "ms" })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "config-row", children: [
-        /* @__PURE__ */ jsx("span", { className: "config-label", children: "Standard-Farbe" }),
-        /* @__PURE__ */ jsx(
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "config-row", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "config-label", children: "Standard-Farbe" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           "input",
           {
             type: "color",
@@ -225,9 +602,9 @@ var ControlPanel = ({
           }
         )
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "config-row", children: [
-        /* @__PURE__ */ jsx("span", { className: "config-label", children: "Animationen" }),
-        /* @__PURE__ */ jsx(
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "config-row", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "config-label", children: "Animationen" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           "input",
           {
             type: "checkbox",
@@ -241,15 +618,15 @@ var ControlPanel = ({
 };
 
 // src/components/NodeDetailsPopup.tsx
-import { jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
+var import_jsx_runtime2 = __toESM(require_jsx_runtime());
 var NodeDetailsPopup = ({
   nodeId,
   nodeName,
   data = {},
   onClose
 }) => {
-  return /* @__PURE__ */ jsxs2("div", { className: "node-details-popup", children: [
-    /* @__PURE__ */ jsx2("style", { children: `
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "node-details-popup", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("style", { children: `
         .node-details-popup {
           padding: 16px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -330,32 +707,32 @@ var NodeDetailsPopup = ({
           overflow: auto;
         }
       ` }),
-    /* @__PURE__ */ jsx2("button", { className: "close-btn", onClick: onClose, children: "\xD7" }),
-    /* @__PURE__ */ jsxs2("div", { className: "popup-header", children: [
-      /* @__PURE__ */ jsx2("div", { className: "popup-icon", children: "\u{1F4E6}" }),
-      /* @__PURE__ */ jsxs2("div", { children: [
-        /* @__PURE__ */ jsx2("div", { className: "popup-title", children: nodeName }),
-        /* @__PURE__ */ jsx2("div", { className: "popup-subtitle", children: nodeId })
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { className: "close-btn", onClick: onClose, children: "\xD7" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "popup-header", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "popup-icon", children: "\u{1F4E6}" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "popup-title", children: nodeName }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "popup-subtitle", children: nodeId })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs2("div", { className: "detail-row", children: [
-      /* @__PURE__ */ jsx2("span", { className: "detail-label", children: "Binding" }),
-      /* @__PURE__ */ jsx2("span", { className: "detail-value", children: /* @__PURE__ */ jsx2("span", { className: "binding-badge", children: data.bindingType || "Keines" }) })
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "detail-row", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "detail-label", children: "Binding" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "detail-value", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "binding-badge", children: data.bindingType || "Keines" }) })
     ] }),
-    /* @__PURE__ */ jsxs2("div", { className: "detail-row", children: [
-      /* @__PURE__ */ jsx2("span", { className: "detail-label", children: "Letztes Update" }),
-      /* @__PURE__ */ jsx2("span", { className: "detail-value mono", children: data.lastUpdate ? new Date(data.lastUpdate).toLocaleTimeString() : "-" })
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "detail-row", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "detail-label", children: "Letztes Update" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "detail-value mono", children: data.lastUpdate ? new Date(data.lastUpdate).toLocaleTimeString() : "-" })
     ] }),
-    data.lastValue !== void 0 && /* @__PURE__ */ jsxs2("div", { children: [
-      /* @__PURE__ */ jsx2("div", { className: "detail-label", style: { marginTop: 12 }, children: "Aktueller Wert" }),
-      /* @__PURE__ */ jsx2("div", { className: "value-preview", children: typeof data.lastValue === "object" ? JSON.stringify(data.lastValue, null, 2) : String(data.lastValue) })
+    data.lastValue !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "detail-label", style: { marginTop: 12 }, children: "Aktueller Wert" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "value-preview", children: typeof data.lastValue === "object" ? JSON.stringify(data.lastValue, null, 2) : String(data.lastValue) })
     ] })
   ] });
 };
 
 // src/components/BindingConfigPopup.tsx
-import { useState as useState2, useCallback as useCallback2 } from "react";
-import { Fragment, jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
+var import_react2 = __toESM(require_react());
+var import_jsx_runtime3 = __toESM(require_jsx_runtime());
 var BindingConfigPopup = ({
   nodeId,
   nodeName,
@@ -364,10 +741,10 @@ var BindingConfigPopup = ({
   onConfigChange,
   onClose
 }) => {
-  const [bindingType, setBindingType] = useState2(
+  const [bindingType, setBindingType] = (0, import_react2.useState)(
     instanceConfig.bindingType || "none"
   );
-  const handleBindingTypeChange = useCallback2(
+  const handleBindingTypeChange = (0, import_react2.useCallback)(
     (e) => {
       const value = e.target.value;
       setBindingType(value);
@@ -375,8 +752,8 @@ var BindingConfigPopup = ({
     },
     [onConfigChange]
   );
-  return /* @__PURE__ */ jsxs3("div", { className: "binding-config-popup", children: [
-    /* @__PURE__ */ jsx3("style", { children: `
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "binding-config-popup", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("style", { children: `
         .binding-config-popup {
           padding: 20px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -477,40 +854,40 @@ var BindingConfigPopup = ({
           background: rgba(255,255,255,0.15);
         }
       ` }),
-    /* @__PURE__ */ jsxs3("div", { className: "popup-header", children: [
-      /* @__PURE__ */ jsx3("div", { className: "popup-title", children: "Binding konfigurieren" }),
-      /* @__PURE__ */ jsxs3("div", { className: "popup-subtitle", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "popup-header", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "popup-title", children: "Binding konfigurieren" }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "popup-subtitle", children: [
         nodeName,
         " (",
         nodeId,
         ")"
       ] })
     ] }),
-    /* @__PURE__ */ jsxs3("div", { className: "form-group", children: [
-      /* @__PURE__ */ jsx3("label", { className: "form-label", children: "Binding-Typ" }),
-      /* @__PURE__ */ jsxs3(
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "form-group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { className: "form-label", children: "Binding-Typ" }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
         "select",
         {
           className: "form-select",
           value: bindingType,
           onChange: handleBindingTypeChange,
           children: [
-            /* @__PURE__ */ jsx3("option", { value: "none", children: "Kein Binding" }),
-            /* @__PURE__ */ jsx3("option", { value: "mqtt", children: "MQTT" }),
-            /* @__PURE__ */ jsx3("option", { value: "opcua", children: "OPC-UA" }),
-            /* @__PURE__ */ jsx3("option", { value: "http", children: "HTTP REST" })
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "none", children: "Kein Binding" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "mqtt", children: "MQTT" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "opcua", children: "OPC-UA" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "http", children: "HTTP REST" })
           ]
         }
       )
     ] }),
-    bindingType === "mqtt" && /* @__PURE__ */ jsxs3("div", { className: "binding-section", children: [
-      /* @__PURE__ */ jsxs3("div", { className: "binding-section-title", children: [
-        /* @__PURE__ */ jsx3("span", { className: "binding-icon mqtt", children: "\u{1F4E1}" }),
+    bindingType === "mqtt" && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "binding-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "binding-section-title", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "binding-icon mqtt", children: "\u{1F4E1}" }),
         "MQTT Konfiguration"
       ] }),
-      /* @__PURE__ */ jsxs3("div", { className: "form-group", children: [
-        /* @__PURE__ */ jsx3("label", { className: "form-label", children: "Topic" }),
-        /* @__PURE__ */ jsx3(
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "form-group", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { className: "form-label", children: "Topic" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "input",
           {
             type: "text",
@@ -520,20 +897,20 @@ var BindingConfigPopup = ({
             onChange: (e) => onConfigChange?.("mqttTopic", e.target.value)
           }
         ),
-        /* @__PURE__ */ jsxs3("div", { className: "form-help", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "form-help", children: [
           "Relativ zu: ",
           String(globalConfig.mqttBaseTopic || "3dviewer/nodes/")
         ] })
       ] })
     ] }),
-    bindingType === "opcua" && /* @__PURE__ */ jsxs3("div", { className: "binding-section", children: [
-      /* @__PURE__ */ jsxs3("div", { className: "binding-section-title", children: [
-        /* @__PURE__ */ jsx3("span", { className: "binding-icon opcua", children: "\u{1F3ED}" }),
+    bindingType === "opcua" && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "binding-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "binding-section-title", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "binding-icon opcua", children: "\u{1F3ED}" }),
         "OPC-UA Konfiguration"
       ] }),
-      /* @__PURE__ */ jsxs3("div", { className: "form-group", children: [
-        /* @__PURE__ */ jsx3("label", { className: "form-label", children: "Node ID" }),
-        /* @__PURE__ */ jsx3(
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "form-group", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { className: "form-label", children: "Node ID" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "input",
           {
             type: "text",
@@ -543,20 +920,20 @@ var BindingConfigPopup = ({
             onChange: (e) => onConfigChange?.("opcuaNodeId", e.target.value)
           }
         ),
-        /* @__PURE__ */ jsxs3("div", { className: "form-help", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "form-help", children: [
           "Server: ",
           String(globalConfig.opcuaEndpoint || "opc.tcp://localhost:4840")
         ] })
       ] })
     ] }),
-    bindingType === "http" && /* @__PURE__ */ jsxs3("div", { className: "binding-section", children: [
-      /* @__PURE__ */ jsxs3("div", { className: "binding-section-title", children: [
-        /* @__PURE__ */ jsx3("span", { className: "binding-icon http", children: "\u{1F310}" }),
+    bindingType === "http" && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "binding-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "binding-section-title", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "binding-icon http", children: "\u{1F310}" }),
         "HTTP REST Konfiguration"
       ] }),
-      /* @__PURE__ */ jsxs3("div", { className: "form-group", children: [
-        /* @__PURE__ */ jsx3("label", { className: "form-label", children: "Endpoint" }),
-        /* @__PURE__ */ jsx3(
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "form-group", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { className: "form-label", children: "Endpoint" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "input",
           {
             type: "text",
@@ -566,16 +943,16 @@ var BindingConfigPopup = ({
             onChange: (e) => onConfigChange?.("httpEndpoint", e.target.value)
           }
         ),
-        /* @__PURE__ */ jsxs3("div", { className: "form-help", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "form-help", children: [
           "Basis-URL: ",
           String(globalConfig.httpBaseUrl || "http://localhost:8080/api")
         ] })
       ] })
     ] }),
-    bindingType !== "none" && /* @__PURE__ */ jsxs3(Fragment, { children: [
-      /* @__PURE__ */ jsxs3("div", { className: "form-group", style: { marginTop: 16 }, children: [
-        /* @__PURE__ */ jsx3("label", { className: "form-label", children: "Wert-Property (JSON-Pfad)" }),
-        /* @__PURE__ */ jsx3(
+    bindingType !== "none" && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "form-group", style: { marginTop: 16 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { className: "form-label", children: "Wert-Property (JSON-Pfad)" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "input",
           {
             type: "text",
@@ -586,9 +963,9 @@ var BindingConfigPopup = ({
           }
         )
       ] }),
-      /* @__PURE__ */ jsxs3("div", { className: "form-group", children: [
-        /* @__PURE__ */ jsx3("label", { className: "form-label", children: "Farb-Property (JSON-Pfad)" }),
-        /* @__PURE__ */ jsx3(
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "form-group", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { className: "form-label", children: "Farb-Property (JSON-Pfad)" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "input",
           {
             type: "text",
@@ -600,15 +977,15 @@ var BindingConfigPopup = ({
         )
       ] })
     ] }),
-    /* @__PURE__ */ jsxs3("div", { className: "button-row", children: [
-      /* @__PURE__ */ jsx3("button", { className: "btn btn-secondary", onClick: onClose, children: "Abbrechen" }),
-      /* @__PURE__ */ jsx3("button", { className: "btn btn-primary", onClick: onClose, children: "Speichern" })
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "button-row", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { className: "btn btn-secondary", onClick: onClose, children: "Abbrechen" }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { className: "btn btn-primary", onClick: onClose, children: "Speichern" })
     ] })
   ] });
 };
 
 // src/components/NodeStatusOverlay.tsx
-import { jsx as jsx4, jsxs as jsxs4 } from "react/jsx-runtime";
+var import_jsx_runtime4 = __toESM(require_jsx_runtime());
 var NodeStatusOverlay = ({
   nodeId: _nodeId,
   data = {}
@@ -637,8 +1014,8 @@ var NodeStatusOverlay = ({
     }
     return "#00d4ff";
   };
-  return /* @__PURE__ */ jsxs4("div", { className: "node-status-overlay", children: [
-    /* @__PURE__ */ jsx4("style", { children: `
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "node-status-overlay", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("style", { children: `
         .node-status-overlay {
           background: rgba(20, 20, 35, 0.95);
           border: 1px solid rgba(255,255,255,0.1);
@@ -680,7 +1057,7 @@ var NodeStatusOverlay = ({
           50% { opacity: 0.5; }
         }
       ` }),
-    /* @__PURE__ */ jsx4(
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
       "div",
       {
         className: "overlay-value",
@@ -688,26 +1065,26 @@ var NodeStatusOverlay = ({
         children: formatValue(data.value)
       }
     ),
-    data.bindingType && data.bindingType !== "none" && /* @__PURE__ */ jsxs4("div", { className: "overlay-binding", children: [
-      /* @__PURE__ */ jsx4(
+    data.bindingType && data.bindingType !== "none" && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "overlay-binding", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
         "span",
         {
           className: "binding-dot",
           style: { background: getStatusColor(data.value) }
         }
       ),
-      /* @__PURE__ */ jsx4("span", { className: "overlay-label", children: data.bindingType })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "overlay-label", children: data.bindingType })
     ] })
   ] });
 };
 
 // src/components/DataLabelOverlay.tsx
-import { jsx as jsx5, jsxs as jsxs5 } from "react/jsx-runtime";
+var import_jsx_runtime5 = __toESM(require_jsx_runtime());
 var DataLabelOverlay = ({
   data = {}
 }) => {
-  return /* @__PURE__ */ jsxs5("div", { className: "data-label-overlay", children: [
-    /* @__PURE__ */ jsx5("style", { children: `
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "data-label-overlay", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("style", { children: `
         .data-label-overlay {
           background: rgba(0, 0, 0, 0.8);
           border-radius: 4px;
@@ -730,17 +1107,17 @@ var DataLabelOverlay = ({
           margin-left: 2px;
         }
       ` }),
-    data.label && /* @__PURE__ */ jsxs5("span", { className: "label-text", children: [
+    data.label && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { className: "label-text", children: [
       data.label,
       ":"
     ] }),
-    /* @__PURE__ */ jsx5("span", { className: "label-value", children: data.value !== void 0 ? String(data.value) : "-" }),
-    data.unit && /* @__PURE__ */ jsx5("span", { className: "label-unit", children: data.unit })
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "label-value", children: data.value !== void 0 ? String(data.value) : "-" }),
+    data.unit && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "label-unit", children: data.unit })
   ] });
 };
 
 // src/components/NodePropertiesSection.tsx
-import { jsx as jsx6, jsxs as jsxs6 } from "react/jsx-runtime";
+var import_jsx_runtime6 = __toESM(require_jsx_runtime());
 var NodePropertiesSection = ({
   nodeId: _nodeId,
   nodeName,
@@ -749,8 +1126,8 @@ var NodePropertiesSection = ({
   onShowPopup
 }) => {
   const bindingType = instanceConfig.bindingType || "none";
-  return /* @__PURE__ */ jsxs6("div", { className: "node-properties-section", children: [
-    /* @__PURE__ */ jsx6("style", { children: `
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "node-properties-section", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("style", { children: `
         .node-properties-section {
           padding: 12px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -816,16 +1193,16 @@ var NodePropertiesSection = ({
           border-color: #00d4ff;
         }
       ` }),
-    /* @__PURE__ */ jsxs6("div", { className: "prop-row", children: [
-      /* @__PURE__ */ jsx6("span", { className: "prop-label", children: "Binding" }),
-      /* @__PURE__ */ jsx6("span", { className: "prop-value", children: /* @__PURE__ */ jsxs6("span", { className: "binding-badge", children: [
-        /* @__PURE__ */ jsx6("span", { className: `binding-dot ${bindingType === "none" ? "inactive" : ""}` }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "prop-row", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "prop-label", children: "Binding" }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "prop-value", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { className: "binding-badge", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: `binding-dot ${bindingType === "none" ? "inactive" : ""}` }),
         bindingType === "none" ? "Nicht verbunden" : bindingType.toUpperCase()
       ] }) })
     ] }),
-    /* @__PURE__ */ jsxs6("div", { className: "prop-row", children: [
-      /* @__PURE__ */ jsx6("span", { className: "prop-label", children: "Overlay anzeigen" }),
-      /* @__PURE__ */ jsx6(
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "prop-row", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "prop-label", children: "Overlay anzeigen" }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
         "input",
         {
           type: "checkbox",
@@ -835,9 +1212,9 @@ var NodePropertiesSection = ({
         }
       )
     ] }),
-    /* @__PURE__ */ jsxs6("div", { className: "prop-row", children: [
-      /* @__PURE__ */ jsx6("span", { className: "prop-label", children: "Custom Label" }),
-      /* @__PURE__ */ jsx6(
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "prop-row", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "prop-label", children: "Custom Label" }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
         "input",
         {
           type: "text",
@@ -849,7 +1226,7 @@ var NodePropertiesSection = ({
         }
       )
     ] }),
-    /* @__PURE__ */ jsx6(
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
       "button",
       {
         className: "config-btn",
@@ -857,7 +1234,7 @@ var NodePropertiesSection = ({
         children: "\u{1F517} Binding konfigurieren"
       }
     ),
-    /* @__PURE__ */ jsx6(
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
       "button",
       {
         className: "config-btn",
@@ -1182,3 +1559,27 @@ var src_default = plugin;
 export {
   src_default as default
 };
+/*! Bundled license information:
+
+react/cjs/react.production.min.js:
+  (**
+   * @license React
+   * react.production.min.js
+   *
+   * Copyright (c) Facebook, Inc. and its affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   *)
+
+react/cjs/react-jsx-runtime.production.min.js:
+  (**
+   * @license React
+   * react-jsx-runtime.production.min.js
+   *
+   * Copyright (c) Facebook, Inc. and its affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   *)
+*/

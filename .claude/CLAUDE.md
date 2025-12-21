@@ -63,14 +63,17 @@ npm run new:plugin -- my-plugin -t sandbox
 
 ## Loading Plugins into 3DViewer
 
-When the dev server is running (`npm run dev`), load plugins into your 3DViewer by configuring the plugin URL:
+When the dev server is running (`npm run dev`), load plugins into your 3DViewer using the **Bundle URL**:
 
-```json
-{
-  "type": "url",
-  "url": "http://localhost:3100/plugins/<plugin-name>/manifest.json"
-}
 ```
+http://localhost:3100/plugins/<plugin-name>/dist/index.js
+```
+
+Examples:
+- `http://localhost:3100/plugins/blueprint-sandbox/dist/index.js`
+- `http://localhost:3100/plugins/blueprint-iframe/dist/index.js`
+
+Make sure to run `npm run build` first so the `dist/` folder exists.
 
 The dev server provides:
 - **Hot reload**: Automatic rebuild on file changes
@@ -92,6 +95,54 @@ The dev server provides:
 - Maximum security through isolation
 - Own JavaScript context
 - For third-party plugins
+
+## IFrame Plugin Critical Rules (MUST READ)
+
+> **See full documentation:** [docs/guides/IFRAME_PLUGIN_PITFALLS.md](../docs/guides/IFRAME_PLUGIN_PITFALLS.md)
+
+IFrame plugins communicate via `postMessage` - this has critical implications:
+
+### 1. ALL API Calls are Async
+```typescript
+// ❌ WRONG - Sandbox pattern doesn't work in iframe
+onLoad(ctx) {
+  const data = ctx.state.get('key');  // Returns Promise, not value!
+}
+
+// ✅ CORRECT - Use async/await
+async onLoad(ctx) {
+  const data = await ctx.state.get('key');
+}
+```
+
+### 2. Callbacks Cannot Be Serialized
+```typescript
+// ❌ WRONG - DataCloneError: function could not be cloned
+ctx.events.onNodeClick((event) => { ... });
+
+// ✅ CORRECT - Store the returned unsubscribe function
+const unsub = await ctx.events.onNodeClick((event) => { ... });
+subscriptions.push(unsub);
+```
+
+### 3. All Lifecycle Hooks Must Be Async
+```typescript
+// ✅ All hooks async for iframe plugins
+async onLoad(ctx): Promise<void> { ... }
+async onNodeBound(ctx, node): Promise<void> { ... }
+async onNodeUnbound(ctx, node): Promise<void> { ... }
+onUnload(ctx): void { ... }  // ctx is passed by host
+```
+
+### 4. Permissions Use Prefix Matching
+```json
+// manifest.json - these all grant API access:
+"permissions": [
+  "state:persist",  // Grants state.* access
+  "mqtt:subscribe", // Grants mqtt.* access
+  "events:click"    // Grants events.* access
+]
+```
 
 ## Available APIs
 

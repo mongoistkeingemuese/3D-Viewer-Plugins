@@ -226,8 +226,9 @@ const plugin: Plugin = {
 
   /**
    * Plugin initialization
+   * NOTE: In iframe context, many API calls are async!
    */
-  onLoad(ctx: PluginContext): void {
+  async onLoad(ctx: PluginContext): Promise<void> {
     state.initialize(ctx);
 
     ctx.log.info('Blueprint IFrame Plugin loaded', {
@@ -238,34 +239,34 @@ const plugin: Plugin = {
     // In IFrame context, we need to be careful about what we can access
     // All external data must go through the API
 
-    // Subscribe to node clicks
-    state.addSubscription(
-      ctx.events.onNodeClick((event) => {
-        ctx.log.debug('Click in IFrame plugin:', event.nodeId);
+    // Subscribe to node clicks (async in iframe context)
+    const unsubClick = await ctx.events.onNodeClick((event: { nodeId: string }) => {
+      ctx.log.debug('Click in IFrame plugin:', event.nodeId);
 
-        // Show popup on click
-        const nodeData = state.getNode(event.nodeId);
-        if (nodeData) {
-          ctx.ui.showPopup('Settings', {
-            title: 'Node Settings',
-            data: {
-              nodeId: event.nodeId,
-              value: nodeData.value,
-            },
-          });
-        }
-      })
-    );
+      // Show popup on click
+      const nodeData = state.getNode(event.nodeId);
+      if (nodeData) {
+        ctx.ui.showPopup('Settings', {
+          title: 'Node Settings',
+          data: {
+            nodeId: event.nodeId,
+            value: nodeData.value,
+          },
+        });
+      }
+    });
+    state.addSubscription(unsubClick);
 
-    // Load persisted state
-    const savedNodes = ctx.state.get<string[]>('nodes', []);
+    // Load persisted state (async in iframe context)
+    const savedNodes = await ctx.state.get<string[]>('nodes', []);
     ctx.log.debug('Restored nodes:', savedNodes);
   },
 
   /**
    * Node bound to plugin
+   * NOTE: In iframe context, this is async!
    */
-  onNodeBound(ctx: PluginContext, node: BoundNode): void {
+  async onNodeBound(ctx: PluginContext, node: BoundNode): Promise<void> {
     ctx.log.info(`IFrame Plugin: Node bound - ${node.name}`);
 
     // Add to state
@@ -278,14 +279,14 @@ const plugin: Plugin = {
     fetchNodeData(ctx, node.id);
 
     // Visual feedback
-    const nodeProxy = ctx.nodes.get(node.id);
+    const nodeProxy = await ctx.nodes.get(node.id);
     if (nodeProxy) {
       nodeProxy.color = '#00d4ff';
       nodeProxy.duration = 300;
     }
 
     // Show overlay based on config
-    const config = ctx.config.instance.getForNode(node.id);
+    const config = await ctx.config.instance.getForNode(node.id);
     if (config.displayMode !== 'none') {
       ctx.ui.showOverlay('StatusBadge', {
         nodeId: node.id,
@@ -293,35 +294,36 @@ const plugin: Plugin = {
       });
     }
 
-    // Persist
-    const nodes = ctx.state.get<string[]>('nodes', []);
+    // Persist (async in iframe context)
+    const nodes = await ctx.state.get<string[]>('nodes', []);
     if (!nodes.includes(node.id)) {
       nodes.push(node.id);
-      ctx.state.set('nodes', nodes);
+      await ctx.state.set('nodes', nodes);
     }
   },
 
   /**
    * Node unbound from plugin
+   * NOTE: In iframe context, this is async!
    */
-  onNodeUnbound(ctx: PluginContext, node: BoundNode): void {
+  async onNodeUnbound(ctx: PluginContext, node: BoundNode): Promise<void> {
     ctx.log.info(`IFrame Plugin: Node unbound - ${node.name}`);
 
     // Cleanup
     state.removeNode(node.id);
 
     // Reset visuals
-    const nodeProxy = ctx.nodes.get(node.id);
+    const nodeProxy = await ctx.nodes.get(node.id);
     if (nodeProxy) {
       nodeProxy.color = '#ffffff';
       nodeProxy.emissive = '#000000';
       nodeProxy.emissiveIntensity = 0;
     }
 
-    // Update persisted state
-    const nodes = ctx.state.get<string[]>('nodes', []);
-    const filtered = nodes.filter((id) => id !== node.id);
-    ctx.state.set('nodes', filtered);
+    // Update persisted state (async in iframe context)
+    const nodes = await ctx.state.get<string[]>('nodes', []);
+    const filtered = nodes.filter((id: string) => id !== node.id);
+    await ctx.state.set('nodes', filtered);
   },
 
   /**

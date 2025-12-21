@@ -17,7 +17,8 @@
     "nodes:write",
     "ui:popup",
     "ui:overlay",
-    "state:persist"
+    "state:persist",
+    "events:click"
   ],
 
   "sandbox": "iframe",

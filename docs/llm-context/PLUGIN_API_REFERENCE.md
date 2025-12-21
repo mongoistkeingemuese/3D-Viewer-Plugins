@@ -1,55 +1,55 @@
 # 3DViewer Plugin API Reference
 
-> **LLM-optimierte Referenz** - Dieses Dokument ist für AI-Assistenten und Entwickler optimiert, um schnell die richtigen APIs und Patterns zu finden.
+> **LLM-Optimized Reference** - This document is optimized for AI assistants and developers to quickly find the right APIs and patterns.
 
-## Quick Reference: Was will ich tun?
+## Quick Reference: What do I want to do?
 
-| Aufgabe | API | Beispiel |
-|---------|-----|----------|
-| Node-Farbe ändern | `ctx.nodes.get(id).color` | `node.color = '#ff0000'` |
-| MQTT abonnieren | `ctx.mqtt.subscribe()` | `ctx.mqtt.subscribe('topic', cb)` |
-| OPC-UA lesen | `ctx.opcua.read()` | `await ctx.opcua.read('ns=2;s=Var')` |
+| Task | API | Example |
+|------|-----|---------|
+| Change node color | `ctx.nodes.get(id).color` | `node.color = '#ff0000'` |
+| Subscribe to MQTT | `ctx.mqtt.subscribe()` | `ctx.mqtt.subscribe('topic', cb)` |
+| Read OPC-UA | `ctx.opcua.read()` | `await ctx.opcua.read('ns=2;s=Var')` |
 | HTTP Request | `ctx.http.get()` | `await ctx.http.get('/api/data')` |
-| Popup öffnen | `ctx.ui.showPopup()` | `ctx.ui.showPopup('Name', opts)` |
-| Config lesen | `ctx.config.global.get()` | `ctx.config.global.get('key')` |
-| Loggen | `ctx.log.info()` | `ctx.log.info('message')` |
+| Open popup | `ctx.ui.showPopup()` | `ctx.ui.showPopup('Name', opts)` |
+| Read config | `ctx.config.global.get()` | `ctx.config.global.get('key')` |
+| Log message | `ctx.log.info()` | `ctx.log.info('message')` |
 
 ---
 
-## Plugin Struktur
+## Plugin Structure
 
 ```typescript
 import type { Plugin, PluginContext, BoundNode } from '@3dviewer/plugin-sdk';
 
 const plugin: Plugin = {
-  // Optional: React-Komponenten
+  // Optional: React components
   components: {
     Panel: MyPanelComponent,
     Popup: MyPopupComponent,
   },
 
-  // Lifecycle: Plugin geladen
+  // Lifecycle: Plugin loaded
   onLoad(ctx: PluginContext) {
     ctx.log.info('Plugin loaded');
   },
 
-  // Lifecycle: Node gebunden
+  // Lifecycle: Node bound
   onNodeBound(ctx: PluginContext, node: BoundNode) {
     const proxy = ctx.nodes.get(node.id);
     proxy.color = '#00ff00';
   },
 
-  // Lifecycle: Node entbunden
+  // Lifecycle: Node unbound
   onNodeUnbound(ctx: PluginContext, node: BoundNode) {
     // Cleanup
   },
 
-  // Lifecycle: Config geändert
+  // Lifecycle: Config changed
   onConfigChange(ctx, type, key, nodeId?) {
     // React to config changes
   },
 
-  // Lifecycle: Plugin entladen
+  // Lifecycle: Plugin unloaded
   onUnload(ctx: PluginContext) {
     // Cleanup (subscriptions auto-cleaned)
   },
@@ -62,32 +62,32 @@ export default plugin;
 
 ## API Details
 
-### NodesAPI - Node-Manipulation
+### NodesAPI - Node Manipulation
 
 ```typescript
-// Node abrufen (by ID oder Name)
+// Get node (by ID or name)
 const node = ctx.nodes.get('Motor_01');
 const node = ctx.nodes.get('uuid-1234-5678');
 
-// Alle Nodes
+// All nodes
 const allNodes = ctx.nodes.getAll();
 
-// Nodes filtern
+// Filter nodes
 const motors = ctx.nodes.find({ namePattern: /^Motor_/ });
 const visible = ctx.nodes.find({ visible: true });
 
-// Properties ändern (reaktiv!)
-node.color = '#ff0000';           // Hex-Farbe
+// Change properties (reactive!)
+node.color = '#ff0000';           // Hex color
 node.opacity = 0.5;               // 0-1
 node.visible = false;             // boolean
 node.position = { x: 0, y: 1, z: 0 };  // Vector3
 node.rotation = { x: 0, y: Math.PI, z: 0 };
 node.scale = { x: 1.5, y: 1.5, z: 1.5 };
-node.emissive = '#ff0000';        // Glow-Farbe
+node.emissive = '#ff0000';        // Glow color
 node.emissiveIntensity = 0.5;     // 0-1
 node.duration = 500;              // Animation in ms
 
-// Property-Änderungen beobachten
+// Watch property changes
 const unsub = ctx.nodes.onChange('node-id', 'visible', (newVal, oldVal) => {
   console.log(`Changed from ${oldVal} to ${newVal}`);
 });
@@ -97,12 +97,12 @@ unsub(); // Unsubscribe
 ### MqttAPI - Pub/Sub Messaging
 
 ```typescript
-// Einfaches Subscribe
+// Simple subscribe
 const unsub = ctx.mqtt.subscribe('sensors/temperature', (msg) => {
   console.log(msg.topic, msg.payload, msg.timestamp);
 });
 
-// Pattern Subscribe (+ = single level, # = multi level)
+// Pattern subscribe (+ = single level, # = multi level)
 ctx.mqtt.subscribePattern('sensors/+/temperature', (msg) => {
   // Matches: sensors/room1/temperature, sensors/room2/temperature
 });
@@ -115,7 +115,7 @@ ctx.mqtt.subscribePattern('sensors/#', (msg) => {
 ctx.mqtt.publish('commands/motor', { speed: 100 });
 ctx.mqtt.publish('commands/motor', { speed: 100 }, { qos: 1, retain: true });
 
-// Mit Source-ID (für Multi-Broker)
+// With source ID (for multi-broker)
 const mqtt2 = ctx.mqtt.withSource('broker2');
 mqtt2.subscribe('topic', callback);
 ```
@@ -123,36 +123,36 @@ mqtt2.subscribe('topic', callback);
 ### OpcUaAPI - Industrial Automation
 
 ```typescript
-// Wert lesen (async!)
+// Read value (async!)
 const value = await ctx.opcua.read('ns=2;s=MyVariable');
 console.log(value.value, value.dataType, value.statusCode);
 
-// Wert schreiben
+// Write value
 await ctx.opcua.write('ns=2;s=MyVariable', 42);
 
-// Subscribe auf Wertänderungen
+// Subscribe to value changes
 const unsub = ctx.opcua.subscribe('ns=2;s=MyVariable', (value) => {
   console.log('New value:', value.value);
 });
 
-// Mit Source-ID
+// With source ID
 const opcua2 = ctx.opcua.withSource('plc2');
 ```
 
 ### HttpAPI - REST Requests
 
 ```typescript
-// GET Request
+// GET request
 const response = await ctx.http.get('https://api.example.com/data');
 console.log(response.status, response.data);
 
-// POST Request
+// POST request
 const response = await ctx.http.post('https://api.example.com/data', {
   name: 'Test',
   value: 42,
 });
 
-// Vollständiger fetch
+// Full fetch
 const response = await ctx.http.fetch('https://api.example.com/data', {
   method: 'PUT',
   headers: { 'Authorization': 'Bearer token' },
@@ -160,7 +160,7 @@ const response = await ctx.http.fetch('https://api.example.com/data', {
   timeout: 5000,
 });
 
-// Polling (automatisches Interval)
+// Polling (automatic interval)
 const unsub = ctx.http.poll('https://api.example.com/status', 1000, (resp) => {
   if (resp.status === 200) {
     console.log('Status:', resp.data);
@@ -171,7 +171,7 @@ const unsub = ctx.http.poll('https://api.example.com/status', 1000, (resp) => {
 ### EventsAPI - Event Handling
 
 ```typescript
-// Node Events
+// Node events
 ctx.events.onNodeClick((event) => {
   console.log('Clicked:', event.nodeId, event.nodeName);
   console.log('3D Point:', event.point);
@@ -181,7 +181,7 @@ ctx.events.onNodeClick((event) => {
 ctx.events.onNodeHover((event) => { /* Mouse enter/leave */ });
 ctx.events.onNodeSelect((event) => { /* Selection changed */ });
 
-// Binding Events
+// Binding events
 ctx.events.onNodeBound((node) => {
   console.log('Node bound:', node.id, node.name);
 });
@@ -190,14 +190,14 @@ ctx.events.onNodeUnbound((node) => {
   console.log('Node unbound:', node.id);
 });
 
-// Custom Events (Plugin <-> Plugin Kommunikation)
+// Custom events (plugin <-> plugin communication)
 ctx.events.emit('my-custom-event', { data: 'value' });
 
 ctx.events.on('my-custom-event', (data) => {
   console.log('Received:', data);
 });
 
-// Activation Events
+// Activation events
 ctx.events.onActivate(() => console.log('Plugin activated'));
 ctx.events.onDeactivate(() => console.log('Plugin deactivated'));
 ```
@@ -205,7 +205,7 @@ ctx.events.onDeactivate(() => console.log('Plugin deactivated'));
 ### UiAPI - Dialogs & Overlays
 
 ```typescript
-// Popup anzeigen (muss in manifest.json definiert sein)
+// Show popup (must be defined in manifest.json)
 const handle = ctx.ui.showPopup('MyPopup', {
   title: 'Details',
   width: 400,
@@ -215,35 +215,35 @@ const handle = ctx.ui.showPopup('MyPopup', {
   onClose: () => console.log('Closed'),
 });
 
-// Popup schließen
+// Close popup
 ctx.ui.closePopup(handle);
 ctx.ui.closeAllPopups();
 
-// 3D Overlay (schwebt über Node)
+// 3D overlay (floats above node)
 const overlay = ctx.ui.showOverlay('StatusOverlay', {
   nodeId: 'motor-1',
   offset: { x: 0, y: 1, z: 0 },
   data: { value: 42 },
-  occlude: false,  // Durch Objekte sichtbar?
+  occlude: false,  // Visible through objects?
 });
 
 ctx.ui.updateOverlay(overlay, { data: { value: 43 } });
 ctx.ui.hideOverlay(overlay);
 
 // Notifications
-ctx.ui.notify('Erfolgreich gespeichert', 'success');
-ctx.ui.notify('Warnung!', 'warning');
-ctx.ui.notify('Fehler aufgetreten', 'error');
+ctx.ui.notify('Successfully saved', 'success');
+ctx.ui.notify('Warning!', 'warning');
+ctx.ui.notify('Error occurred', 'error');
 
 // Dialogs (async)
-const confirmed = await ctx.ui.confirm('Wirklich löschen?');
-const input = await ctx.ui.prompt('Neuer Name:', 'Default');
+const confirmed = await ctx.ui.confirm('Really delete?');
+const input = await ctx.ui.prompt('New name:', 'Default');
 ```
 
-### ConfigAPI - Konfiguration
+### ConfigAPI - Configuration
 
 ```typescript
-// Global Config (für alle Nodes)
+// Global config (for all nodes)
 const value = ctx.config.global.get<string>('apiUrl', 'http://default');
 ctx.config.global.set('apiUrl', 'http://new-url');
 const all = ctx.config.global.getAll();
@@ -252,7 +252,7 @@ ctx.config.global.onChange('apiUrl', (newVal, oldVal) => {
   console.log('Config changed');
 });
 
-// Instance Config (pro Node)
+// Instance config (per node)
 const nodeValue = ctx.config.instance.get<number>('node-1', 'threshold', 50);
 ctx.config.instance.set('node-1', 'threshold', 75);
 const nodeConfig = ctx.config.instance.getForNode('node-1');
@@ -262,23 +262,23 @@ ctx.config.instance.onChange('node-1', 'threshold', (newVal, oldVal) => {
 });
 ```
 
-### StateAPI - Persistenz
+### StateAPI - Persistence
 
 ```typescript
-// Persistent (überlebt Browser-Reload)
+// Persistent (survives browser reload)
 ctx.state.set('myData', { count: 42 });
 const data = ctx.state.get<{ count: number }>('myData', { count: 0 });
 ctx.state.delete('myData');
 
-// Session (nur für aktuelle Session)
+// Session (current session only)
 ctx.state.session.set('tempData', 'value');
 const temp = ctx.state.session.get('tempData');
 ```
 
-### VarsAPI & ConstsAPI - Globale Variablen
+### VarsAPI & ConstsAPI - Global Variables
 
 ```typescript
-// Variablen (read/write)
+// Variables (read/write)
 ctx.vars.set('globalCounter', 42);
 const counter = ctx.vars.get('globalCounter');
 const allVars = ctx.vars.getAll();
@@ -287,7 +287,7 @@ ctx.vars.onChange('globalCounter', (newVal, oldVal) => {
   console.log('Variable changed');
 });
 
-// Konstanten (read-only)
+// Constants (read-only)
 const appVersion = ctx.consts.get('version');
 const allConsts = ctx.consts.getAll();
 ```
@@ -295,7 +295,7 @@ const allConsts = ctx.consts.getAll();
 ### LogAPI - Debugging
 
 ```typescript
-ctx.log.debug('Debug info', { details: 'data' });  // Nur in Dev-Mode
+ctx.log.debug('Debug info', { details: 'data' });  // Dev-Mode only
 ctx.log.info('Information', { nodeId: 'x' });
 ctx.log.warn('Warning message');
 ctx.log.error('Error occurred', new Error('details'));
@@ -303,7 +303,7 @@ ctx.log.error('Error occurred', new Error('details'));
 
 ---
 
-## Manifest.json Referenz
+## Manifest.json Reference
 
 ```json
 {
@@ -326,10 +326,10 @@ ctx.log.error('Error occurred', new Error('details'));
     "state:persist"
   ],
 
-  "sandbox": "proxy",  // oder "iframe"
+  "sandbox": "proxy",
 
   "nodeBinding": {
-    "mode": "manual",  // oder "auto"
+    "mode": "manual",
     "filter": {
       "namePattern": "^Motor_",
       "metadata": { "type": "motor" }
@@ -374,26 +374,26 @@ ctx.log.error('Error occurred', new Error('details'));
 
 ---
 
-## Sandbox-Typen
+## Sandbox Types
 
-### Proxy (Standard)
-- Schneller, direkter API-Zugriff
-- Volle React-Integration
-- Gleicher JavaScript-Kontext
-- Permission-Checks via Proxy
+### Proxy (Default)
+- Fast, direct API access
+- Full React integration
+- Same JavaScript context
+- Permission checks via Proxy
 
-### IFrame (Isoliert)
-- Maximale Sicherheit
-- Eigener JavaScript-Kontext
+### IFrame (Isolated)
+- Maximum security
+- Own JavaScript context
 - Async-only APIs
-- postMessage-Kommunikation
-- Für nicht vertrauenswürdige Plugins
+- postMessage communication
+- For untrusted plugins
 
 ---
 
-## Häufige Patterns
+## Common Patterns
 
-### Daten-Binding mit Farbänderung
+### Data Binding with Color Change
 
 ```typescript
 onNodeBound(ctx, node) {
@@ -401,23 +401,27 @@ onNodeBound(ctx, node) {
   const topic = config.mqttTopic as string;
 
   ctx.mqtt.subscribe(topic, (msg) => {
-    const value = msg.payload as number;
-    const proxy = ctx.nodes.get(node.id);
+    try {
+      const value = msg.payload as number;
+      const proxy = ctx.nodes.get(node.id);
 
-    if (value > 90) {
-      proxy.color = '#ff0000';
-      proxy.emissive = '#ff0000';
-      proxy.emissiveIntensity = 0.5;
-    } else if (value > 70) {
-      proxy.color = '#ffaa00';
-    } else {
-      proxy.color = '#00ff00';
+      if (value > 90) {
+        proxy.color = '#ff0000';
+        proxy.emissive = '#ff0000';
+        proxy.emissiveIntensity = 0.5;
+      } else if (value > 70) {
+        proxy.color = '#ffaa00';
+      } else {
+        proxy.color = '#00ff00';
+      }
+    } catch (error) {
+      ctx.log.error('Failed to update node', { nodeId: node.id, error });
     }
   });
 }
 ```
 
-### HTTP Polling mit Overlay
+### HTTP Polling with Overlay
 
 ```typescript
 onNodeBound(ctx, node) {
@@ -427,16 +431,20 @@ onNodeBound(ctx, node) {
   });
 
   ctx.http.poll('/api/nodes/' + node.id, 1000, (resp) => {
-    if (resp.status === 200) {
-      ctx.ui.updateOverlay(overlay, {
-        data: { value: resp.data },
-      });
+    try {
+      if (resp.status === 200) {
+        ctx.ui.updateOverlay(overlay, {
+          data: { value: resp.data },
+        });
+      }
+    } catch (error) {
+      ctx.log.error('Failed to poll', { nodeId: node.id, error });
     }
   });
 }
 ```
 
-### Config-basierte Logik
+### Config-Based Logic
 
 ```typescript
 onConfigChange(ctx, type, key, nodeId) {
@@ -454,14 +462,14 @@ onConfigChange(ctx, type, key, nodeId) {
 
 ---
 
-## Fehlerbehandlung
+## Error Handling
 
 ```typescript
 try {
   const value = await ctx.opcua.read('ns=2;s=NonExistent');
 } catch (error) {
   ctx.log.error('OPC-UA read failed', error);
-  ctx.ui.notify('Verbindung fehlgeschlagen', 'error');
+  ctx.ui.notify('Connection failed', 'error');
 }
 ```
 
@@ -499,3 +507,59 @@ test('node changes color on data', () => {
   expect(node?.color).toBe('#ff0000');
 });
 ```
+
+---
+
+## SDK Import Reference
+
+```typescript
+// Main imports
+import type {
+  Plugin,
+  PluginContext,
+  PluginManifest,
+  BoundNode,
+  NodeProxy,
+  NodeEvent,
+  Unsubscribe,
+  Vector3,
+  MqttMessage,
+  OpcUaValue,
+  HttpResponse,
+  OverlayHandle,
+  PopupHandle,
+} from '@3dviewer/plugin-sdk';
+
+// Helpers
+import { definePlugin, defineManifest, validateManifest } from '@3dviewer/plugin-sdk';
+
+// Testing
+import { createMockContext, MockMqttAPI, MockNodesAPI } from '@3dviewer/plugin-sdk/testing';
+```
+
+---
+
+## Performance Considerations
+
+| Check | Risk if Violated |
+|-------|------------------|
+| Use `ctx.log.debug` for frequent logs | Log flooding |
+| Debounce rapid MQTT messages | UI lag, high CPU |
+| Clean up overlays on unbind | Memory leak |
+| Batch state updates | Multiple re-renders |
+| Use threshold checks | Unnecessary color updates |
+
+---
+
+## Quality Checklist
+
+Before completing a plugin:
+
+- [ ] All types from `@3dviewer/plugin-sdk`
+- [ ] No `: any` types
+- [ ] Subscriptions saved and cleaned up
+- [ ] Error handling with try/catch
+- [ ] Logging for debugging
+- [ ] Permissions declared in manifest
+- [ ] Config schema for UI generation
+- [ ] Documentation comments (Purpose, Usage, Rationale)

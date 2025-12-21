@@ -16,7 +16,7 @@ interface ControlPanelProps {
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({
-  pluginId,
+  pluginId: _pluginId,
   boundNodes = [],
   globalConfig = {},
   onConfigChange,

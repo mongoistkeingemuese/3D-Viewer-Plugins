@@ -28,7 +28,7 @@
 export * from './types';
 
 // Type imports for internal use
-import type { Plugin, PluginContext, PluginManifest } from './types';
+import type { Plugin, PluginManifest } from './types';
 
 /**
  * Helper function to define a plugin with type safety.

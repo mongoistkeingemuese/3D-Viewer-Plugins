@@ -175,7 +175,7 @@ export const BindingConfigPopup: React.FC<BindingConfigPopupProps> = ({
               onChange={(e) => onConfigChange?.('mqttTopic', e.target.value)}
             />
             <div className="form-help">
-              Relativ zu: {globalConfig.mqttBaseTopic || '3dviewer/nodes/'}
+              Relativ zu: {String(globalConfig.mqttBaseTopic || '3dviewer/nodes/')}
             </div>
           </div>
         </div>
@@ -197,7 +197,7 @@ export const BindingConfigPopup: React.FC<BindingConfigPopupProps> = ({
               onChange={(e) => onConfigChange?.('opcuaNodeId', e.target.value)}
             />
             <div className="form-help">
-              Server: {globalConfig.opcuaEndpoint || 'opc.tcp://localhost:4840'}
+              Server: {String(globalConfig.opcuaEndpoint || 'opc.tcp://localhost:4840')}
             </div>
           </div>
         </div>
@@ -219,7 +219,7 @@ export const BindingConfigPopup: React.FC<BindingConfigPopupProps> = ({
               onChange={(e) => onConfigChange?.('httpEndpoint', e.target.value)}
             />
             <div className="form-help">
-              Basis-URL: {globalConfig.httpBaseUrl || 'http://localhost:8080/api'}
+              Basis-URL: {String(globalConfig.httpBaseUrl || 'http://localhost:8080/api')}
             </div>
           </div>
         </div>

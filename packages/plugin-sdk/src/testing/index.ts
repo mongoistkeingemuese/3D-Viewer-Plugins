@@ -58,7 +58,6 @@ import type {
   OverlayOptions,
   NotificationType,
   Unsubscribe,
-  Vector3,
 } from '../types';
 
 // ============================================================================

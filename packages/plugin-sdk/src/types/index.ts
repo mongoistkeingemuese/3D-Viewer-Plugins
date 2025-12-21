@@ -930,12 +930,14 @@ export interface PluginContext {
  * export default plugin;
  * ```
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface Plugin {
   /**
    * React components provided by this plugin.
    * Keys must match component names in manifest UI config.
+   * Note: Using 'any' here to allow components with specific prop types.
    */
-  components?: Record<string, ComponentType<unknown>>;
+  components?: Record<string, ComponentType<any>>;
 
   /**
    * Called when the plugin is loaded.

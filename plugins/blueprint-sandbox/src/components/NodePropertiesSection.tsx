@@ -15,7 +15,7 @@ interface NodePropertiesSectionProps {
 }
 
 export const NodePropertiesSection: React.FC<NodePropertiesSectionProps> = ({
-  nodeId,
+  nodeId: _nodeId,
   nodeName,
   instanceConfig = {},
   onConfigChange,

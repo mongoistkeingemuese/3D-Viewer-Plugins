@@ -16,7 +16,7 @@ interface NodeStatusOverlayProps {
 }
 
 export const NodeStatusOverlay: React.FC<NodeStatusOverlayProps> = ({
-  nodeId,
+  nodeId: _nodeId,
   data = {},
 }) => {
   const formatValue = (value: unknown): string => {

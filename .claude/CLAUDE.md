@@ -21,15 +21,17 @@ This monorepo contains everything needed for 3DViewer plugin development:
 # Install dependencies
 npm install
 
-# Start dev server
+# Start dev server (http://localhost:3100)
 npm run dev
-# → http://localhost:3100
 
-# Build everything
+# Build everything (SDK → DevTools → Plugins)
 npm run build
 
 # Build SDK only
 npm run build:sdk
+
+# Build DevTools only
+npm run build:devtools
 
 # Build single plugin
 npm run build --workspace=plugins/<plugin-name>
@@ -40,8 +42,8 @@ npm test
 # Run single test file
 npm test tests/unit/sdk.test.ts
 
-# Unit tests
-npm run test:unit
+# Watch mode tests
+npm test -- --watch
 
 # Tests with coverage
 npm test -- --coverage
@@ -52,12 +54,32 @@ npm run typecheck
 # Lint
 npm run lint
 
-# Validate plugin
+# Validate plugin manifest
 npm run validate
 
 # Create new plugin
 npm run new:plugin -- my-plugin -t sandbox
 ```
+
+## Loading Plugins into 3DViewer
+
+When the dev server is running (`npm run dev`), load plugins into your 3DViewer by configuring the plugin URL:
+
+```json
+{
+  "type": "url",
+  "url": "http://localhost:3100/plugins/<plugin-name>/manifest.json"
+}
+```
+
+The dev server provides:
+- **Hot reload**: Automatic rebuild on file changes
+- **WebSocket notifications**: Connected clients refresh automatically
+- **Dashboard**: Visit http://localhost:3100 to see all detected plugins
+- **API endpoints**:
+  - `GET /api/plugins` - List all plugins
+  - `GET /api/plugins/:id` - Get plugin info
+  - `POST /api/plugins/:id/rebuild` - Trigger rebuild
 
 ## Plugin Types
 
@@ -198,12 +220,56 @@ NPM Workspaces with the following build order:
 ### SDK Exports
 
 ```typescript
-// Main types
+// Main types and helpers
+import { definePlugin, validateManifest, PERMISSIONS } from '@3dviewer/plugin-sdk';
 import type { Plugin, PluginContext, BoundNode, NodeProxy } from '@3dviewer/plugin-sdk';
 
 // Testing utilities
-import { createMockContext } from '@3dviewer/plugin-sdk/testing';
+import { createMockContext, MockMqttAPI, MockNodesAPI } from '@3dviewer/plugin-sdk/testing';
 ```
+
+### Testing Plugins
+
+Use the mock context for unit testing:
+
+```typescript
+import { createMockContext } from '@3dviewer/plugin-sdk/testing';
+import plugin from './index';
+
+describe('MyPlugin', () => {
+  it('should handle node binding', () => {
+    const ctx = createMockContext({
+      pluginId: 'com.test.plugin',
+      initialNodes: [{ id: 'motor-1', name: 'Motor_01' }],
+    });
+
+    plugin.onNodeBound?.(ctx, ctx.nodes.get('motor-1')!);
+
+    // Inspect mock state
+    expect(ctx.mqtt.subscriptions).toHaveLength(1);
+    expect(ctx.log.entries).toContainEqual(
+      expect.objectContaining({ level: 'info' })
+    );
+  });
+
+  it('should respond to MQTT messages', () => {
+    const ctx = createMockContext();
+    plugin.onLoad?.(ctx);
+
+    // Simulate incoming message
+    ctx.mqtt.simulateMessage('sensors/temp', { value: 42 });
+
+    expect(ctx.nodes.get('motor-1')?.color).toBe('#ff0000');
+  });
+});
+```
+
+Mock capabilities:
+- `ctx.mqtt.simulateMessage(topic, payload)` - Trigger subscribed callbacks
+- `ctx.nodes.simulateChange(nodeId, property, newValue, oldValue)` - Trigger onChange callbacks
+- `ctx.events.simulateClick({ nodeId, nodeName })` - Simulate user interactions
+- `ctx.ui.confirmResponse = true/false` - Set mock dialog responses
+- `ctx.reset()` - Clear all mock state between tests
 
 ---
 

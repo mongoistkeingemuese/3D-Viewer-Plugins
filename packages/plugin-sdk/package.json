@@ -1,0 +1,50 @@
+{
+  "name": "@3dviewer/plugin-sdk",
+  "version": "1.0.0",
+  "description": "Official SDK for developing 3DViewer plugins",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types/index.mjs",
+      "require": "./dist/types/index.js",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./testing": {
+      "import": "./dist/testing/index.mjs",
+      "require": "./dist/testing/index.js",
+      "types": "./dist/testing/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "build:watch": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.10",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "3dviewer",
+    "plugin",
+    "sdk",
+    "three.js",
+    "react-three-fiber"
+  ],
+  "author": "3DViewer Team",
+  "license": "MIT"
+}

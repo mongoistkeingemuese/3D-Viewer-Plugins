@@ -1,0 +1,110 @@
+{
+  "id": "com.3dviewer.blueprint-iframe",
+  "name": "Blueprint IFrame Plugin",
+  "version": "1.0.0",
+  "author": "3DViewer Team",
+  "description": "Vollständiges Beispiel für ein isoliertes IFrame-Plugin. Demonstriert die sichere Kommunikation zwischen Host und Plugin über postMessage.",
+  "license": "MIT",
+  "icon": "🔒",
+  "entryPoint": "dist/index.js",
+
+  "permissions": [
+    "mqtt:subscribe",
+    "mqtt:publish",
+    "opcua:read",
+    "http:fetch",
+    "nodes:read",
+    "nodes:write",
+    "ui:popup",
+    "ui:overlay",
+    "state:persist"
+  ],
+
+  "sandbox": "iframe",
+
+  "nodeBinding": {
+    "mode": "manual"
+  },
+
+  "ui": {
+    "toolbar": {
+      "enabled": true,
+      "icon": "🔒",
+      "tooltip": "IFrame Plugin Panel öffnen"
+    },
+    "panel": {
+      "component": "IFramePanel",
+      "title": "IFrame Controls",
+      "width": 300
+    },
+    "popups": {
+      "Settings": {
+        "component": "SettingsPopup",
+        "width": 400,
+        "height": 350
+      }
+    },
+    "overlays": {
+      "StatusBadge": {
+        "component": "StatusBadgeOverlay",
+        "occlude": false
+      }
+    }
+  },
+
+  "config": {
+    "global": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "apiUrl": {
+            "type": "string",
+            "title": "API URL",
+            "default": "http://localhost:8080/api"
+          },
+          "pollingInterval": {
+            "type": "number",
+            "title": "Polling Intervall (ms)",
+            "default": 2000,
+            "minimum": 500
+          },
+          "theme": {
+            "type": "string",
+            "title": "Theme",
+            "enum": ["light", "dark", "auto"],
+            "default": "dark"
+          }
+        }
+      }
+    },
+    "instance": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "dataSource": {
+            "type": "string",
+            "title": "Datenquelle",
+            "enum": ["mqtt", "http", "manual"],
+            "default": "manual"
+          },
+          "endpoint": {
+            "type": "string",
+            "title": "Endpoint/Topic"
+          },
+          "displayMode": {
+            "type": "string",
+            "title": "Anzeigemodus",
+            "enum": ["badge", "label", "none"],
+            "default": "badge"
+          }
+        }
+      }
+    }
+  },
+
+  "events": {
+    "onClick": true,
+    "onHover": false,
+    "onDataChange": true
+  }
+}

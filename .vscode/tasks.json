@@ -1,0 +1,171 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dev Server",
+      "type": "shell",
+      "command": "npm run dev",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^\\[ERROR\\] (.+)$",
+          "message": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[DEV\\].*Building",
+          "endsPattern": "^\\[DEV\\].*Build complete"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      }
+    },
+    {
+      "label": "Build All",
+      "type": "shell",
+      "command": "npm run build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Build SDK",
+      "type": "shell",
+      "command": "npm run build:sdk",
+      "group": "build",
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Build DevTools",
+      "type": "shell",
+      "command": "npm run build:devtools",
+      "group": "build",
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Build Plugins",
+      "type": "shell",
+      "command": "npm run build:plugins",
+      "group": "build",
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Watch SDK",
+      "type": "shell",
+      "command": "npm run build:watch",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^error: (.+)$",
+          "message": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Building",
+          "endsPattern": "^(Build complete|Watching)"
+        }
+      }
+    },
+    {
+      "label": "Test All",
+      "type": "shell",
+      "command": "npm test",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test Unit",
+      "type": "shell",
+      "command": "npm run test:unit",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Test Integration",
+      "type": "shell",
+      "command": "npm run test:integration",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Create New Plugin",
+      "type": "shell",
+      "command": "npm run new:plugin -- ${input:pluginName} -t ${input:pluginType}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate Plugin",
+      "type": "shell",
+      "command": "npm run validate -- ${input:pluginPath}",
+      "problemMatcher": []
+    },
+    {
+      "label": "TypeCheck",
+      "type": "shell",
+      "command": "npm run typecheck",
+      "group": "build",
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Lint",
+      "type": "shell",
+      "command": "npm run lint",
+      "group": "build",
+      "problemMatcher": "$eslint-stylish"
+    },
+    {
+      "label": "Install Dependencies",
+      "type": "shell",
+      "command": "npm install",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Playground",
+      "type": "shell",
+      "command": "npm run playground",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^error: (.+)$",
+          "message": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Starting",
+          "endsPattern": "^Local:"
+        }
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "pluginName",
+      "type": "promptString",
+      "description": "Plugin name (e.g., my-plugin)"
+    },
+    {
+      "id": "pluginType",
+      "type": "pickString",
+      "description": "Plugin type",
+      "options": ["sandbox", "iframe"],
+      "default": "sandbox"
+    },
+    {
+      "id": "pluginPath",
+      "type": "promptString",
+      "description": "Path to plugin directory",
+      "default": "./plugins/"
+    }
+  ]
+}

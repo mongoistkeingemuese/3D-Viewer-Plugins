@@ -1,0 +1,52 @@
+{
+  "name": "3dviewer-plugins-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plugin Development Environment for 3DViewer",
+  "workspaces": [
+    "packages/*",
+    "plugins/*",
+    "playground"
+  ],
+  "scripts": {
+    "dev": "npm run dev:server",
+    "dev:server": "node packages/plugin-devtools/dist/cli.js serve",
+    "dev:watch": "npm run build:watch --workspace=packages/plugin-sdk & npm run dev:server",
+    "build": "npm run build:sdk && npm run build:devtools && npm run build:plugins",
+    "build:sdk": "npm run build --workspace=packages/plugin-sdk",
+    "build:devtools": "npm run build --workspace=packages/plugin-devtools",
+    "build:plugins": "npm run build --workspace=plugins/blueprint-sandbox && npm run build --workspace=plugins/blueprint-iframe",
+    "build:watch": "npm run build:watch --workspace=packages/plugin-sdk",
+    "test": "vitest",
+    "test:unit": "vitest run --dir tests/unit",
+    "test:visual": "vitest run --dir tests/visual",
+    "test:integration": "vitest run --dir tests/integration",
+    "lint": "eslint packages plugins playground --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "playground": "npm run dev --workspace=playground",
+    "new:plugin": "node scripts/create-plugin.mjs",
+    "docs:build": "node scripts/build-docs.mjs",
+    "validate": "node packages/plugin-devtools/dist/cli.js validate"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "esbuild": "^0.19.10",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.0",
+    "ws": "^8.14.2",
+    "chokidar": "^3.5.3",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Dev Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug Plugin Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "test", "--", "--reporter=verbose"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug Current Test File",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "test", "--", "${relativeFile}", "--reporter=verbose"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug Build Script",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/plugin-sdk/build.mjs",
+      "cwd": "${workspaceFolder}/packages/plugin-sdk",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug CLI - Validate",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/plugin-devtools/dist/cli.js",
+      "args": ["validate", "${input:pluginPath}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "preLaunchTask": "Build DevTools"
+    },
+    {
+      "name": "Debug CLI - New Plugin",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/plugin-devtools/dist/cli.js",
+      "args": ["new", "${input:pluginName}", "-t", "${input:pluginType}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "preLaunchTask": "Build DevTools"
+    },
+    {
+      "name": "Attach to Dev Server",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "pluginPath",
+      "type": "promptString",
+      "description": "Path to plugin directory",
+      "default": "./plugins/blueprint-sandbox"
+    },
+    {
+      "id": "pluginName",
+      "type": "promptString",
+      "description": "New plugin name",
+      "default": "my-plugin"
+    },
+    {
+      "id": "pluginType",
+      "type": "pickString",
+      "description": "Plugin type",
+      "options": ["sandbox", "iframe"],
+      "default": "sandbox"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Dev Server + Watch",
+      "configurations": ["Debug Dev Server"],
+      "preLaunchTask": "Watch SDK"
+    }
+  ]
+}

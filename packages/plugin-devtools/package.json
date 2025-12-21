@@ -1,6 +1,7 @@
 {
   "name": "@3dviewer/plugin-devtools",
   "version": "1.0.0",
+  "type": "module",
   "description": "Development tools for 3DViewer plugins",
   "main": "dist/index.js",
   "bin": {

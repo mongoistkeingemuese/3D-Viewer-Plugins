@@ -1,9 +1,12 @@
 # Dependencies
 node_modules/
 
-# Build outputs
-dist/
+# Build outputs (packages only - plugins need dist/ for GitHub distribution)
+packages/*/dist/
 *.js.map
+
+# Plugin dist/ is NOT ignored - required for GitHub loading
+# plugins/*/dist/  ← intentionally NOT ignored
 
 # IDE
 .idea/

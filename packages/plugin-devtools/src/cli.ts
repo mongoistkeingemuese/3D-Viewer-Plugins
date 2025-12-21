@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Plugin Development CLI
  *

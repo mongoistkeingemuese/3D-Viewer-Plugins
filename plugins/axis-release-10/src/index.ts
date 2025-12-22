@@ -349,14 +349,32 @@ function updateNodePosition(
 function handleAxisData(
   ctx: PluginContext,
   nodeId: string,
-  payload: AxisPayload
+  rawPayload: unknown
 ): void {
   const nodeState = pluginState.getNode(nodeId);
   if (!nodeState) return;
 
   try {
+    // Parse payload if it's a string
+    let payload: AxisPayload;
+    if (typeof rawPayload === 'string') {
+      payload = JSON.parse(rawPayload) as AxisPayload;
+    } else {
+      payload = rawPayload as AxisPayload;
+    }
+
+    // Debug: log raw payload structure
+    ctx.log.debug('MQTT payload received', {
+      nodeId,
+      axisName: nodeState.axisName,
+      payloadType: typeof rawPayload,
+      hasPack: !!payload.pack,
+      packLength: payload.pack?.length ?? 0,
+    });
+
     // Extract axis data from payload
     if (!payload.pack || payload.pack.length === 0) {
+      ctx.log.warn('Empty or missing pack array in payload');
       return;
     }
 
@@ -364,11 +382,18 @@ function handleAxisData(
     for (const packItem of payload.pack) {
       const axisData = packItem.Axis;
       if (!axisData) {
+        ctx.log.debug('Pack item has no Axis property', { packItem: JSON.stringify(packItem).slice(0, 200) });
         continue;
       }
 
+      const incomingAxisName = normalizeAxisName(axisData.name);
+
       // Filter by axis name (normalize to handle trailing spaces from PLC)
-      if (normalizeAxisName(axisData.name) !== nodeState.axisName) {
+      if (incomingAxisName !== nodeState.axisName) {
+        ctx.log.debug('Axis name mismatch', {
+          incoming: incomingAxisName,
+          expected: nodeState.axisName
+        });
         continue; // Not our axis
       }
 

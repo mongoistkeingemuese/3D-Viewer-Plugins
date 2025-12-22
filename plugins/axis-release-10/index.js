@@ -3290,20 +3290,40 @@ function updateNodePosition(ctx, nodeId, worldPosition) {
   }
   node.duration = 100;
 }
-function handleAxisData(ctx, nodeId, payload) {
+function handleAxisData(ctx, nodeId, rawPayload) {
   const nodeState = pluginState.getNode(nodeId);
   if (!nodeState)
     return;
   try {
+    let payload;
+    if (typeof rawPayload === "string") {
+      payload = JSON.parse(rawPayload);
+    } else {
+      payload = rawPayload;
+    }
+    ctx.log.debug("MQTT payload received", {
+      nodeId,
+      axisName: nodeState.axisName,
+      payloadType: typeof rawPayload,
+      hasPack: !!payload.pack,
+      packLength: payload.pack?.length ?? 0
+    });
     if (!payload.pack || payload.pack.length === 0) {
+      ctx.log.warn("Empty or missing pack array in payload");
       return;
     }
     for (const packItem of payload.pack) {
       const axisData = packItem.Axis;
       if (!axisData) {
+        ctx.log.debug("Pack item has no Axis property", { packItem: JSON.stringify(packItem).slice(0, 200) });
         continue;
       }
-      if (normalizeAxisName(axisData.name) !== nodeState.axisName) {
+      const incomingAxisName = normalizeAxisName(axisData.name);
+      if (incomingAxisName !== nodeState.axisName) {
+        ctx.log.debug("Axis name mismatch", {
+          incoming: incomingAxisName,
+          expected: nodeState.axisName
+        });
         continue;
       }
       const motionState = hexToInt(axisData.sS.val);

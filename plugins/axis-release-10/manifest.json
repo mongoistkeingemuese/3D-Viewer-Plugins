@@ -1,7 +1,7 @@
 {
   "id": "com.rexat.axis-release-10",
   "name": "Axis Release 10",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "author": "RexAt",
   "description": "Axis monitoring plugin with position animation, motion state visualization, and error logging",
   "license": "MIT",
@@ -53,7 +53,8 @@
           "mqttSource": {
             "type": "string",
             "title": "MQTT Broker",
-            "description": "MQTT broker source ID (leave empty for default broker)"
+            "description": "MQTT broker source ID (leave empty for default broker)",
+            "x-source-type": "mqtt"
           },
           "mainTopic": {
             "type": "string",

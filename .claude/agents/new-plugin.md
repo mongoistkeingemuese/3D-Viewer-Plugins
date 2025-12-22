@@ -198,7 +198,7 @@ Generate `manifest.json` based on all collected information:
   "version": "1.0.0",
   "description": "<Description from Step 1>",
   "icon": "<Appropriate Emoji>",
-  "entryPoint": "dist/index.js",
+  "entryPoint": "index.js",
 
   "permissions": [/* based on data sources */],
 

@@ -6,7 +6,7 @@
   "description": "Vollständiges Beispiel-Plugin mit allen verfügbaren Features. Demonstriert Node-Manipulation, Events, Bindings (MQTT, HTTP, OPC-UA), UI-Komponenten und mehr.",
   "license": "MIT",
   "icon": "🔧",
-  "entryPoint": "dist/index.js",
+  "entryPoint": "index.js",
 
   "permissions": [
     "mqtt:subscribe",

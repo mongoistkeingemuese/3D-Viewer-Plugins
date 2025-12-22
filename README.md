@@ -124,7 +124,7 @@ plugins/my-plugin/
   "id": "com.example.my-plugin",
   "name": "My Plugin",
   "version": "1.0.0",
-  "entryPoint": "dist/index.js",
+  "entryPoint": "index.js",
   "permissions": ["nodes:read", "nodes:write", "mqtt:subscribe"],
   "sandbox": "proxy",
   "config": {

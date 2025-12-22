@@ -314,7 +314,7 @@ ctx.log.error('Error occurred', new Error('details'));
   "description": "Plugin description",
   "license": "MIT",
   "icon": "🔧",
-  "entryPoint": "dist/index.js",
+  "entryPoint": "index.js",
 
   "permissions": [
     "mqtt:subscribe", "mqtt:publish",

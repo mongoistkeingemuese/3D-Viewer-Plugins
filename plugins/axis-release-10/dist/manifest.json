@@ -6,7 +6,7 @@
   "description": "Axis monitoring plugin with position animation, motion state visualization, and error logging",
   "license": "MIT",
   "icon": "⚙️",
-  "entryPoint": "dist/index.js",
+  "entryPoint": "index.js",
 
   "permissions": [
     "mqtt:subscribe",

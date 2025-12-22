@@ -6,7 +6,7 @@
   "description": "Vollständiges Beispiel für ein isoliertes IFrame-Plugin. Demonstriert die sichere Kommunikation zwischen Host und Plugin über postMessage.",
   "license": "MIT",
   "icon": "🔒",
-  "entryPoint": "dist/index.js",
+  "entryPoint": "index.js",
 
   "permissions": [
     "mqtt:subscribe",

@@ -142,11 +142,32 @@ plugins/my-plugin/
 
 ## Verbindung zum 3DViewer
 
-Plugins vom Dev-Server laden:
+### Local (Dev Server)
 
-```json
-{
-  "type": "url",
-  "url": "http://localhost:3100/plugins/my-plugin/manifest.json"
-}
 ```
+http://localhost:3100/plugins/<plugin-name>/dist/
+```
+
+### GitHub (via jsDelivr CDN)
+
+Nach commit und git tag:
+
+| Feld | Wert |
+|------|------|
+| **Monorepo** | `mongoistkeingemuese/3D-Viewer-Plugins` |
+| **Version** | `v1.1.0` (oder neuester Tag) |
+| **Plugin Path** | `plugins/<plugin-name>/dist` |
+
+Direkte URLs:
+```
+https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@v1.1.0/plugins/<plugin-name>/dist/manifest.json
+https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@v1.1.0/plugins/<plugin-name>/dist/index.js
+```
+
+### Verfügbare Plugins
+
+| Plugin | Path | Beschreibung |
+|--------|------|--------------|
+| blueprint-sandbox | `plugins/blueprint-sandbox/dist` | Vollständiges Sandbox-Beispiel |
+| blueprint-iframe | `plugins/blueprint-iframe/dist` | Vollständiges IFrame-Beispiel |
+| axis-release-10 | `plugins/axis-release-10/dist` | Achsen-Monitoring mit MQTT |

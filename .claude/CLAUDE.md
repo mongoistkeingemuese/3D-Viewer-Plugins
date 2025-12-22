@@ -35,10 +35,18 @@ npm run new:plugin -- my-plugin -t sandbox  # Create new plugin
 
 ## Plugin Loading
 
-Dev server serves plugins at:
+### Local (Dev Server)
 ```
-http://localhost:3100/plugins/<plugin-name>/dist/index.js
+http://localhost:3100/plugins/<plugin-name>/dist/
 ```
+
+### GitHub (via jsDelivr CDN)
+
+| Field | Value |
+|-------|-------|
+| **Monorepo** | `mongoistkeingemuese/3D-Viewer-Plugins` |
+| **Version** | Latest git tag (e.g., `v1.1.0`) |
+| **Plugin Path** | `plugins/<plugin-name>/dist` |
 
 ## Plugin Types
 

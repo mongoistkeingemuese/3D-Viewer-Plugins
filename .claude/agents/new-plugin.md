@@ -433,3 +433,17 @@ After successful creation:
    - API Reference: docs/llm-context/PLUGIN_API_REFERENCE.md
    - Examples: plugins/blueprint-sandbox/
 ```
+
+After build completes, ALWAYS show the installation info:
+
+```
+🔌 Plugin Installation:
+
+   Local (Dev Server):
+   URL: http://localhost:3100/plugins/<name>/dist/
+
+   GitHub (after commit + tag):
+   Monorepo:    mongoistkeingemuese/3D-Viewer-Plugins
+   Version:     <latest-tag>
+   Plugin Path: plugins/<name>/dist
+```

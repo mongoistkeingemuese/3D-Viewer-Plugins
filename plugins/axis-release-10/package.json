@@ -1,0 +1,19 @@
+{
+  "name": "com.rexat.axis-release-10",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Axis monitoring plugin with position animation, status visualization, and error logging",
+  "scripts": {
+    "build": "../../packages/plugin-devtools/dist/cli.js build .",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@3dviewer/plugin-sdk": "*",
+    "@types/react": "^18.2.45",
+    "react": "^18.2.0",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  }
+}

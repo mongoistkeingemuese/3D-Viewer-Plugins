@@ -941,13 +941,23 @@ function handleErrorMessage(ctx, payload) {
     ctx.log.error("Failed to process error message", { error });
   }
 }
+function getMqttApi(ctx) {
+  const globalConfig = ctx.config.global.getAll();
+  const mqttSource = globalConfig.mqttSource;
+  if (mqttSource) {
+    return ctx.mqtt.withSource(mqttSource);
+  }
+  return ctx.mqtt;
+}
 function setupSubscriptions(ctx, nodeId) {
   const nodeState = pluginState.getNode(nodeId);
   if (!nodeState)
     return;
   const globalConfig = ctx.config.global.getAll();
   const mainTopic = globalConfig.mainTopic || "machine/axes";
-  const axisUnsub = ctx.mqtt.subscribe(mainTopic, (msg) => {
+  const mqttSource = globalConfig.mqttSource || "default";
+  const mqtt = getMqttApi(ctx);
+  const axisUnsub = mqtt.subscribe(mainTopic, (msg) => {
     logRawMqttMessage(ctx, mainTopic, msg);
     handleAxisData(ctx, nodeId, msg.payload);
   });
@@ -955,7 +965,8 @@ function setupSubscriptions(ctx, nodeId) {
   ctx.log.info("Axis subscription setup - waiting for MQTT messages", {
     nodeId,
     axisName: nodeState.axisName,
-    mainTopic
+    mainTopic,
+    mqttSource
   });
 }
 function logRawMqttMessage(ctx, topic, msg) {
@@ -968,11 +979,13 @@ function logRawMqttMessage(ctx, topic, msg) {
 function setupErrorSubscription(ctx) {
   const globalConfig = ctx.config.global.getAll();
   const errorTopic = globalConfig.errorTopic || "machine/errors";
-  const errorUnsub = ctx.mqtt.subscribe(errorTopic, (msg) => {
+  const mqttSource = globalConfig.mqttSource || "default";
+  const mqtt = getMqttApi(ctx);
+  const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
     handleErrorMessage(ctx, msg.payload);
   });
   pluginState.setErrorSubscription(errorUnsub);
-  ctx.log.info("Error subscription setup", { errorTopic });
+  ctx.log.info("Error subscription setup", { errorTopic, mqttSource });
 }
 function acknowledgeError(nodeId, errorIndex) {
   const ctx = pluginState.getContext();

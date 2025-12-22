@@ -134,9 +134,17 @@ class PluginState {
   private nodes: Map<string, NodeState> = new Map();
   private ctx: PluginContext | null = null;
   private errorSubscription: Unsubscribe | null = null;
+  private mqttSources: string[] = [];
 
   initialize(ctx: PluginContext): void {
     this.ctx = ctx;
+    // Fetch available MQTT sources
+    this.mqttSources = ctx.mqtt.getSources();
+    ctx.log.info('Available MQTT sources', { sources: this.mqttSources });
+  }
+
+  getMqttSources(): string[] {
+    return this.mqttSources;
   }
 
   setErrorSubscription(unsub: Unsubscribe): void {
@@ -490,6 +498,14 @@ function getMqttApi(ctx: PluginContext): typeof ctx.mqtt {
   const mqttSource = globalConfig.mqttSource as string;
 
   if (mqttSource) {
+    // Validate source exists
+    const availableSources = pluginState.getMqttSources();
+    if (!availableSources.includes(mqttSource)) {
+      ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
+        available: availableSources,
+      });
+      ctx.ui.notify(`MQTT Broker "${mqttSource}" nicht gefunden`, 'warning');
+    }
     return ctx.mqtt.withSource(mqttSource);
   }
   return ctx.mqtt;
@@ -587,6 +603,29 @@ export function acknowledgeError(nodeId: string, errorIndex: number): void {
  */
 export function getNodeState(nodeId: string): NodeState | undefined {
   return pluginState.getNode(nodeId);
+}
+
+/**
+ * Get available MQTT sources for UI components
+ *
+ * Purpose: Expose available MQTT brokers for configuration UI
+ * Usage: Called from settings components to populate dropdowns
+ * Rationale: Enables dynamic broker selection in UI
+ */
+export function getMqttSources(): string[] {
+  return pluginState.getMqttSources();
+}
+
+/**
+ * Get current MQTT source configuration
+ *
+ * Purpose: Get currently configured MQTT broker
+ * Usage: Called from settings components
+ */
+export function getCurrentMqttSource(): string {
+  const ctx = pluginState.getContext();
+  const globalConfig = ctx.config.global.getAll();
+  return (globalConfig.mqttSource as string) || '';
 }
 
 // ============================================================================

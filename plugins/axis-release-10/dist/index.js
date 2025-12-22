@@ -707,9 +707,15 @@ var PluginState = class {
     this.nodes = /* @__PURE__ */ new Map();
     this.ctx = null;
     this.errorSubscription = null;
+    this.mqttSources = [];
   }
   initialize(ctx) {
     this.ctx = ctx;
+    this.mqttSources = ctx.mqtt.getSources();
+    ctx.log.info("Available MQTT sources", { sources: this.mqttSources });
+  }
+  getMqttSources() {
+    return this.mqttSources;
   }
   setErrorSubscription(unsub) {
     this.errorSubscription = unsub;
@@ -945,6 +951,13 @@ function getMqttApi(ctx) {
   const globalConfig = ctx.config.global.getAll();
   const mqttSource = globalConfig.mqttSource;
   if (mqttSource) {
+    const availableSources = pluginState.getMqttSources();
+    if (!availableSources.includes(mqttSource)) {
+      ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
+        available: availableSources
+      });
+      ctx.ui.notify(`MQTT Broker "${mqttSource}" nicht gefunden`, "warning");
+    }
     return ctx.mqtt.withSource(mqttSource);
   }
   return ctx.mqtt;
@@ -998,6 +1011,14 @@ function acknowledgeError(nodeId, errorIndex) {
 }
 function getNodeState(nodeId) {
   return pluginState.getNode(nodeId);
+}
+function getMqttSources() {
+  return pluginState.getMqttSources();
+}
+function getCurrentMqttSource() {
+  const ctx = pluginState.getContext();
+  const globalConfig = ctx.config.global.getAll();
+  return globalConfig.mqttSource || "";
 }
 var plugin = {
   /**
@@ -1090,6 +1111,8 @@ var src_default = plugin;
 export {
   acknowledgeError,
   src_default as default,
+  getCurrentMqttSource,
+  getMqttSources,
   getNodeState
 };
 /*! Bundled license information:

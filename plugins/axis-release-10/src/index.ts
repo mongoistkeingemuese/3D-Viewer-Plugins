@@ -524,8 +524,24 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
 
   const globalConfig = ctx.config.global.getAll();
   const mainTopic = globalConfig.mainTopic as string || 'machine/axes';
-  const mqttSource = globalConfig.mqttSource as string || 'default';
+  const configuredSource = globalConfig.mqttSource as string || '';
   const mqtt = getMqttApi(ctx);
+
+  // Validate MQTT sources are available
+  const availableSources = ctx.mqtt.getSources();
+  if (availableSources.length === 0) {
+    ctx.log.error('No MQTT sources available - cannot subscribe to axis data', {
+      nodeId,
+      axisName: nodeState.axisName,
+    });
+    ctx.ui.notify('Keine MQTT-Broker konfiguriert. Bitte zuerst einen MQTT-Broker hinzufügen.', 'error');
+    return;
+  }
+
+  ctx.log.debug('MQTT sources check', {
+    configured: configuredSource || '(using default)',
+    available: availableSources,
+  });
 
   // Subscribe to axis data (per-node subscription)
   const axisUnsub = mqtt.subscribe(mainTopic, (msg: MqttMessage) => {
@@ -538,7 +554,7 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
     nodeId,
     axisName: nodeState.axisName,
     mainTopic,
-    mqttSource,
+    mqttSource: configuredSource || '(default)',
   });
 }
 
@@ -564,15 +580,22 @@ function logRawMqttMessage(ctx: PluginContext, topic: string, msg: MqttMessage):
 function setupErrorSubscription(ctx: PluginContext): void {
   const globalConfig = ctx.config.global.getAll();
   const errorTopic = globalConfig.errorTopic as string || 'machine/errors';
-  const mqttSource = globalConfig.mqttSource as string || 'default';
+  const configuredSource = globalConfig.mqttSource as string || '';
   const mqtt = getMqttApi(ctx);
+
+  // Validate MQTT sources are available
+  const availableSources = ctx.mqtt.getSources();
+  if (availableSources.length === 0) {
+    ctx.log.warn('No MQTT sources available - cannot subscribe to error messages');
+    return;
+  }
 
   const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
     handleErrorMessage(ctx, msg.payload as ErrorPayload);
   });
   pluginState.setErrorSubscription(errorUnsub);
 
-  ctx.log.info('Error subscription setup', { errorTopic, mqttSource });
+  ctx.log.info('Error subscription setup', { errorTopic, mqttSource: configuredSource || '(default)' });
 }
 
 /**

@@ -363,8 +363,8 @@ function handleAxisData(
       payload = rawPayload as AxisPayload;
     }
 
-    // Debug: log raw payload structure
-    ctx.log.debug('MQTT payload received', {
+    // Debug: log raw payload structure (INFO level to ensure visibility)
+    ctx.log.info('MQTT payload received', {
       nodeId,
       axisName: nodeState.axisName,
       payloadType: typeof rawPayload,
@@ -495,14 +495,28 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
 
   // Subscribe to axis data (per-node subscription)
   const axisUnsub = ctx.mqtt.subscribe(mainTopic, (msg: MqttMessage) => {
-    handleAxisData(ctx, nodeId, msg.payload as AxisPayload);
+    logRawMqttMessage(ctx, mainTopic, msg);
+    handleAxisData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(axisUnsub);
 
-  ctx.log.info('Axis subscription setup', {
+  ctx.log.info('Axis subscription setup - waiting for MQTT messages', {
     nodeId,
     axisName: nodeState.axisName,
     mainTopic,
+  });
+}
+
+/**
+ * DEBUG: Log every raw MQTT message for troubleshooting
+ */
+function logRawMqttMessage(ctx: PluginContext, topic: string, msg: MqttMessage): void {
+  ctx.log.info('RAW MQTT message received', {
+    topic,
+    payloadType: typeof msg.payload,
+    payloadPreview: typeof msg.payload === 'string'
+      ? msg.payload.slice(0, 200)
+      : JSON.stringify(msg.payload).slice(0, 200),
   });
 }
 

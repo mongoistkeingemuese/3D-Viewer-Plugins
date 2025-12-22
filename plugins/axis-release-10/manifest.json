@@ -1,7 +1,7 @@
 {
   "id": "com.rexat.axis-release-10",
   "name": "Axis Release 10",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "RexAt",
   "description": "Axis monitoring plugin with position animation, motion state visualization, and error logging",
   "license": "MIT",

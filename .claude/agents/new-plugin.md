@@ -447,3 +447,33 @@ After build completes, ALWAYS show the installation info:
    Version:     <latest-tag>
    Plugin Path: plugins/<name>/dist
 ```
+
+---
+
+## Deployment Checklist
+
+When deploying a new version:
+
+1. **Update version numbers** (must match git tag):
+   - `manifest.json` → `"version": "x.y.z"`
+   - `package.json` → `"version": "x.y.z"`
+
+2. **Build the plugin**:
+   ```bash
+   npm run build --workspace=plugins/<name>
+   ```
+
+3. **Commit and push**:
+   ```bash
+   git add -A && git commit -m "release(<name>): vX.Y.Z" && git push
+   ```
+
+4. **Create and push tag**:
+   ```bash
+   git tag vX.Y.Z && git push origin vX.Y.Z
+   ```
+
+5. **Verify jsDelivr access**:
+   ```
+   https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@vX.Y.Z/plugins/<name>/dist/manifest.json
+   ```

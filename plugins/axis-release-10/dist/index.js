@@ -1051,7 +1051,6 @@ var plugin = {
   onLoad(ctx) {
     pluginState.initialize(ctx);
     ctx.log.info("Axis Release 10 Plugin loaded", {
-      version: "1.0.0",
       pluginId: ctx.pluginId
     });
     setupErrorSubscription(ctx);

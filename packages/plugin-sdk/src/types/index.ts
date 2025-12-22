@@ -340,6 +340,12 @@ export interface MqttAPI {
    * Useful for multi-source configurations
    */
   withSource(sourceId: string): MqttAPI;
+
+  /**
+   * Get list of available MQTT source/broker IDs
+   * @returns Array of source IDs configured in the 3DViewer
+   */
+  getSources(): string[];
 }
 
 /**
@@ -384,6 +390,12 @@ export interface OpcUaAPI {
    * Create a scoped OPC UA API with a source identifier
    */
   withSource(sourceId: string): OpcUaAPI;
+
+  /**
+   * Get list of available OPC-UA source/server IDs
+   * @returns Array of source IDs configured in the 3DViewer
+   */
+  getSources(): string[];
 }
 
 /**

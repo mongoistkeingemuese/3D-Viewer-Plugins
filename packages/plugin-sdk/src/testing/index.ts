@@ -110,6 +110,7 @@ export interface MockNotification {
 export class MockMqttAPI implements MqttAPI {
   subscriptions: MockSubscription[] = [];
   publications: MockPublication[] = [];
+  sources: string[] = ['default'];
 
   publish(topic: string, payload: unknown, options?: MqttPublishOptions): void {
     this.publications.push({ topic, payload, options, timestamp: Date.now() });
@@ -130,6 +131,15 @@ export class MockMqttAPI implements MqttAPI {
 
   withSource(_sourceId: string): MqttAPI {
     return this;
+  }
+
+  getSources(): string[] {
+    return this.sources;
+  }
+
+  /** Set available sources (for test setup) */
+  setSources(sources: string[]): void {
+    this.sources = sources;
   }
 
   /**
@@ -164,6 +174,7 @@ export class MockMqttAPI implements MqttAPI {
   reset(): void {
     this.subscriptions = [];
     this.publications = [];
+    this.sources = ['default'];
   }
 }
 
@@ -174,6 +185,7 @@ export class MockOpcUaAPI implements OpcUaAPI {
   subscriptions: MockOpcUaSubscription[] = [];
   values: Map<string, OpcUaValue> = new Map();
   writeLog: Array<{ nodeId: string; value: unknown; timestamp: number }> = [];
+  sources: string[] = ['default'];
 
   async read(nodeId: string): Promise<OpcUaValue> {
     return (
@@ -206,6 +218,15 @@ export class MockOpcUaAPI implements OpcUaAPI {
 
   withSource(_sourceId: string): OpcUaAPI {
     return this;
+  }
+
+  getSources(): string[] {
+    return this.sources;
+  }
+
+  /** Set available sources (for test setup) */
+  setSources(sources: string[]): void {
+    this.sources = sources;
   }
 
   /**
@@ -243,6 +264,7 @@ export class MockOpcUaAPI implements OpcUaAPI {
     this.subscriptions = [];
     this.values.clear();
     this.writeLog = [];
+    this.sources = ['default'];
   }
 }
 

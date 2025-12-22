@@ -118,6 +118,9 @@ ctx.mqtt.publish('commands/motor', { speed: 100 }, { qos: 1, retain: true });
 // With source ID (for multi-broker)
 const mqtt2 = ctx.mqtt.withSource('broker2');
 mqtt2.subscribe('topic', callback);
+
+// Get available broker sources
+const sources = ctx.mqtt.getSources();  // ['default', 'broker2', ...]
 ```
 
 ### OpcUaAPI - Industrial Automation
@@ -137,6 +140,9 @@ const unsub = ctx.opcua.subscribe('ns=2;s=MyVariable', (value) => {
 
 // With source ID
 const opcua2 = ctx.opcua.withSource('plc2');
+
+// Get available OPC-UA sources
+const sources = ctx.opcua.getSources();  // ['default', 'plc2', ...]
 ```
 
 ### HttpAPI - REST Requests

@@ -983,11 +983,14 @@ function setupSubscriptions(ctx, nodeId) {
     configured: configuredSource || "(using default)",
     available: availableSources
   });
+  console.log(`\u{1F50C} [AXIS-PLUGIN] SUBSCRIBING to topic "${mainTopic}" for axis "${nodeState.axisName}"`);
   const axisUnsub = mqtt.subscribe(mainTopic, (msg) => {
+    console.log(`\u{1F4E8} [AXIS-PLUGIN] MESSAGE RECEIVED on "${mainTopic}":`, msg);
     logRawMqttMessage(ctx, mainTopic, msg);
     handleAxisData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(axisUnsub);
+  console.log(`\u2705 [AXIS-PLUGIN] Subscription setup complete for "${nodeState.axisName}" on topic "${mainTopic}"`);
   ctx.log.info("Axis subscription setup - waiting for MQTT messages", {
     nodeId,
     axisName: nodeState.axisName,

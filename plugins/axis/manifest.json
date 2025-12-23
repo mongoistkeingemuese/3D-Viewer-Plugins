@@ -1,0 +1,158 @@
+{
+  "id": "com.rexat.axis",
+  "name": "Axis",
+  "version": "1.0.0",
+  "author": "RexAt",
+  "description": "Axis monitoring plugin with comprehensive status display, step control function, and HTTP API integration",
+  "license": "MIT",
+  "icon": "🎛️",
+  "entryPoint": "index.js",
+
+  "permissions": [
+    "mqtt:subscribe",
+    "nodes:read",
+    "nodes:write",
+    "ui:popup",
+    "state:persist",
+    "http:request"
+  ],
+
+  "sandbox": "proxy",
+
+  "nodeBinding": {
+    "mode": "manual"
+  },
+
+  "ui": {
+    "toolbar": {
+      "enabled": true,
+      "icon": "🎛️",
+      "tooltip": "Open Axis Control"
+    },
+    "popups": {
+      "AxisDetails": {
+        "component": "AxisDetailsPopup",
+        "width": 600,
+        "height": 700,
+        "resizable": true
+      }
+    },
+    "contextMenu": [
+      {
+        "id": "show-axis-details",
+        "label": "Show Axis Details",
+        "icon": "📊"
+      }
+    ]
+  },
+
+  "config": {
+    "global": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "mqttFormat": {
+            "type": "string",
+            "title": "MQTT Data Format",
+            "description": "Select the MQTT payload format version",
+            "enum": ["release11", "release10"],
+            "enumNames": ["Release 11 (direct values)", "Release 10 (nested objects)"],
+            "default": "release11"
+          },
+          "mqttSource": {
+            "type": "string",
+            "title": "MQTT Broker",
+            "description": "MQTT broker source ID (leave empty for default broker)",
+            "x-source-type": "mqtt"
+          },
+          "mainTopic": {
+            "type": "string",
+            "title": "MQTT Axis Topic",
+            "description": "Main MQTT topic for axis data",
+            "default": "machine/axes"
+          },
+          "errorTopic": {
+            "type": "string",
+            "title": "MQTT Error Topic",
+            "description": "MQTT topic for error messages",
+            "default": "machine/errors"
+          },
+          "httpBaseUrl": {
+            "type": "string",
+            "title": "HTTP API Base URL",
+            "description": "Base URL for function call API (e.g., http://localhost:3021)",
+            "default": "http://localhost:3021"
+          },
+          "errorColor": {
+            "type": "string",
+            "title": "Error State Color",
+            "description": "Emissive color for ErrorStop state",
+            "format": "color",
+            "default": "#ff0000"
+          },
+          "homingColor": {
+            "type": "string",
+            "title": "Homing State Color",
+            "description": "Emissive color for Homing state",
+            "format": "color",
+            "default": "#00aaff"
+          },
+          "motionColor": {
+            "type": "string",
+            "title": "Motion State Color",
+            "description": "Emissive color for motion states",
+            "format": "color",
+            "default": "#00ff00"
+          },
+          "emissiveIntensity": {
+            "type": "number",
+            "title": "Glow Intensity",
+            "description": "Emissive intensity for glowing states (0-1)",
+            "default": 0.6,
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "instance": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "axisName": {
+            "type": "string",
+            "title": "Axis Name",
+            "description": "Axis name for filtering MQTT payloads (e.g., FrontPortalAxisZ)"
+          },
+          "functionNo": {
+            "type": "number",
+            "title": "SF Number (Function No.)",
+            "description": "Function number for step control commands (e.g., 5031)",
+            "default": 5031
+          },
+          "conversionFactor": {
+            "type": "number",
+            "title": "Position Conversion Factor",
+            "description": "Multiplier for converting axis position to world coordinates",
+            "default": 1.0
+          },
+          "transformAxis": {
+            "type": "string",
+            "title": "Transform Axis",
+            "description": "Which axis to animate",
+            "enum": ["x", "y", "z", "rotX", "rotY", "rotZ"],
+            "enumNames": ["Position X", "Position Y", "Position Z", "Rotation X", "Rotation Y", "Rotation Z"],
+            "default": "y"
+          },
+          "invertDirection": {
+            "type": "boolean",
+            "title": "Invert Direction",
+            "description": "Multiply position by -1",
+            "default": false
+          }
+        },
+        "required": ["axisName", "functionNo"]
+      }
+    }
+  }
+}

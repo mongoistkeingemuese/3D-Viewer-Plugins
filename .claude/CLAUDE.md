@@ -213,10 +213,111 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`
 Scopes: `sdk`, `devtools`, `plugin`, `docs`, `tests`
 
-## Custom Claude Agents
+## Quality Workflow
 
-- **init**: First-time project setup (`npm install`, `npm run build`)
-- **new-plugin**: Interactive wizard for creating plugins with guided questions
+### Before Any Deployment
+
+```
+1. quality-check  →  Validates code (typecheck, tests, build)
+2. deploy         →  Handles versioning, commit, tag, push
+```
+
+**NEVER deploy without quality checks.** Use the `deploy` agent.
+
+### Quality Gates
+
+| Gate | Command | Blocking |
+|------|---------|----------|
+| TypeScript | `npm run typecheck` | YES |
+| Tests | `npm test -- --run` | YES |
+| Build | `npm run build` | YES |
+| Manifest | `npm run validate` | YES |
+
+### Quick Quality Check
+
+```bash
+npm run typecheck && npm test -- --run && npm run build
+```
+
+## Claude Agents
+
+| Agent | Purpose | Mode | Requires |
+|-------|---------|------|----------|
+| **init** | First-time setup | blocks | - |
+| **new-plugin** | Create plugin | independent | init |
+| **quality-check** | Validate code | independent | init |
+| **deploy** | Release plugin | blocks | quality-check |
+
+All agents are **self-learning** and declare parallelization rules.
+
+## Task Orchestration
+
+### Parallel-Safe Combinations
+
+```
+SAFE (can run simultaneously):
+├── new-plugin:foo + new-plugin:bar     (different plugins)
+├── new-plugin:foo + quality-check:bar  (different plugins)
+└── quality-check:* + quality-check:*   (read-only)
+
+UNSAFE (must be sequential):
+├── init + anything                     (setup first)
+├── deploy + deploy                     (git conflicts)
+└── quality-check:foo → deploy:foo      (gate)
+```
+
+### Execution Order for Multi-Step Tasks
+
+```
+"Create and deploy plugin foo":
+
+1. [init]         ← if not done
+2. [new-plugin]   ← create plugin
+3. [quality-check]← validate (MUST PASS)
+4. [deploy]       ← release
+
+Each step waits for previous to complete.
+```
+
+See `.claude/rules/parallelization.md` for full documentation.
+
+## Versioning
+
+| Location | Format | Example |
+|----------|--------|---------|
+| `manifest.json` | `X.Y.Z` | `1.2.3` |
+| `package.json` | `X.Y.Z` | `1.2.3` |
+| Git tag | `vX.Y.Z` | `v1.2.3` |
+
+**All three MUST match.** See `.claude/rules/versioning.md` for details.
+
+## Plugin Templates
+
+### Production Reference: `axis-release-10`
+
+**USE THIS** for new MQTT/OPC-UA plugins:
+- Source selection from 3D Viewer server list (`x-source-type: "mqtt"`)
+- `ctx.mqtt.getSources()` + `ctx.mqtt.withSource()`
+- PluginState class pattern
+- Proper subscription cleanup
+
+### Demo Plugins: `blueprint-*`
+
+**Legacy patterns** - demonstrate all UI features but use direct URLs:
+- `blueprint-sandbox` - Full feature demo (Panel, Popup, Overlay, Context Menu)
+- `blueprint-iframe` - IFrame async patterns
+
+**Do NOT copy** the config patterns from blueprints for new plugins.
+
+## Rules
+
+Rules in `.claude/rules/` apply to all interactions:
+- `quality-standards.md` - Code quality requirements
+- `versioning.md` - Version sync rules (manifest, package, git tag)
+- `source-patterns.md` - MQTT/OPC-UA source selection patterns
+- `parallelization.md` - Agent dependencies and safe parallel execution
+- `self-learning.md` - How agents improve over time
+- `common-errors.md` - Known issues and fixes
 
 ## VS Code
 

@@ -1,19 +1,31 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)",
+      "Bash(npm run:*)",
       "Bash(npm install)",
       "Bash(npm test)",
       "Bash(node --version)",
       "Bash(npm --version)",
-      "Bash(ls *)",
+      "Bash(ls:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git tag:*)",
+      "Bash(git push origin:*)",
+      "Bash(curl:*)",
       "Read(docs/**)",
       "Read(packages/**)",
-      "Read(plugins/**)"
+      "Read(plugins/**)",
+      "Read(.claude/**)",
+      "Write(.claude/**)",
+      "Edit(.claude/**)"
     ],
     "deny": [
-      "Bash(rm -rf *)",
-      "Bash(git push --force *)"
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
     ]
   },
   "env": {

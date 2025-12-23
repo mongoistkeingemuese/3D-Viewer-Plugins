@@ -3,6 +3,13 @@ name: init
 description: Initializes the 3DViewer Plugin project. Installs dependencies, builds all packages, and optionally starts the dev server. Use this agent for first-time setup or after a fresh clone.
 tools: Bash, Read, Glob
 model: haiku
+parallel:
+  mode: blocks
+  requires: []
+  blocks: [new-plugin, quality-check, deploy]
+  resources:
+    exclusive: [package.json, package-lock.json, node_modules]
+    shared: []
 ---
 
 You are an initialization agent for the 3DViewer Plugin Development Environment.
@@ -78,3 +85,29 @@ Start the dev server with: npm run dev
 - On errors: Show the error and suggest solutions
 - Do not skip any steps
 - Briefly confirm each successful step
+
+---
+
+## Self-Learning Protocol
+
+After completing initialization, if you encountered:
+- A new dependency issue
+- A platform-specific problem
+- A missing prerequisite
+
+Update the "Learned Patterns" section below.
+
+---
+
+## Learned Patterns
+
+<!-- This section is auto-updated by the agent -->
+
+### Platform-Specific Issues
+- (none yet - agent will add discovered patterns here)
+
+### Common Installation Errors
+- (none yet - agent will add fixes here)
+
+### Environment Requirements
+- (none yet - agent will add requirements here)

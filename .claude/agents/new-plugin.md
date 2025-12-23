@@ -3,6 +3,17 @@ name: new-plugin
 description: Creates a new 3DViewer Plugin with an interactive wizard. Guides through all decisions: functionality, properties, UI, sandbox type.
 tools: Bash, Read, Write, Edit, Glob, AskUserQuestion
 model: sonnet
+parallel:
+  mode: independent
+  requires: [init]
+  blocks: []
+  resources:
+    exclusive: [plugins/<plugin-name>]
+    shared: [packages/plugin-sdk, docs]
+  notes: |
+    - Can run parallel to other new-plugin agents IF different plugin names
+    - Cannot run parallel with same plugin name (directory conflict)
+    - Safe to run parallel with quality-check on OTHER plugins
 ---
 
 You are a Plugin Generator for the 3DViewer Plugin Development Environment.
@@ -55,22 +66,44 @@ Ask (AskUserQuestion, multiSelect: true):
 
 ## Step 3: Define Global Properties
 
-Based on data sources, ask about global settings:
+**Reference:** See `.claude/rules/source-patterns.md` for complete patterns.
+**Template:** Use `plugins/axis-release-10` as reference implementation.
+
+Based on data sources, generate these global settings:
 
 ### If MQTT selected:
 ```json
 {
-  "mqttBroker": { "type": "string", "title": "MQTT Broker URL", "default": "ws://localhost:9001" },
-  "mqttBaseTopic": { "type": "string", "title": "Base Topic", "default": "sensors/" }
+  "mqttSource": {
+    "type": "string",
+    "title": "MQTT Broker",
+    "description": "Select MQTT broker (leave empty for default)",
+    "x-source-type": "mqtt"
+  },
+  "mainTopic": {
+    "type": "string",
+    "title": "Data Topic",
+    "description": "MQTT topic for data subscription",
+    "default": "sensors/data"
+  }
 }
 ```
+
+**Important:** `"x-source-type": "mqtt"` enables broker dropdown in 3D Viewer UI.
 
 ### If OPC-UA selected:
 ```json
 {
-  "opcuaEndpoint": { "type": "string", "title": "OPC-UA Endpoint", "default": "opc.tcp://localhost:4840" }
+  "opcuaSource": {
+    "type": "string",
+    "title": "OPC-UA Server",
+    "description": "Select OPC-UA server (leave empty for default)",
+    "x-source-type": "opcua"
+  }
 }
 ```
+
+**Important:** `"x-source-type": "opcua"` enables server dropdown in 3D Viewer UI.
 
 ### If HTTP selected:
 ```json
@@ -328,13 +361,15 @@ export default plugin;
 
 ---
 
-## Template: Plugin with MQTT Binding
+## Template: Plugin with MQTT Binding (Source Selection)
+
+**Based on:** `plugins/axis-release-10` (production-tested reference)
 
 ```typescript
 /**
- * Purpose: Plugin template with MQTT data binding and visual feedback.
- * Usage: Binds nodes to MQTT topics and changes color based on values.
- * Rationale: Common pattern for IoT/sensor visualization plugins.
+ * Purpose: Plugin template with MQTT source selection and data binding.
+ * Usage: Select broker from 3D Viewer server list, bind nodes to topics.
+ * Rationale: Standard pattern for MQTT-based visualization plugins.
  */
 import type {
   Plugin,
@@ -344,68 +379,353 @@ import type {
   MqttMessage
 } from '@3dviewer/plugin-sdk';
 
-interface ThresholdConfig {
-  warning: number;
-  critical: number;
+interface NodeState {
+  nodeId: string;
+  subscriptions: Unsubscribe[];
+  // Add plugin-specific state here
 }
 
-const subscriptions = new Map<string, Unsubscribe[]>();
+class PluginState {
+  private nodes: Map<string, NodeState> = new Map();
+  private ctx: PluginContext | null = null;
+  private mqttSources: string[] = [];
+
+  initialize(ctx: PluginContext): void {
+    this.ctx = ctx;
+    this.mqttSources = ctx.mqtt.getSources();
+    ctx.log.info('Available MQTT sources', { sources: this.mqttSources });
+  }
+
+  getMqttSources(): string[] {
+    return this.mqttSources;
+  }
+
+  getContext(): PluginContext {
+    if (!this.ctx) throw new Error('Plugin not initialized');
+    return this.ctx;
+  }
+
+  addNode(nodeId: string): NodeState {
+    const state: NodeState = { nodeId, subscriptions: [] };
+    this.nodes.set(nodeId, state);
+    return state;
+  }
+
+  getNode(nodeId: string): NodeState | undefined {
+    return this.nodes.get(nodeId);
+  }
+
+  removeNode(nodeId: string): void {
+    const state = this.nodes.get(nodeId);
+    if (state) {
+      state.subscriptions.forEach(unsub => unsub());
+      this.nodes.delete(nodeId);
+    }
+  }
+
+  cleanup(): void {
+    this.nodes.forEach(state => {
+      state.subscriptions.forEach(unsub => unsub());
+    });
+    this.nodes.clear();
+  }
+}
+
+const pluginState = new PluginState();
+
+/**
+ * Get MQTT API with configured source (from global config)
+ */
+function getMqttApi(ctx: PluginContext): typeof ctx.mqtt {
+  const globalConfig = ctx.config.global.getAll();
+  const mqttSource = globalConfig.mqttSource as string;
+
+  if (mqttSource) {
+    const availableSources = pluginState.getMqttSources();
+    if (!availableSources.includes(mqttSource)) {
+      ctx.log.warn(`MQTT source "${mqttSource}" not found`, { available: availableSources });
+      ctx.ui.notify(`MQTT Broker "${mqttSource}" not found`, 'warning');
+    }
+    return ctx.mqtt.withSource(mqttSource);
+  }
+  return ctx.mqtt;
+}
+
+function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
+  const nodeState = pluginState.getNode(nodeId);
+  if (!nodeState) return;
+
+  const globalConfig = ctx.config.global.getAll();
+  const topic = globalConfig.mainTopic as string || 'sensors/data';
+  const mqtt = getMqttApi(ctx);
+
+  // Validate sources are available
+  const availableSources = ctx.mqtt.getSources();
+  if (availableSources.length === 0) {
+    ctx.log.error('No MQTT sources available');
+    ctx.ui.notify('No MQTT brokers configured', 'error');
+    return;
+  }
+
+  const unsub = mqtt.subscribe(topic, (msg: MqttMessage) => {
+    try {
+      // Process message - customize for your plugin
+      const payload = msg.payload;
+      ctx.log.debug('MQTT message received', { nodeId, payload });
+
+      // Update node visuals based on data
+      const node = ctx.nodes.get(nodeId);
+      if (node) {
+        // Example: node.color = '#00ff00';
+      }
+    } catch (error) {
+      ctx.log.error('Failed to process MQTT message', { nodeId, error });
+    }
+  });
+
+  nodeState.subscriptions.push(unsub);
+  ctx.log.info('Subscription setup complete', { nodeId, topic });
+}
 
 const plugin: Plugin = {
-  onLoad(ctx: PluginContext) {
-    ctx.log.info('MQTT Plugin loaded');
+  onLoad(ctx: PluginContext): void {
+    pluginState.initialize(ctx);
+    ctx.log.info('Plugin loaded');
   },
 
-  onNodeBound(ctx: PluginContext, node: BoundNode) {
-    const subs: Unsubscribe[] = [];
-
-    const config = ctx.config.instance.getForNode(node.id);
-    const topic = config.mqttTopic as string || `sensors/${node.id}`;
-    const thresholds = config.thresholds as ThresholdConfig || { warning: 70, critical: 90 };
-
-    const unsub = ctx.mqtt.subscribe(topic, (msg: MqttMessage) => {
-      try {
-        const value = (msg.payload as { value: number }).value;
-        const proxy = ctx.nodes.get(node.id);
-
-        if (!proxy) return;
-
-        if (value >= thresholds.critical) {
-          proxy.color = '#ff0000';
-          proxy.emissive = '#ff0000';
-          proxy.emissiveIntensity = 0.5;
-        } else if (value >= thresholds.warning) {
-          proxy.color = '#ffaa00';
-          proxy.emissive = '#ffaa00';
-          proxy.emissiveIntensity = 0.3;
-        } else {
-          proxy.color = '#00ff00';
-          proxy.emissive = '#000000';
-          proxy.emissiveIntensity = 0;
-        }
-
-        ctx.log.debug('Value updated', { nodeId: node.id, value });
-      } catch (error) {
-        ctx.log.error('Failed to process MQTT message', { nodeId: node.id, error });
-      }
-    });
-
-    subs.push(unsub);
-    subscriptions.set(node.id, subs);
+  onNodeBound(ctx: PluginContext, node: BoundNode): void {
+    pluginState.addNode(node.id);
+    setupSubscriptions(ctx, node.id);
+    ctx.log.info('Node bound', { nodeId: node.id, nodeName: node.name });
   },
 
-  onNodeUnbound(ctx: PluginContext, node: BoundNode) {
-    subscriptions.get(node.id)?.forEach(unsub => unsub());
-    subscriptions.delete(node.id);
+  onNodeUnbound(ctx: PluginContext, node: BoundNode): void {
+    pluginState.removeNode(node.id);
+    ctx.log.info('Node unbound', { nodeId: node.id });
   },
 
-  onUnload(ctx: PluginContext) {
-    subscriptions.forEach(subs => subs.forEach(unsub => unsub()));
-    subscriptions.clear();
+  onUnload(ctx: PluginContext): void {
+    pluginState.cleanup();
+    ctx.log.info('Plugin unloaded');
   },
 };
 
 export default plugin;
+```
+
+### Manifest for MQTT Plugin
+
+```json
+{
+  "permissions": ["mqtt:subscribe", "nodes:read", "nodes:write"],
+  "config": {
+    "global": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "mqttSource": {
+            "type": "string",
+            "title": "MQTT Broker",
+            "description": "Select broker from server list",
+            "x-source-type": "mqtt"
+          },
+          "mainTopic": {
+            "type": "string",
+            "title": "Data Topic",
+            "default": "sensors/data"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Template: Plugin with OPC-UA Binding (Source Selection)
+
+```typescript
+/**
+ * Purpose: Plugin template with OPC-UA source selection and data binding.
+ * Usage: Select server from 3D Viewer server list, subscribe to node IDs.
+ * Rationale: Standard pattern for OPC-UA-based industrial plugins.
+ */
+import type {
+  Plugin,
+  PluginContext,
+  BoundNode,
+  Unsubscribe,
+} from '@3dviewer/plugin-sdk';
+
+interface NodeState {
+  nodeId: string;
+  subscriptions: Unsubscribe[];
+}
+
+class PluginState {
+  private nodes: Map<string, NodeState> = new Map();
+  private ctx: PluginContext | null = null;
+  private opcuaSources: string[] = [];
+
+  initialize(ctx: PluginContext): void {
+    this.ctx = ctx;
+    this.opcuaSources = ctx.opcua.getSources();
+    ctx.log.info('Available OPC-UA sources', { sources: this.opcuaSources });
+  }
+
+  getOpcuaSources(): string[] {
+    return this.opcuaSources;
+  }
+
+  getContext(): PluginContext {
+    if (!this.ctx) throw new Error('Plugin not initialized');
+    return this.ctx;
+  }
+
+  addNode(nodeId: string): NodeState {
+    const state: NodeState = { nodeId, subscriptions: [] };
+    this.nodes.set(nodeId, state);
+    return state;
+  }
+
+  getNode(nodeId: string): NodeState | undefined {
+    return this.nodes.get(nodeId);
+  }
+
+  removeNode(nodeId: string): void {
+    const state = this.nodes.get(nodeId);
+    if (state) {
+      state.subscriptions.forEach(unsub => unsub());
+      this.nodes.delete(nodeId);
+    }
+  }
+
+  cleanup(): void {
+    this.nodes.forEach(state => {
+      state.subscriptions.forEach(unsub => unsub());
+    });
+    this.nodes.clear();
+  }
+}
+
+const pluginState = new PluginState();
+
+/**
+ * Get OPC-UA API with configured source (from global config)
+ */
+function getOpcuaApi(ctx: PluginContext): typeof ctx.opcua {
+  const globalConfig = ctx.config.global.getAll();
+  const opcuaSource = globalConfig.opcuaSource as string;
+
+  if (opcuaSource) {
+    const availableSources = pluginState.getOpcuaSources();
+    if (!availableSources.includes(opcuaSource)) {
+      ctx.log.warn(`OPC-UA source "${opcuaSource}" not found`, { available: availableSources });
+      ctx.ui.notify(`OPC-UA Server "${opcuaSource}" not found`, 'warning');
+    }
+    return ctx.opcua.withSource(opcuaSource);
+  }
+  return ctx.opcua;
+}
+
+function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
+  const nodeState = pluginState.getNode(nodeId);
+  if (!nodeState) return;
+
+  const config = ctx.config.instance.getForNode(nodeId);
+  const opcuaNodeId = config.opcuaNodeId as string;
+  const opcua = getOpcuaApi(ctx);
+
+  // Validate sources are available
+  const availableSources = ctx.opcua.getSources();
+  if (availableSources.length === 0) {
+    ctx.log.error('No OPC-UA sources available');
+    ctx.ui.notify('No OPC-UA servers configured', 'error');
+    return;
+  }
+
+  if (!opcuaNodeId) {
+    ctx.log.warn('No OPC-UA Node ID configured', { nodeId });
+    return;
+  }
+
+  const unsub = opcua.subscribe(opcuaNodeId, (data) => {
+    try {
+      ctx.log.debug('OPC-UA value received', { nodeId, opcuaNodeId, value: data.value });
+
+      // Update node visuals based on data
+      const node = ctx.nodes.get(nodeId);
+      if (node) {
+        // Example: node.color = data.value > 50 ? '#ff0000' : '#00ff00';
+      }
+    } catch (error) {
+      ctx.log.error('Failed to process OPC-UA data', { nodeId, error });
+    }
+  });
+
+  nodeState.subscriptions.push(unsub);
+  ctx.log.info('OPC-UA subscription setup', { nodeId, opcuaNodeId });
+}
+
+const plugin: Plugin = {
+  onLoad(ctx: PluginContext): void {
+    pluginState.initialize(ctx);
+    ctx.log.info('OPC-UA Plugin loaded');
+  },
+
+  onNodeBound(ctx: PluginContext, node: BoundNode): void {
+    pluginState.addNode(node.id);
+    setupSubscriptions(ctx, node.id);
+  },
+
+  onNodeUnbound(ctx: PluginContext, node: BoundNode): void {
+    pluginState.removeNode(node.id);
+  },
+
+  onUnload(ctx: PluginContext): void {
+    pluginState.cleanup();
+    ctx.log.info('OPC-UA Plugin unloaded');
+  },
+};
+
+export default plugin;
+```
+
+### Manifest for OPC-UA Plugin
+
+```json
+{
+  "permissions": ["opcua:read", "opcua:subscribe", "nodes:read", "nodes:write"],
+  "config": {
+    "global": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "opcuaSource": {
+            "type": "string",
+            "title": "OPC-UA Server",
+            "description": "Select server from server list",
+            "x-source-type": "opcua"
+          }
+        }
+      }
+    },
+    "instance": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "opcuaNodeId": {
+            "type": "string",
+            "title": "OPC-UA Node ID",
+            "description": "Node ID to subscribe (e.g., ns=2;s=MyVariable)"
+          }
+        },
+        "required": ["opcuaNodeId"]
+      }
+    }
+  }
+}
 ```
 
 ---
@@ -477,3 +797,29 @@ When deploying a new version:
    ```
    https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@vX.Y.Z/plugins/<name>/dist/manifest.json
    ```
+
+---
+
+## Self-Learning Protocol
+
+After creating a plugin, if you discovered:
+- A new use case pattern
+- A missing template option
+- A common user request not covered
+
+Update the "Learned Patterns" section below.
+
+---
+
+## Learned Patterns
+
+<!-- This section is auto-updated by the agent -->
+
+### Common Use Cases
+- (none yet - agent will add discovered patterns here)
+
+### Missing Template Features
+- (none yet - agent will add suggestions here)
+
+### User Feedback
+- (none yet - agent will add improvements here)

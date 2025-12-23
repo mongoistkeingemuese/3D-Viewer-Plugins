@@ -221,7 +221,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '20px',
     backgroundColor: '#f9f9f9',
     height: '100%',
-    overflow: 'auto',
+    overflow: 'hidden',
     fontFamily: 'Arial, sans-serif',
   },
   header: {

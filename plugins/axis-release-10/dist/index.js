@@ -1,8 +1,30 @@
-const React = window.React;
+// react-global:react
+var React = window.React;
+var {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useContext,
+  createContext,
+  Fragment,
+  createElement,
+  Component,
+  PureComponent,
+  memo,
+  forwardRef,
+  lazy,
+  Suspense
+} = React;
+
+// react-global:react/jsx-runtime
+var React2 = window.React;
+var jsx = React2.createElement;
+var jsxs = React2.createElement;
+var Fragment2 = React2.Fragment;
 
 // src/components/AxisDetailsPopup.tsx
-import { useEffect, useState } from "react";
-import { jsx, jsxs } from "react/jsx-runtime";
 var MotionStateNames = {
   0: "Error Stop",
   1: "Standstill",

@@ -83,6 +83,60 @@ program
       fs.mkdirSync(outDir, { recursive: true });
     }
 
+    // Create React shim plugin - replaces React imports with window.React
+    const reactGlobalPlugin: esbuild.Plugin = {
+      name: 'react-global',
+      setup(build) {
+        // Intercept 'react' and 'react/jsx-runtime' imports
+        build.onResolve({ filter: /^react$|^react\/jsx-runtime$|^react-dom$/ }, (args) => {
+          return {
+            path: args.path,
+            namespace: 'react-global',
+          };
+        });
+
+        // Return code that uses window.React
+        build.onLoad({ filter: /.*/, namespace: 'react-global' }, (args) => {
+          if (args.path === 'react') {
+            return {
+              contents: `
+                const React = window.React;
+                export default React;
+                export const {
+                  useState, useEffect, useCallback, useMemo, useRef,
+                  useContext, createContext, Fragment, createElement,
+                  Component, PureComponent, memo, forwardRef, lazy, Suspense
+                } = React;
+              `,
+              loader: 'js',
+            };
+          }
+          if (args.path === 'react/jsx-runtime') {
+            return {
+              contents: `
+                const React = window.React;
+                export const jsx = React.createElement;
+                export const jsxs = React.createElement;
+                export const Fragment = React.Fragment;
+              `,
+              loader: 'js',
+            };
+          }
+          if (args.path === 'react-dom') {
+            return {
+              contents: `
+                export default window.ReactDOM || {};
+                export const createRoot = window.ReactDOM?.createRoot;
+                export const render = window.ReactDOM?.render;
+              `,
+              loader: 'js',
+            };
+          }
+          return null;
+        });
+      },
+    };
+
     try {
       await esbuild.build({
         entryPoints: [entryPoint],
@@ -93,13 +147,7 @@ program
         target: 'es2020',
         minify: options.minify,
         sourcemap: options.sourcemap,
-        // Mark React as external - host app provides it via window.React
-        external: ['react', 'react-dom'],
-        // Map external imports to global variables
-        // import React from 'react' -> const React = window.React
-        banner: {
-          js: `const React = window.React;`,
-        },
+        plugins: [reactGlobalPlugin],
         define: {
           'process.env.NODE_ENV': '"production"',
         },

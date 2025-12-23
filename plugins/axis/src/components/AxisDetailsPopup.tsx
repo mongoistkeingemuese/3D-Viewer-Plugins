@@ -266,25 +266,8 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
             {stepControlEnabled ? (
               <div style={styles.section}>
                 <h3 style={styles.sectionTitle}>Step Control</h3>
-                <div style={styles.stepControl}>
-                  <div style={styles.stepSizeSelector}>
-                    <span style={styles.stepLabel}>Step Size:</span>
-                    <div style={styles.stepButtons}>
-                      {STEP_SIZES.map((size) => (
-                        <button
-                          key={size}
-                          onClick={() => handleStepSizeChange(size)}
-                          style={{
-                            ...styles.stepSizeButton,
-                            backgroundColor: selectedStep === size ? '#007bff' : '#e9ecef',
-                            color: selectedStep === size ? '#fff' : '#333',
-                          }}
-                        >
-                          {size}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                <div style={styles.stepControlRow}>
+                  {/* Buttons left */}
                   <div style={styles.stepActions}>
                     <button
                       onClick={() => handleStep(-1)}
@@ -307,10 +290,44 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
                       + {selectedStep}
                     </button>
                   </div>
-                  {isLoading && (
-                    <div style={styles.loadingIndicator}>Sending command...</div>
-                  )}
+                  {/* Step size right */}
+                  <div style={styles.stepSizePanel}>
+                    <div style={styles.stepPresets}>
+                      {STEP_SIZES.map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => handleStepSizeChange(size)}
+                          style={{
+                            ...styles.stepPresetButton,
+                            backgroundColor: selectedStep === size ? '#007bff' : '#e9ecef',
+                            color: selectedStep === size ? '#fff' : '#333',
+                          }}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={styles.customStepRow}>
+                      <input
+                        type="number"
+                        value={selectedStep}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val > 0) {
+                            handleStepSizeChange(val);
+                          }
+                        }}
+                        style={styles.customStepInput}
+                        min="0.001"
+                        step="0.1"
+                      />
+                      <span style={styles.stepUnit}>mm</span>
+                    </div>
+                  </div>
                 </div>
+                {isLoading && (
+                  <div style={styles.loadingIndicator}>Sending command...</div>
+                )}
               </div>
             ) : (
               <div style={styles.section}>
@@ -568,49 +585,65 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#333',
     fontFamily: 'monospace',
   },
-  stepControl: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  stepSizeSelector: {
+  stepControlRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-  },
-  stepLabel: {
-    fontSize: '13px',
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  stepButtons: {
-    display: 'flex',
-    gap: '6px',
-  },
-  stepSizeButton: {
-    padding: '6px 14px',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '13px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
+    justifyContent: 'space-between',
+    gap: '16px',
   },
   stepActions: {
     display: 'flex',
-    gap: '12px',
-    justifyContent: 'center',
+    gap: '8px',
+    flexShrink: 0,
   },
   stepActionButton: {
-    padding: '12px 32px',
+    padding: '14px 24px',
     border: 'none',
     borderRadius: '6px',
-    fontSize: '16px',
+    fontSize: '15px',
     fontWeight: 'bold',
     color: '#fff',
     cursor: 'pointer',
     transition: 'opacity 0.2s',
-    minWidth: '120px',
+    minWidth: '100px',
+  },
+  stepSizePanel: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    alignItems: 'flex-end',
+  },
+  stepPresets: {
+    display: 'flex',
+    gap: '4px',
+  },
+  stepPresetButton: {
+    padding: '4px 10px',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  customStepRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  customStepInput: {
+    width: '80px',
+    padding: '6px 8px',
+    border: '1px solid #ced4da',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontFamily: 'monospace',
+    textAlign: 'right',
+  },
+  stepUnit: {
+    fontSize: '12px',
+    color: '#666',
+    fontWeight: 'bold',
   },
   loadingIndicator: {
     textAlign: 'center',

@@ -238,23 +238,7 @@ var AxisDetailsPopup = ({ data }) => {
         ] }),
         stepControlEnabled ? /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
           /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Step Control" }),
-          /* @__PURE__ */ jsxs("div", { style: styles.stepControl, children: [
-            /* @__PURE__ */ jsxs("div", { style: styles.stepSizeSelector, children: [
-              /* @__PURE__ */ jsx("span", { style: styles.stepLabel, children: "Step Size:" }),
-              /* @__PURE__ */ jsx("div", { style: styles.stepButtons, children: STEP_SIZES.map((size) => /* @__PURE__ */ jsx(
-                "button",
-                {
-                  onClick: () => handleStepSizeChange(size),
-                  style: {
-                    ...styles.stepSizeButton,
-                    backgroundColor: selectedStep === size ? "#007bff" : "#e9ecef",
-                    color: selectedStep === size ? "#fff" : "#333"
-                  },
-                  children: size
-                },
-                size
-              )) })
-            ] }),
+          /* @__PURE__ */ jsxs("div", { style: styles.stepControlRow, children: [
             /* @__PURE__ */ jsxs("div", { style: styles.stepActions, children: [
               /* @__PURE__ */ jsxs(
                 "button",
@@ -287,8 +271,42 @@ var AxisDetailsPopup = ({ data }) => {
                 }
               )
             ] }),
-            isLoading && /* @__PURE__ */ jsx("div", { style: styles.loadingIndicator, children: "Sending command..." })
-          ] })
+            /* @__PURE__ */ jsxs("div", { style: styles.stepSizePanel, children: [
+              /* @__PURE__ */ jsx("div", { style: styles.stepPresets, children: STEP_SIZES.map((size) => /* @__PURE__ */ jsx(
+                "button",
+                {
+                  onClick: () => handleStepSizeChange(size),
+                  style: {
+                    ...styles.stepPresetButton,
+                    backgroundColor: selectedStep === size ? "#007bff" : "#e9ecef",
+                    color: selectedStep === size ? "#fff" : "#333"
+                  },
+                  children: size
+                },
+                size
+              )) }),
+              /* @__PURE__ */ jsxs("div", { style: styles.customStepRow, children: [
+                /* @__PURE__ */ jsx(
+                  "input",
+                  {
+                    type: "number",
+                    value: selectedStep,
+                    onChange: (e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val) && val > 0) {
+                        handleStepSizeChange(val);
+                      }
+                    },
+                    style: styles.customStepInput,
+                    min: "0.001",
+                    step: "0.1"
+                  }
+                ),
+                /* @__PURE__ */ jsx("span", { style: styles.stepUnit, children: "mm" })
+              ] })
+            ] })
+          ] }),
+          isLoading && /* @__PURE__ */ jsx("div", { style: styles.loadingIndicator, children: "Sending command..." })
         ] }) : /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
           /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Step Control" }),
           /* @__PURE__ */ jsxs("div", { style: styles.release10Notice, children: [
@@ -525,49 +543,65 @@ var styles = {
     color: "#333",
     fontFamily: "monospace"
   },
-  stepControl: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px"
-  },
-  stepSizeSelector: {
+  stepControlRow: {
     display: "flex",
     alignItems: "center",
-    gap: "12px"
-  },
-  stepLabel: {
-    fontSize: "13px",
-    fontWeight: "bold",
-    color: "#666"
-  },
-  stepButtons: {
-    display: "flex",
-    gap: "6px"
-  },
-  stepSizeButton: {
-    padding: "6px 14px",
-    border: "none",
-    borderRadius: "4px",
-    fontSize: "13px",
-    fontWeight: "bold",
-    cursor: "pointer",
-    transition: "all 0.2s"
+    justifyContent: "space-between",
+    gap: "16px"
   },
   stepActions: {
     display: "flex",
-    gap: "12px",
-    justifyContent: "center"
+    gap: "8px",
+    flexShrink: 0
   },
   stepActionButton: {
-    padding: "12px 32px",
+    padding: "14px 24px",
     border: "none",
     borderRadius: "6px",
-    fontSize: "16px",
+    fontSize: "15px",
     fontWeight: "bold",
     color: "#fff",
     cursor: "pointer",
     transition: "opacity 0.2s",
-    minWidth: "120px"
+    minWidth: "100px"
+  },
+  stepSizePanel: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    alignItems: "flex-end"
+  },
+  stepPresets: {
+    display: "flex",
+    gap: "4px"
+  },
+  stepPresetButton: {
+    padding: "4px 10px",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "12px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    transition: "all 0.2s"
+  },
+  customStepRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px"
+  },
+  customStepInput: {
+    width: "80px",
+    padding: "6px 8px",
+    border: "1px solid #ced4da",
+    borderRadius: "4px",
+    fontSize: "14px",
+    fontFamily: "monospace",
+    textAlign: "right"
+  },
+  stepUnit: {
+    fontSize: "12px",
+    color: "#666",
+    fontWeight: "bold"
   },
   loadingIndicator: {
     textAlign: "center",

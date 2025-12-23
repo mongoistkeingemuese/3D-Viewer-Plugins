@@ -1,6 +1,6 @@
 {
   "name": "com.rexat.axis-release-10",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "Axis monitoring plugin with position animation, status visualization, and error logging",
   "scripts": {

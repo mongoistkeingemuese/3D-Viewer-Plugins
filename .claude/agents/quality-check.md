@@ -5,7 +5,7 @@ tools: Bash, Read, Glob, Grep, Edit
 model: haiku
 parallel:
   mode: independent
-  requires: [init]
+  requires: [start]
   blocks: []
   resources:
     exclusive: []

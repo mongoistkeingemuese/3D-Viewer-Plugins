@@ -243,9 +243,9 @@ npm run typecheck && npm test -- --run && npm run build
 
 | Agent | Purpose | Mode | Requires |
 |-------|---------|------|----------|
-| **init** | First-time setup | blocks | - |
-| **new-plugin** | Create plugin | independent | init |
-| **quality-check** | Validate code | independent | init |
+| **start** | First-time setup | blocks | - |
+| **new-plugin** | Create plugin | independent | start |
+| **quality-check** | Validate code | independent | start |
 | **deploy** | Release plugin | blocks | quality-check |
 
 All agents are **self-learning** and declare parallelization rules.
@@ -261,7 +261,7 @@ SAFE (can run simultaneously):
 └── quality-check:* + quality-check:*   (read-only)
 
 UNSAFE (must be sequential):
-├── init + anything                     (setup first)
+├── start + anything                    (setup first)
 ├── deploy + deploy                     (git conflicts)
 └── quality-check:foo → deploy:foo      (gate)
 ```
@@ -271,7 +271,7 @@ UNSAFE (must be sequential):
 ```
 "Create and deploy plugin foo":
 
-1. [init]         ← if not done
+1. [start]        ← if not done
 2. [new-plugin]   ← create plugin
 3. [quality-check]← validate (MUST PASS)
 4. [deploy]       ← release

@@ -1,5 +1,5 @@
 ---
-name: init
+name: start
 description: Initializes the 3DViewer Plugin project. Installs dependencies, builds all packages, and optionally starts the dev server. Use this agent for first-time setup or after a fresh clone.
 tools: Bash, Read, Glob
 model: haiku

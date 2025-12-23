@@ -5,7 +5,7 @@ tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion
 model: sonnet
 parallel:
   mode: blocks
-  requires: [init, quality-check]
+  requires: [start, quality-check]
   blocks: [deploy]
   resources:
     exclusive: [.git, git-tags, plugins/<plugin-name>]

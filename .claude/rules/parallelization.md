@@ -6,7 +6,7 @@ Safe parallel execution of agents and tasks.
 
 ```
                     ┌─────────────┐
-                    │    init     │
+                    │   start     │
                     │  (setup)    │
                     └──────┬──────┘
                            │
@@ -30,7 +30,7 @@ Safe parallel execution of agents and tasks.
 
 | Agent A | Agent B | Parallel Safe? | Notes |
 |---------|---------|----------------|-------|
-| init | * | NO | Must complete first |
+| start | * | NO | Must complete first |
 | new-plugin | new-plugin | NO | Same plugin name conflict |
 | new-plugin | quality-check | YES | Different concerns |
 | quality-check | quality-check | YES | Read-only operations |
@@ -67,8 +67,8 @@ Use when each task's output feeds the next.
 | Resource | Lock Type | Holders |
 |----------|-----------|---------|
 | `plugins/<name>/` | Plugin Lock | new-plugin, deploy |
-| `package.json` | Root Lock | init |
-| `package-lock.json` | Root Lock | init |
+| `package.json` | Root Lock | start |
+| `package-lock.json` | Root Lock | start |
 | `.git/` | Git Lock | deploy |
 | Git tags | Git Lock | deploy |
 

@@ -5,7 +5,7 @@ tools: Bash, Read, Write, Edit, Glob, AskUserQuestion
 model: sonnet
 parallel:
   mode: independent
-  requires: [init]
+  requires: [start]
   blocks: []
   resources:
     exclusive: [plugins/<plugin-name>]

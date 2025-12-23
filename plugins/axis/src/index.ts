@@ -169,7 +169,8 @@ interface ErrorEntry {
 interface NodeState {
   nodeId: string;
   axisName: string;
-  functionNo: number;
+  axisCommandNo: number;
+  moveCommandNo: number;
   subscriptions: Unsubscribe[];
   currentState: MotionState;
   activityBits: MotionActivityStatusBits;
@@ -217,11 +218,12 @@ class PluginState {
     return this.ctx;
   }
 
-  addNode(nodeId: string, axisName: string, functionNo: number): NodeState {
+  addNode(nodeId: string, axisName: string, axisCommandNo: number, moveCommandNo: number): NodeState {
     const state: NodeState = {
       nodeId,
       axisName,
-      functionNo,
+      axisCommandNo,
+      moveCommandNo,
       subscriptions: [],
       currentState: MotionState.Disabled,
       activityBits: createEmptyActivityBits(),
@@ -781,6 +783,7 @@ function setupErrorSubscription(ctx: PluginContext): void {
  * Send step command via HTTP API
  *
  * Purpose: Execute axis step movement via function call API
+ * Uses: Move Command No., functionCommand: 83, parameterIndex: 4
  */
 export async function sendStepCommand(
   nodeId: string,
@@ -799,12 +802,12 @@ export async function sendStepCommand(
   const url = `${httpBaseUrl}/v1/commands/functioncall`;
 
   const payload = {
-    functionNo: nodeState.functionNo,
+    functionNo: nodeState.moveCommandNo,
     functionCommand: 83,
     functionInvokerCommand: 'Start',
     inputs: [
       {
-        functionNo: nodeState.functionNo,
+        functionNo: nodeState.moveCommandNo,
         parameters: [
           {
             parameterIndex: 4,
@@ -820,7 +823,7 @@ export async function sendStepCommand(
     ctx.log.info('Sending step command', {
       nodeId,
       axisName: nodeState.axisName,
-      functionNo: nodeState.functionNo,
+      moveCommandNo: nodeState.moveCommandNo,
       stepValue,
       url,
     });
@@ -852,6 +855,208 @@ export async function sendStepCommand(
   } catch (error) {
     ctx.log.error('Step command error', { nodeId, error });
     ctx.ui.notify('Fehler beim Senden des Step-Befehls', 'error');
+    return false;
+  }
+}
+
+/**
+ * Send Switch On command via HTTP API
+ *
+ * Purpose: Turn axis on
+ * Uses: Axis Command No., functionCommand: 9
+ */
+export async function sendSwitchOnCommand(nodeId: string): Promise<boolean> {
+  const ctx = pluginState.getContext();
+  const nodeState = pluginState.getNode(nodeId);
+
+  if (!nodeState) {
+    ctx.log.error('Node state not found for switch on command', { nodeId });
+    return false;
+  }
+
+  const globalConfig = ctx.config.global.getAll();
+  const httpBaseUrl = globalConfig.httpBaseUrl as string || 'http://localhost:3021';
+  const url = `${httpBaseUrl}/v1/commands/functioncall`;
+
+  const payload = {
+    functionNo: nodeState.axisCommandNo,
+    functionCommand: 9,
+    functionInvokerCommand: 'Start',
+    inputs: [],
+  };
+
+  try {
+    ctx.log.info('Sending switch on command', {
+      nodeId,
+      axisName: nodeState.axisName,
+      axisCommandNo: nodeState.axisCommandNo,
+      url,
+    });
+
+    const response = await ctx.http.post(url, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*',
+      },
+    });
+
+    if (response.status >= 200 && response.status < 300) {
+      ctx.log.info('Switch on command sent successfully', { nodeId, status: response.status });
+      ctx.ui.notify('Switch On gesendet', 'success');
+      return true;
+    } else {
+      ctx.log.error('Switch on command failed', {
+        nodeId,
+        status: response.status,
+        statusText: response.statusText,
+      });
+      ctx.ui.notify(`Switch On fehlgeschlagen: ${response.statusText}`, 'error');
+      return false;
+    }
+  } catch (error) {
+    ctx.log.error('Switch on command error', { nodeId, error });
+    ctx.ui.notify('Fehler beim Senden des Switch On-Befehls', 'error');
+    return false;
+  }
+}
+
+/**
+ * Send Homing command via HTTP API
+ *
+ * Purpose: Start homing operation
+ * Uses: Move Command No., functionCommand: 13
+ */
+export async function sendHomingCommand(nodeId: string): Promise<boolean> {
+  const ctx = pluginState.getContext();
+  const nodeState = pluginState.getNode(nodeId);
+
+  if (!nodeState) {
+    ctx.log.error('Node state not found for homing command', { nodeId });
+    return false;
+  }
+
+  const globalConfig = ctx.config.global.getAll();
+  const httpBaseUrl = globalConfig.httpBaseUrl as string || 'http://localhost:3021';
+  const url = `${httpBaseUrl}/v1/commands/functioncall`;
+
+  const payload = {
+    functionNo: nodeState.moveCommandNo,
+    functionCommand: 13,
+    functionInvokerCommand: 'Start',
+    inputs: [],
+  };
+
+  try {
+    ctx.log.info('Sending homing command', {
+      nodeId,
+      axisName: nodeState.axisName,
+      moveCommandNo: nodeState.moveCommandNo,
+      url,
+    });
+
+    const response = await ctx.http.post(url, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*',
+      },
+    });
+
+    if (response.status >= 200 && response.status < 300) {
+      ctx.log.info('Homing command sent successfully', { nodeId, status: response.status });
+      ctx.ui.notify('Homing gestartet', 'success');
+      return true;
+    } else {
+      ctx.log.error('Homing command failed', {
+        nodeId,
+        status: response.status,
+        statusText: response.statusText,
+      });
+      ctx.ui.notify(`Homing fehlgeschlagen: ${response.statusText}`, 'error');
+      return false;
+    }
+  } catch (error) {
+    ctx.log.error('Homing command error', { nodeId, error });
+    ctx.ui.notify('Fehler beim Senden des Homing-Befehls', 'error');
+    return false;
+  }
+}
+
+/**
+ * Send Move To Position command via HTTP API
+ *
+ * Purpose: Move axis to absolute position
+ * Uses: Move Command No., functionCommand: 93, parameterIndex: 0 = position
+ */
+export async function sendMoveToPositionCommand(
+  nodeId: string,
+  targetPosition: number
+): Promise<boolean> {
+  const ctx = pluginState.getContext();
+  const nodeState = pluginState.getNode(nodeId);
+
+  if (!nodeState) {
+    ctx.log.error('Node state not found for move to position command', { nodeId });
+    return false;
+  }
+
+  const globalConfig = ctx.config.global.getAll();
+  const httpBaseUrl = globalConfig.httpBaseUrl as string || 'http://localhost:3021';
+  const url = `${httpBaseUrl}/v1/commands/functioncall`;
+
+  const payload = {
+    functionNo: nodeState.moveCommandNo,
+    functionCommand: 93,
+    functionInvokerCommand: 'Start',
+    inputs: [
+      {
+        functionNo: nodeState.moveCommandNo,
+        parameters: [
+          {
+            parameterIndex: 0,
+            typeOfParameter: 'float',
+            parameter: targetPosition,
+          },
+        ],
+      },
+    ],
+  };
+
+  try {
+    ctx.log.info('Sending move to position command', {
+      nodeId,
+      axisName: nodeState.axisName,
+      moveCommandNo: nodeState.moveCommandNo,
+      targetPosition,
+      url,
+    });
+
+    const response = await ctx.http.post(url, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*',
+      },
+    });
+
+    if (response.status >= 200 && response.status < 300) {
+      ctx.log.info('Move to position command sent successfully', {
+        nodeId,
+        targetPosition,
+        status: response.status,
+      });
+      ctx.ui.notify(`Move To ${targetPosition} mm gesendet`, 'success');
+      return true;
+    } else {
+      ctx.log.error('Move to position command failed', {
+        nodeId,
+        status: response.status,
+        statusText: response.statusText,
+      });
+      ctx.ui.notify(`Move To fehlgeschlagen: ${response.statusText}`, 'error');
+      return false;
+    }
+  } catch (error) {
+    ctx.log.error('Move to position command error', { nodeId, error });
+    ctx.ui.notify('Fehler beim Senden des Move To-Befehls', 'error');
     return false;
   }
 }
@@ -955,7 +1160,8 @@ const plugin: Plugin = {
   onNodeBound(ctx: PluginContext, node: BoundNode): void {
     const config = ctx.config.instance.getForNode(node.id);
     const axisName = config.axisName as string;
-    const functionNo = config.functionNo as number || 5031;
+    const axisCommandNo = config.axisCommandNo as number || 5031;
+    const moveCommandNo = config.moveCommandNo as number || 5031;
 
     if (!axisName) {
       ctx.log.warn(`No axis name configured for node ${node.id}`);
@@ -963,9 +1169,9 @@ const plugin: Plugin = {
       return;
     }
 
-    ctx.log.info(`Node bound: ${node.name} (${node.id}) -> Axis: ${axisName}, SF: ${functionNo}`);
+    ctx.log.info(`Node bound: ${node.name} (${node.id}) -> Axis: ${axisName}, AxisCmd: ${axisCommandNo}, MoveCmd: ${moveCommandNo}`);
 
-    pluginState.addNode(node.id, axisName, functionNo);
+    pluginState.addNode(node.id, axisName, axisCommandNo, moveCommandNo);
     setupSubscriptions(ctx, node.id);
 
     ctx.ui.notify(`Monitoring: ${axisName}`, 'success');
@@ -992,16 +1198,17 @@ const plugin: Plugin = {
     ctx.log.debug(`Config changed: ${type}.${key}`, nodeId || '');
 
     if (type === 'instance' && nodeId) {
-      if (key === 'axisName' || key === 'functionNo') {
+      if (key === 'axisName' || key === 'axisCommandNo' || key === 'moveCommandNo') {
         const config = ctx.config.instance.getForNode(nodeId);
         const newAxisName = config.axisName as string;
-        const newFunctionNo = config.functionNo as number || 5031;
+        const newAxisCommandNo = config.axisCommandNo as number || 5031;
+        const newMoveCommandNo = config.moveCommandNo as number || 5031;
 
         if (newAxisName) {
           pluginState.removeNode(nodeId);
-          pluginState.addNode(nodeId, newAxisName, newFunctionNo);
+          pluginState.addNode(nodeId, newAxisName, newAxisCommandNo, newMoveCommandNo);
           setupSubscriptions(ctx, nodeId);
-          ctx.log.info(`Config updated for ${nodeId}: ${newAxisName}, SF: ${newFunctionNo}`);
+          ctx.log.info(`Config updated for ${nodeId}: ${newAxisName}, AxisCmd: ${newAxisCommandNo}, MoveCmd: ${newMoveCommandNo}`);
         }
       }
     }

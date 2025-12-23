@@ -11,6 +11,9 @@ import {
   getNodeState,
   acknowledgeError,
   sendStepCommand,
+  sendSwitchOnCommand,
+  sendHomingCommand,
+  sendMoveToPositionCommand,
   setStepSize,
   isStepControlAvailable,
   getCurrentMqttFormat,
@@ -129,6 +132,10 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
   const [updateCounter, setUpdateCounter] = useState(0);
   const [selectedStep, setSelectedStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSwitchOnLoading, setIsSwitchOnLoading] = useState(false);
+  const [isHomingLoading, setIsHomingLoading] = useState(false);
+  const [isMoveToLoading, setIsMoveToLoading] = useState(false);
+  const [targetPosition, setTargetPosition] = useState(0);
   const [stepControlEnabled, setStepControlEnabled] = useState(() => isStepControlAvailable());
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
   const [activeTab, setActiveTab] = useState<TabType>('control');
@@ -174,6 +181,24 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
     setIsLoading(false);
   };
 
+  const handleSwitchOn = async (): Promise<void> => {
+    setIsSwitchOnLoading(true);
+    await sendSwitchOnCommand(nodeId);
+    setIsSwitchOnLoading(false);
+  };
+
+  const handleHoming = async (): Promise<void> => {
+    setIsHomingLoading(true);
+    await sendHomingCommand(nodeId);
+    setIsHomingLoading(false);
+  };
+
+  const handleMoveTo = async (): Promise<void> => {
+    setIsMoveToLoading(true);
+    await sendMoveToPositionCommand(nodeId, targetPosition);
+    setIsMoveToLoading(false);
+  };
+
   const motionStateName = MotionStateNames[nodeState.currentState] || 'Unknown';
   const { activityBits, statusMask } = nodeState;
 
@@ -186,9 +211,6 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
           <span style={styles.formatLabel}>
             {mqttFormat === 'release11' ? 'Release 11' : 'Release 10'}
           </span>
-          {stepControlEnabled && (
-            <span style={styles.sfLabel}>SF: {nodeState.functionNo}</span>
-          )}
           <span
             style={{
               ...styles.statusBadge,
@@ -335,6 +357,58 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
                 <div style={styles.release10Notice}>
                   <span style={{ fontSize: '18px' }}>&#9432;</span>
                   <span>Step-Betrieb nur mit Release 11 Format verfuegbar</span>
+                </div>
+              </div>
+            )}
+
+            {/* Move To Position */}
+            {stepControlEnabled && (
+              <div style={styles.section}>
+                <h3 style={styles.sectionTitle}>Move Absolut</h3>
+                <div style={styles.moveToRow}>
+                  <div style={styles.moveToInputGroup}>
+                    <input
+                      type="number"
+                      value={targetPosition}
+                      onChange={(e) => setTargetPosition(parseFloat(e.target.value) || 0)}
+                      style={styles.moveToInput}
+                      step="0.1"
+                    />
+                    <span style={styles.stepUnit}>mm</span>
+                  </div>
+                  <button
+                    onClick={handleMoveTo}
+                    disabled={isMoveToLoading}
+                    style={styles.moveToButton}
+                  >
+                    {isMoveToLoading ? 'Sending...' : 'Move To'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Axis Commands */}
+            {stepControlEnabled && (
+              <div style={styles.section}>
+                <h3 style={styles.sectionTitle}>Axis Commands</h3>
+                <div style={styles.axisCommandsRow}>
+                  <button
+                    onClick={handleSwitchOn}
+                    disabled={isSwitchOnLoading}
+                    style={styles.axisCommandButton}
+                  >
+                    {isSwitchOnLoading ? 'Sending...' : 'Switch On'}
+                  </button>
+                  <button
+                    onClick={handleHoming}
+                    disabled={isHomingLoading}
+                    style={{
+                      ...styles.axisCommandButton,
+                      backgroundColor: '#17a2b8',
+                    }}
+                  >
+                    {isHomingLoading ? 'Sending...' : 'Homing'}
+                  </button>
                 </div>
               </div>
             )}
@@ -644,6 +718,53 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '12px',
     color: '#666',
     fontWeight: 'bold',
+  },
+  moveToRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  moveToInputGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    flex: 1,
+  },
+  moveToInput: {
+    flex: 1,
+    padding: '10px 12px',
+    border: '1px solid #ced4da',
+    borderRadius: '4px',
+    fontSize: '16px',
+    fontFamily: 'monospace',
+    textAlign: 'right',
+  },
+  moveToButton: {
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#fff',
+    backgroundColor: '#6f42c1',
+    cursor: 'pointer',
+    transition: 'opacity 0.2s',
+  },
+  axisCommandsRow: {
+    display: 'flex',
+    gap: '12px',
+  },
+  axisCommandButton: {
+    flex: 1,
+    padding: '12px 16px',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#fff',
+    backgroundColor: '#ffc107',
+    cursor: 'pointer',
+    transition: 'opacity 0.2s',
   },
   loadingIndicator: {
     textAlign: 'center',

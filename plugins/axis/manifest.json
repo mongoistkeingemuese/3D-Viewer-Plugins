@@ -1,7 +1,7 @@
 {
   "id": "com.rexat.axis",
   "name": "Axis",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "author": "RexAt",
   "description": "Axis monitoring plugin with comprehensive status display, step control function, and HTTP API integration",
   "license": "MIT",
@@ -124,10 +124,16 @@
             "title": "Axis Name",
             "description": "Axis name for filtering MQTT payloads (e.g., FrontPortalAxisZ)"
           },
-          "functionNo": {
+          "axisCommandNo": {
             "type": "number",
-            "title": "SF Number (Function No.)",
-            "description": "Function number for step control commands (e.g., 5031)",
+            "title": "Axis Command No.",
+            "description": "Function number for axis commands (Switch On)",
+            "default": 5031
+          },
+          "moveCommandNo": {
+            "type": "number",
+            "title": "Move Command No.",
+            "description": "Function number for move commands (Homing, Move To, Step)",
             "default": 5031
           },
           "conversionFactor": {
@@ -151,7 +157,7 @@
             "default": false
           }
         },
-        "required": ["axisName", "functionNo"]
+        "required": ["axisName", "axisCommandNo", "moveCommandNo"]
       }
     }
   }

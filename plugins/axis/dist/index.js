@@ -105,6 +105,10 @@ var AxisDetailsPopup = ({ data }) => {
   const [updateCounter, setUpdateCounter] = useState(0);
   const [selectedStep, setSelectedStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSwitchOnLoading, setIsSwitchOnLoading] = useState(false);
+  const [isHomingLoading, setIsHomingLoading] = useState(false);
+  const [isMoveToLoading, setIsMoveToLoading] = useState(false);
+  const [targetPosition, setTargetPosition] = useState(0);
   const [stepControlEnabled, setStepControlEnabled] = useState(() => isStepControlAvailable());
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
   const [activeTab, setActiveTab] = useState("control");
@@ -138,6 +142,21 @@ var AxisDetailsPopup = ({ data }) => {
     await sendStepCommand(nodeId, stepValue);
     setIsLoading(false);
   };
+  const handleSwitchOn = async () => {
+    setIsSwitchOnLoading(true);
+    await sendSwitchOnCommand(nodeId);
+    setIsSwitchOnLoading(false);
+  };
+  const handleHoming = async () => {
+    setIsHomingLoading(true);
+    await sendHomingCommand(nodeId);
+    setIsHomingLoading(false);
+  };
+  const handleMoveTo = async () => {
+    setIsMoveToLoading(true);
+    await sendMoveToPositionCommand(nodeId, targetPosition);
+    setIsMoveToLoading(false);
+  };
   const motionStateName = MotionStateNames[nodeState.currentState] || "Unknown";
   const { activityBits, statusMask } = nodeState;
   return /* @__PURE__ */ jsxs("div", { style: styles.container, children: [
@@ -148,10 +167,6 @@ var AxisDetailsPopup = ({ data }) => {
       ] }),
       /* @__PURE__ */ jsxs("div", { style: styles.headerInfo, children: [
         /* @__PURE__ */ jsx("span", { style: styles.formatLabel, children: mqttFormat === "release11" ? "Release 11" : "Release 10" }),
-        stepControlEnabled && /* @__PURE__ */ jsxs("span", { style: styles.sfLabel, children: [
-          "SF: ",
-          nodeState.functionNo
-        ] }),
         /* @__PURE__ */ jsx(
           "span",
           {
@@ -312,6 +327,59 @@ var AxisDetailsPopup = ({ data }) => {
           /* @__PURE__ */ jsxs("div", { style: styles.release10Notice, children: [
             /* @__PURE__ */ jsx("span", { style: { fontSize: "18px" }, children: "\u24D8" }),
             /* @__PURE__ */ jsx("span", { children: "Step-Betrieb nur mit Release 11 Format verfuegbar" })
+          ] })
+        ] }),
+        stepControlEnabled && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Move Absolut" }),
+          /* @__PURE__ */ jsxs("div", { style: styles.moveToRow, children: [
+            /* @__PURE__ */ jsxs("div", { style: styles.moveToInputGroup, children: [
+              /* @__PURE__ */ jsx(
+                "input",
+                {
+                  type: "number",
+                  value: targetPosition,
+                  onChange: (e) => setTargetPosition(parseFloat(e.target.value) || 0),
+                  style: styles.moveToInput,
+                  step: "0.1"
+                }
+              ),
+              /* @__PURE__ */ jsx("span", { style: styles.stepUnit, children: "mm" })
+            ] }),
+            /* @__PURE__ */ jsx(
+              "button",
+              {
+                onClick: handleMoveTo,
+                disabled: isMoveToLoading,
+                style: styles.moveToButton,
+                children: isMoveToLoading ? "Sending..." : "Move To"
+              }
+            )
+          ] })
+        ] }),
+        stepControlEnabled && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Axis Commands" }),
+          /* @__PURE__ */ jsxs("div", { style: styles.axisCommandsRow, children: [
+            /* @__PURE__ */ jsx(
+              "button",
+              {
+                onClick: handleSwitchOn,
+                disabled: isSwitchOnLoading,
+                style: styles.axisCommandButton,
+                children: isSwitchOnLoading ? "Sending..." : "Switch On"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "button",
+              {
+                onClick: handleHoming,
+                disabled: isHomingLoading,
+                style: {
+                  ...styles.axisCommandButton,
+                  backgroundColor: "#17a2b8"
+                },
+                children: isHomingLoading ? "Sending..." : "Homing"
+              }
+            )
           ] })
         ] })
       ] }),
@@ -603,6 +671,53 @@ var styles = {
     color: "#666",
     fontWeight: "bold"
   },
+  moveToRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px"
+  },
+  moveToInputGroup: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    flex: 1
+  },
+  moveToInput: {
+    flex: 1,
+    padding: "10px 12px",
+    border: "1px solid #ced4da",
+    borderRadius: "4px",
+    fontSize: "16px",
+    fontFamily: "monospace",
+    textAlign: "right"
+  },
+  moveToButton: {
+    padding: "10px 20px",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "bold",
+    color: "#fff",
+    backgroundColor: "#6f42c1",
+    cursor: "pointer",
+    transition: "opacity 0.2s"
+  },
+  axisCommandsRow: {
+    display: "flex",
+    gap: "12px"
+  },
+  axisCommandButton: {
+    flex: 1,
+    padding: "12px 16px",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "bold",
+    color: "#fff",
+    backgroundColor: "#ffc107",
+    cursor: "pointer",
+    transition: "opacity 0.2s"
+  },
   loadingIndicator: {
     textAlign: "center",
     fontSize: "12px",
@@ -730,11 +845,12 @@ var PluginState = class {
       throw new Error("Plugin not initialized");
     return this.ctx;
   }
-  addNode(nodeId, axisName, functionNo) {
+  addNode(nodeId, axisName, axisCommandNo, moveCommandNo) {
     const state = {
       nodeId,
       axisName,
-      functionNo,
+      axisCommandNo,
+      moveCommandNo,
       subscriptions: [],
       currentState: 4 /* Disabled */,
       activityBits: createEmptyActivityBits(),
@@ -1162,12 +1278,12 @@ async function sendStepCommand(nodeId, stepValue) {
   const httpBaseUrl = globalConfig.httpBaseUrl || "http://localhost:3021";
   const url = `${httpBaseUrl}/v1/commands/functioncall`;
   const payload = {
-    functionNo: nodeState.functionNo,
+    functionNo: nodeState.moveCommandNo,
     functionCommand: 83,
     functionInvokerCommand: "Start",
     inputs: [
       {
-        functionNo: nodeState.functionNo,
+        functionNo: nodeState.moveCommandNo,
         parameters: [
           {
             parameterIndex: 4,
@@ -1182,7 +1298,7 @@ async function sendStepCommand(nodeId, stepValue) {
     ctx.log.info("Sending step command", {
       nodeId,
       axisName: nodeState.axisName,
-      functionNo: nodeState.functionNo,
+      moveCommandNo: nodeState.moveCommandNo,
       stepValue,
       url
     });
@@ -1212,6 +1328,166 @@ async function sendStepCommand(nodeId, stepValue) {
   } catch (error) {
     ctx.log.error("Step command error", { nodeId, error });
     ctx.ui.notify("Fehler beim Senden des Step-Befehls", "error");
+    return false;
+  }
+}
+async function sendSwitchOnCommand(nodeId) {
+  const ctx = pluginState.getContext();
+  const nodeState = pluginState.getNode(nodeId);
+  if (!nodeState) {
+    ctx.log.error("Node state not found for switch on command", { nodeId });
+    return false;
+  }
+  const globalConfig = ctx.config.global.getAll();
+  const httpBaseUrl = globalConfig.httpBaseUrl || "http://localhost:3021";
+  const url = `${httpBaseUrl}/v1/commands/functioncall`;
+  const payload = {
+    functionNo: nodeState.axisCommandNo,
+    functionCommand: 9,
+    functionInvokerCommand: "Start",
+    inputs: []
+  };
+  try {
+    ctx.log.info("Sending switch on command", {
+      nodeId,
+      axisName: nodeState.axisName,
+      axisCommandNo: nodeState.axisCommandNo,
+      url
+    });
+    const response = await ctx.http.post(url, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "*/*"
+      }
+    });
+    if (response.status >= 200 && response.status < 300) {
+      ctx.log.info("Switch on command sent successfully", { nodeId, status: response.status });
+      ctx.ui.notify("Switch On gesendet", "success");
+      return true;
+    } else {
+      ctx.log.error("Switch on command failed", {
+        nodeId,
+        status: response.status,
+        statusText: response.statusText
+      });
+      ctx.ui.notify(`Switch On fehlgeschlagen: ${response.statusText}`, "error");
+      return false;
+    }
+  } catch (error) {
+    ctx.log.error("Switch on command error", { nodeId, error });
+    ctx.ui.notify("Fehler beim Senden des Switch On-Befehls", "error");
+    return false;
+  }
+}
+async function sendHomingCommand(nodeId) {
+  const ctx = pluginState.getContext();
+  const nodeState = pluginState.getNode(nodeId);
+  if (!nodeState) {
+    ctx.log.error("Node state not found for homing command", { nodeId });
+    return false;
+  }
+  const globalConfig = ctx.config.global.getAll();
+  const httpBaseUrl = globalConfig.httpBaseUrl || "http://localhost:3021";
+  const url = `${httpBaseUrl}/v1/commands/functioncall`;
+  const payload = {
+    functionNo: nodeState.moveCommandNo,
+    functionCommand: 13,
+    functionInvokerCommand: "Start",
+    inputs: []
+  };
+  try {
+    ctx.log.info("Sending homing command", {
+      nodeId,
+      axisName: nodeState.axisName,
+      moveCommandNo: nodeState.moveCommandNo,
+      url
+    });
+    const response = await ctx.http.post(url, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "*/*"
+      }
+    });
+    if (response.status >= 200 && response.status < 300) {
+      ctx.log.info("Homing command sent successfully", { nodeId, status: response.status });
+      ctx.ui.notify("Homing gestartet", "success");
+      return true;
+    } else {
+      ctx.log.error("Homing command failed", {
+        nodeId,
+        status: response.status,
+        statusText: response.statusText
+      });
+      ctx.ui.notify(`Homing fehlgeschlagen: ${response.statusText}`, "error");
+      return false;
+    }
+  } catch (error) {
+    ctx.log.error("Homing command error", { nodeId, error });
+    ctx.ui.notify("Fehler beim Senden des Homing-Befehls", "error");
+    return false;
+  }
+}
+async function sendMoveToPositionCommand(nodeId, targetPosition) {
+  const ctx = pluginState.getContext();
+  const nodeState = pluginState.getNode(nodeId);
+  if (!nodeState) {
+    ctx.log.error("Node state not found for move to position command", { nodeId });
+    return false;
+  }
+  const globalConfig = ctx.config.global.getAll();
+  const httpBaseUrl = globalConfig.httpBaseUrl || "http://localhost:3021";
+  const url = `${httpBaseUrl}/v1/commands/functioncall`;
+  const payload = {
+    functionNo: nodeState.moveCommandNo,
+    functionCommand: 93,
+    functionInvokerCommand: "Start",
+    inputs: [
+      {
+        functionNo: nodeState.moveCommandNo,
+        parameters: [
+          {
+            parameterIndex: 0,
+            typeOfParameter: "float",
+            parameter: targetPosition
+          }
+        ]
+      }
+    ]
+  };
+  try {
+    ctx.log.info("Sending move to position command", {
+      nodeId,
+      axisName: nodeState.axisName,
+      moveCommandNo: nodeState.moveCommandNo,
+      targetPosition,
+      url
+    });
+    const response = await ctx.http.post(url, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "*/*"
+      }
+    });
+    if (response.status >= 200 && response.status < 300) {
+      ctx.log.info("Move to position command sent successfully", {
+        nodeId,
+        targetPosition,
+        status: response.status
+      });
+      ctx.ui.notify(`Move To ${targetPosition} mm gesendet`, "success");
+      return true;
+    } else {
+      ctx.log.error("Move to position command failed", {
+        nodeId,
+        status: response.status,
+        statusText: response.statusText
+      });
+      ctx.ui.notify(`Move To fehlgeschlagen: ${response.statusText}`, "error");
+      return false;
+    }
+  } catch (error) {
+    ctx.log.error("Move to position command error", { nodeId, error });
+    ctx.ui.notify("Fehler beim Senden des Move To-Befehls", "error");
     return false;
   }
 }
@@ -1273,14 +1549,15 @@ var plugin = {
   onNodeBound(ctx, node) {
     const config = ctx.config.instance.getForNode(node.id);
     const axisName = config.axisName;
-    const functionNo = config.functionNo || 5031;
+    const axisCommandNo = config.axisCommandNo || 5031;
+    const moveCommandNo = config.moveCommandNo || 5031;
     if (!axisName) {
       ctx.log.warn(`No axis name configured for node ${node.id}`);
       ctx.ui.notify(`Bitte Achsname f\xFCr ${node.name} konfigurieren`, "warning");
       return;
     }
-    ctx.log.info(`Node bound: ${node.name} (${node.id}) -> Axis: ${axisName}, SF: ${functionNo}`);
-    pluginState.addNode(node.id, axisName, functionNo);
+    ctx.log.info(`Node bound: ${node.name} (${node.id}) -> Axis: ${axisName}, AxisCmd: ${axisCommandNo}, MoveCmd: ${moveCommandNo}`);
+    pluginState.addNode(node.id, axisName, axisCommandNo, moveCommandNo);
     setupSubscriptions(ctx, node.id);
     ctx.ui.notify(`Monitoring: ${axisName}`, "success");
   },
@@ -1296,15 +1573,16 @@ var plugin = {
   onConfigChange(ctx, type, key, nodeId) {
     ctx.log.debug(`Config changed: ${type}.${key}`, nodeId || "");
     if (type === "instance" && nodeId) {
-      if (key === "axisName" || key === "functionNo") {
+      if (key === "axisName" || key === "axisCommandNo" || key === "moveCommandNo") {
         const config = ctx.config.instance.getForNode(nodeId);
         const newAxisName = config.axisName;
-        const newFunctionNo = config.functionNo || 5031;
+        const newAxisCommandNo = config.axisCommandNo || 5031;
+        const newMoveCommandNo = config.moveCommandNo || 5031;
         if (newAxisName) {
           pluginState.removeNode(nodeId);
-          pluginState.addNode(nodeId, newAxisName, newFunctionNo);
+          pluginState.addNode(nodeId, newAxisName, newAxisCommandNo, newMoveCommandNo);
           setupSubscriptions(ctx, nodeId);
-          ctx.log.info(`Config updated for ${nodeId}: ${newAxisName}, SF: ${newFunctionNo}`);
+          ctx.log.info(`Config updated for ${nodeId}: ${newAxisName}, AxisCmd: ${newAxisCommandNo}, MoveCmd: ${newMoveCommandNo}`);
         }
       }
     }
@@ -1329,6 +1607,9 @@ export {
   getMqttSources,
   getNodeState,
   isStepControlAvailable,
+  sendHomingCommand,
+  sendMoveToPositionCommand,
   sendStepCommand,
+  sendSwitchOnCommand,
   setStepSize
 };

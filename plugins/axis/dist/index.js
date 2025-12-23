@@ -188,6 +188,20 @@ var AxisDetailsPopup = ({ data }) => {
           disabled: mqttFormat !== "release11",
           children: "Status Flags"
         }
+      ),
+      /* @__PURE__ */ jsxs(
+        "button",
+        {
+          onClick: () => setActiveTab("errors"),
+          style: {
+            ...styles.tabButton,
+            ...activeTab === "errors" ? styles.tabButtonActive : {}
+          },
+          children: [
+            "Errors ",
+            nodeState.errors.length > 0 && `(${nodeState.errors.length})`
+          ]
+        }
       )
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.tabContent, children: [
@@ -321,54 +335,54 @@ var AxisDetailsPopup = ({ data }) => {
             /* @__PURE__ */ jsx(StatusBit, { label: "Reset Fault", active: activityBits.resetControllerFaultIsActive })
           ] })
         ] })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-      /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Error Log (Last 5)" }),
-      nodeState.errors.length === 0 ? /* @__PURE__ */ jsxs("div", { style: styles.noErrors, children: [
-        /* @__PURE__ */ jsx("span", { style: { fontSize: "24px" }, children: "\u2713" }),
-        /* @__PURE__ */ jsx("p", { children: "No errors recorded" })
-      ] }) : /* @__PURE__ */ jsx("div", { style: styles.errorList, children: nodeState.errors.map((error, index) => /* @__PURE__ */ jsxs(
-        "div",
-        {
-          style: {
-            ...styles.errorItem,
-            backgroundColor: error.acknowledged ? "#f0f0f0" : "#ffffff",
-            borderLeft: `4px solid ${getErrorLevelColor(error.level)}`
-          },
-          children: [
-            /* @__PURE__ */ jsxs("div", { style: styles.errorHeader, children: [
-              /* @__PURE__ */ jsx(
-                "span",
-                {
-                  style: {
-                    ...styles.errorLevel,
-                    color: getErrorLevelColor(error.level)
-                  },
-                  children: error.level
-                }
-              ),
-              /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(error.timestamp) })
-            ] }),
-            /* @__PURE__ */ jsx("div", { style: styles.errorMessage, children: error.message }),
-            /* @__PURE__ */ jsxs("div", { style: styles.errorFooter, children: [
-              /* @__PURE__ */ jsxs("span", { style: styles.errorSource, children: [
-                "Source: ",
-                error.source
+      ] }),
+      activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
+        /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Error Log (Last 5)" }),
+        nodeState.errors.length === 0 ? /* @__PURE__ */ jsxs("div", { style: styles.noErrors, children: [
+          /* @__PURE__ */ jsx("span", { style: { fontSize: "24px" }, children: "\u2713" }),
+          /* @__PURE__ */ jsx("p", { children: "No errors recorded" })
+        ] }) : /* @__PURE__ */ jsx("div", { style: styles.errorListFull, children: nodeState.errors.map((error, index) => /* @__PURE__ */ jsxs(
+          "div",
+          {
+            style: {
+              ...styles.errorItem,
+              backgroundColor: error.acknowledged ? "#f0f0f0" : "#ffffff",
+              borderLeft: `4px solid ${getErrorLevelColor(error.level)}`
+            },
+            children: [
+              /* @__PURE__ */ jsxs("div", { style: styles.errorHeader, children: [
+                /* @__PURE__ */ jsx(
+                  "span",
+                  {
+                    style: {
+                      ...styles.errorLevel,
+                      color: getErrorLevelColor(error.level)
+                    },
+                    children: error.level
+                  }
+                ),
+                /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(error.timestamp) })
               ] }),
-              !error.acknowledged ? /* @__PURE__ */ jsx(
-                "button",
-                {
-                  onClick: () => handleAcknowledge(index),
-                  style: styles.ackButton,
-                  children: "Acknowledge"
-                }
-              ) : /* @__PURE__ */ jsx("span", { style: styles.acknowledgedBadge, children: "\u2713 Acknowledged" })
-            ] })
-          ]
-        },
-        index
-      )) })
+              /* @__PURE__ */ jsx("div", { style: styles.errorMessage, children: error.message }),
+              /* @__PURE__ */ jsxs("div", { style: styles.errorFooter, children: [
+                /* @__PURE__ */ jsxs("span", { style: styles.errorSource, children: [
+                  "Source: ",
+                  error.source
+                ] }),
+                !error.acknowledged ? /* @__PURE__ */ jsx(
+                  "button",
+                  {
+                    onClick: () => handleAcknowledge(index),
+                    style: styles.ackButton,
+                    children: "Acknowledge"
+                  }
+                ) : /* @__PURE__ */ jsx("span", { style: styles.acknowledgedBadge, children: "\u2713 Acknowledged" })
+              ] })
+            ]
+          },
+          index
+        )) })
+      ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.footer, children: [
       /* @__PURE__ */ jsxs("div", { style: styles.footerInfo, children: [
@@ -572,6 +586,11 @@ var styles = {
     gap: "8px",
     maxHeight: "150px",
     overflowY: "auto"
+  },
+  errorListFull: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px"
   },
   errorItem: {
     padding: "10px",

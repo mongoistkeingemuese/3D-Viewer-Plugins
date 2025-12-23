@@ -29,7 +29,7 @@ interface AxisDetailsPopupProps {
 /**
  * Tab type definition
  */
-type TabType = 'control' | 'status';
+type TabType = 'control' | 'status' | 'errors';
 
 /**
  * MotionState names for display
@@ -222,6 +222,15 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
         >
           Status Flags
         </button>
+        <button
+          onClick={() => setActiveTab('errors')}
+          style={{
+            ...styles.tabButton,
+            ...(activeTab === 'errors' ? styles.tabButtonActive : {}),
+          }}
+        >
+          Errors {nodeState.errors.length > 0 && `(${nodeState.errors.length})`}
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -359,54 +368,55 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
             </div>
           </>
         )}
-      </div>
 
-      {/* Error Log - Always visible */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Error Log (Last 5)</h3>
-        {nodeState.errors.length === 0 ? (
-          <div style={styles.noErrors}>
-            <span style={{ fontSize: '24px' }}>&#10003;</span>
-            <p>No errors recorded</p>
-          </div>
-        ) : (
-          <div style={styles.errorList}>
-            {nodeState.errors.map((error, index) => (
-              <div
-                key={index}
-                style={{
-                  ...styles.errorItem,
-                  backgroundColor: error.acknowledged ? '#f0f0f0' : '#ffffff',
-                  borderLeft: `4px solid ${getErrorLevelColor(error.level)}`,
-                }}
-              >
-                <div style={styles.errorHeader}>
-                  <span
+        {activeTab === 'errors' && (
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>Error Log (Last 5)</h3>
+            {nodeState.errors.length === 0 ? (
+              <div style={styles.noErrors}>
+                <span style={{ fontSize: '24px' }}>&#10003;</span>
+                <p>No errors recorded</p>
+              </div>
+            ) : (
+              <div style={styles.errorListFull}>
+                {nodeState.errors.map((error, index) => (
+                  <div
+                    key={index}
                     style={{
-                      ...styles.errorLevel,
-                      color: getErrorLevelColor(error.level),
+                      ...styles.errorItem,
+                      backgroundColor: error.acknowledged ? '#f0f0f0' : '#ffffff',
+                      borderLeft: `4px solid ${getErrorLevelColor(error.level)}`,
                     }}
                   >
-                    {error.level}
-                  </span>
-                  <span style={styles.errorTime}>{formatTimestamp(error.timestamp)}</span>
-                </div>
-                <div style={styles.errorMessage}>{error.message}</div>
-                <div style={styles.errorFooter}>
-                  <span style={styles.errorSource}>Source: {error.source}</span>
-                  {!error.acknowledged ? (
-                    <button
-                      onClick={() => handleAcknowledge(index)}
-                      style={styles.ackButton}
-                    >
-                      Acknowledge
-                    </button>
-                  ) : (
-                    <span style={styles.acknowledgedBadge}>&#10003; Acknowledged</span>
-                  )}
-                </div>
+                    <div style={styles.errorHeader}>
+                      <span
+                        style={{
+                          ...styles.errorLevel,
+                          color: getErrorLevelColor(error.level),
+                        }}
+                      >
+                        {error.level}
+                      </span>
+                      <span style={styles.errorTime}>{formatTimestamp(error.timestamp)}</span>
+                    </div>
+                    <div style={styles.errorMessage}>{error.message}</div>
+                    <div style={styles.errorFooter}>
+                      <span style={styles.errorSource}>Source: {error.source}</span>
+                      {!error.acknowledged ? (
+                        <button
+                          onClick={() => handleAcknowledge(index)}
+                          style={styles.ackButton}
+                        >
+                          Acknowledge
+                        </button>
+                      ) : (
+                        <span style={styles.acknowledgedBadge}>&#10003; Acknowledged</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
@@ -619,6 +629,11 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     maxHeight: '150px',
     overflowY: 'auto',
+  },
+  errorListFull: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
   },
   errorItem: {
     padding: '10px',

@@ -93,8 +93,13 @@ program
         target: 'es2020',
         minify: options.minify,
         sourcemap: options.sourcemap,
-        // React must be bundled inline for remote loading (bare specifiers don't work with dynamic import)
-        // external: ['react', 'react-dom'],  // Only works with local dev server
+        // Mark React as external - host app provides it via window.React
+        external: ['react', 'react-dom'],
+        // Map external imports to global variables
+        // import React from 'react' -> const React = window.React
+        banner: {
+          js: `const React = window.React;`,
+        },
         define: {
           'process.env.NODE_ENV': '"production"',
         },

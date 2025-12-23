@@ -27,6 +27,11 @@ interface AxisDetailsPopupProps {
 }
 
 /**
+ * Tab type definition
+ */
+type TabType = 'control' | 'status';
+
+/**
  * MotionState names for display
  */
 const MotionStateNames: Record<number, string> = {
@@ -45,11 +50,11 @@ const MotionStateNames: Record<number, string> = {
  */
 function getMotionStateColor(state: number): string {
   switch (state) {
-    case 0: return '#ff4444'; // ErrorStop
-    case 2: return '#00aaff'; // Homing
+    case 0: return '#ff4444';
+    case 2: return '#00aaff';
     case 5:
     case 6:
-    case 7: return '#00ff00'; // Motion
+    case 7: return '#00ff00';
     default: return '#888888';
   }
 }
@@ -126,6 +131,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [stepControlEnabled, setStepControlEnabled] = useState(() => isStepControlAvailable());
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
+  const [activeTab, setActiveTab] = useState<TabType>('control');
 
   // Poll for updates
   useEffect(() => {
@@ -194,144 +200,168 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
         </div>
       </div>
 
-      {/* Status Overview - Only for Release 11 */}
-      {mqttFormat === 'release11' ? (
-        <>
-          <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Status Flags (motMsk)</h3>
-            <div style={styles.bitGrid}>
-              <StatusBit label="Ready" active={statusMask.isReady} />
-              <StatusBit label="Enabled" active={statusMask.isEnabled} />
-              <StatusBit label="Switched On" active={statusMask.isSwitchedOn} />
-              <StatusBit label="Homed" active={statusMask.isHomed} />
-              <StatusBit label="Commutated" active={statusMask.isCommutated} />
-              <StatusBit label="In Velocity" active={statusMask.isInVelocity} />
-              <StatusBit label="Override" active={statusMask.overrideEnabled} />
-              <StatusBit label="HW Enable" active={statusMask.hardwareEnableActivated} />
-              <StatusBit label="Internal Limit" active={statusMask.internalLimitIsActive} warning />
-              <StatusBit label="Warning" active={statusMask.hasWarning} warning />
-              <StatusBit label="Error" active={statusMask.hasError} warning />
-              <StatusBit label="Home Switch" active={statusMask.hardwareHomeSwitchActivated} />
-              <StatusBit label="HW Limit-" active={statusMask.hardwareLimitSwitchNegativeActivated} warning />
-              <StatusBit label="HW Limit+" active={statusMask.hardwareLimitSwitchPositiveActivated} warning />
-              <StatusBit label="SW Limit-" active={statusMask.softwareLimitSwitchNegativeActivated} warning />
-              <StatusBit label="SW Limit+" active={statusMask.softwareLimitSwitchPositiveActivated} warning />
-              <StatusBit label="SW Reached-" active={statusMask.softwareLimitSwitchNegativeReached} warning />
-              <StatusBit label="SW Reached+" active={statusMask.softwareLimitSwitchPositiveReached} warning />
-              <StatusBit label="Emergency" active={statusMask.emergencyDetectedDelayedEnabled} warning />
-            </div>
-          </div>
-
-          {/* Activity Status */}
-          <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Activity Status (mtAcMk)</h3>
-            <div style={styles.bitGrid}>
-              <StatusBit label="Motion Active" active={activityBits.motionIsActive} />
-              <StatusBit label="Jog-" active={activityBits.jogNegativeIsActive} />
-              <StatusBit label="Jog+" active={activityBits.jogPositiveIsActive} />
-              <StatusBit label="Homing" active={activityBits.homingIsActive} />
-              <StatusBit label="Vel+" active={activityBits.velocityPositiveIsActive} />
-              <StatusBit label="Vel-" active={activityBits.velocityNegativeIsActive} />
-              <StatusBit label="Stopping" active={activityBits.stoppingIsActive} />
-              <StatusBit label="Reset Fault" active={activityBits.resetControllerFaultIsActive} />
-            </div>
-          </div>
-        </>
-      ) : (
-        <div style={styles.section}>
-          <div style={styles.release10Notice}>
-            <span style={{ fontSize: '18px' }}>&#9432;</span>
-            <span>Release 10 Format: Status-Bits (motMsk, mtAcMk) nicht verfuegbar</span>
-          </div>
-        </div>
-      )}
-
-      {/* Position & Velocity */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Position & Velocity</h3>
-        <div style={styles.dataGrid}>
-          <div style={styles.dataRow}>
-            <span style={styles.dataLabel}>World Position:</span>
-            <span style={styles.dataValue}>{nodeState.worldPosition.toFixed(3)} mm</span>
-          </div>
-          <div style={styles.dataRow}>
-            <span style={styles.dataLabel}>Actual Position:</span>
-            <span style={styles.dataValue}>{nodeState.position.toFixed(3)} mm</span>
-          </div>
-          <div style={styles.dataRow}>
-            <span style={styles.dataLabel}>Velocity:</span>
-            <span style={styles.dataValue}>{nodeState.velocity.toFixed(3)} mm/s</span>
-          </div>
-          <div style={styles.dataRow}>
-            <span style={styles.dataLabel}>Last Update:</span>
-            <span style={styles.dataValue}>
-              {nodeState.lastUpdate ? nodeState.lastUpdate.toLocaleTimeString() : 'Never'}
-            </span>
-          </div>
-        </div>
+      {/* Tab Navigation */}
+      <div style={styles.tabContainer}>
+        <button
+          onClick={() => setActiveTab('control')}
+          style={{
+            ...styles.tabButton,
+            ...(activeTab === 'control' ? styles.tabButtonActive : {}),
+          }}
+        >
+          Control & Position
+        </button>
+        <button
+          onClick={() => setActiveTab('status')}
+          style={{
+            ...styles.tabButton,
+            ...(activeTab === 'status' ? styles.tabButtonActive : {}),
+            ...(mqttFormat !== 'release11' ? styles.tabButtonDisabled : {}),
+          }}
+          disabled={mqttFormat !== 'release11'}
+        >
+          Status Flags
+        </button>
       </div>
 
-      {/* Step Control - Only for Release 11 */}
-      {stepControlEnabled ? (
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Step Control</h3>
-          <div style={styles.stepControl}>
-            <div style={styles.stepSizeSelector}>
-              <span style={styles.stepLabel}>Step Size:</span>
-              <div style={styles.stepButtons}>
-                {STEP_SIZES.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => handleStepSizeChange(size)}
-                    style={{
-                      ...styles.stepSizeButton,
-                      backgroundColor: selectedStep === size ? '#007bff' : '#e9ecef',
-                      color: selectedStep === size ? '#fff' : '#333',
-                    }}
-                  >
-                    {size}
-                  </button>
-                ))}
+      {/* Tab Content */}
+      <div style={styles.tabContent}>
+        {activeTab === 'control' && (
+          <>
+            {/* Position & Velocity */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Position & Velocity</h3>
+              <div style={styles.dataGrid}>
+                <div style={styles.dataRow}>
+                  <span style={styles.dataLabel}>World Position:</span>
+                  <span style={styles.dataValue}>{nodeState.worldPosition.toFixed(3)} mm</span>
+                </div>
+                <div style={styles.dataRow}>
+                  <span style={styles.dataLabel}>Actual Position:</span>
+                  <span style={styles.dataValue}>{nodeState.position.toFixed(3)} mm</span>
+                </div>
+                <div style={styles.dataRow}>
+                  <span style={styles.dataLabel}>Velocity:</span>
+                  <span style={styles.dataValue}>{nodeState.velocity.toFixed(3)} mm/s</span>
+                </div>
+                <div style={styles.dataRow}>
+                  <span style={styles.dataLabel}>Last Update:</span>
+                  <span style={styles.dataValue}>
+                    {nodeState.lastUpdate ? nodeState.lastUpdate.toLocaleTimeString() : 'Never'}
+                  </span>
+                </div>
               </div>
             </div>
-            <div style={styles.stepActions}>
-              <button
-                onClick={() => handleStep(-1)}
-                disabled={isLoading}
-                style={{
-                  ...styles.stepActionButton,
-                  backgroundColor: '#dc3545',
-                }}
-              >
-                - {selectedStep}
-              </button>
-              <button
-                onClick={() => handleStep(1)}
-                disabled={isLoading}
-                style={{
-                  ...styles.stepActionButton,
-                  backgroundColor: '#28a745',
-                }}
-              >
-                + {selectedStep}
-              </button>
-            </div>
-            {isLoading && (
-              <div style={styles.loadingIndicator}>Sending command...</div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Step Control</h3>
-          <div style={styles.release10Notice}>
-            <span style={{ fontSize: '18px' }}>&#9432;</span>
-            <span>Step-Betrieb nur mit Release 11 Format verfuegbar</span>
-          </div>
-        </div>
-      )}
 
-      {/* Error Log */}
+            {/* Step Control */}
+            {stepControlEnabled ? (
+              <div style={styles.section}>
+                <h3 style={styles.sectionTitle}>Step Control</h3>
+                <div style={styles.stepControl}>
+                  <div style={styles.stepSizeSelector}>
+                    <span style={styles.stepLabel}>Step Size:</span>
+                    <div style={styles.stepButtons}>
+                      {STEP_SIZES.map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => handleStepSizeChange(size)}
+                          style={{
+                            ...styles.stepSizeButton,
+                            backgroundColor: selectedStep === size ? '#007bff' : '#e9ecef',
+                            color: selectedStep === size ? '#fff' : '#333',
+                          }}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={styles.stepActions}>
+                    <button
+                      onClick={() => handleStep(-1)}
+                      disabled={isLoading}
+                      style={{
+                        ...styles.stepActionButton,
+                        backgroundColor: '#dc3545',
+                      }}
+                    >
+                      - {selectedStep}
+                    </button>
+                    <button
+                      onClick={() => handleStep(1)}
+                      disabled={isLoading}
+                      style={{
+                        ...styles.stepActionButton,
+                        backgroundColor: '#28a745',
+                      }}
+                    >
+                      + {selectedStep}
+                    </button>
+                  </div>
+                  {isLoading && (
+                    <div style={styles.loadingIndicator}>Sending command...</div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div style={styles.section}>
+                <h3 style={styles.sectionTitle}>Step Control</h3>
+                <div style={styles.release10Notice}>
+                  <span style={{ fontSize: '18px' }}>&#9432;</span>
+                  <span>Step-Betrieb nur mit Release 11 Format verfuegbar</span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'status' && mqttFormat === 'release11' && (
+          <>
+            {/* Status Flags (motMsk) */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Status Flags (motMsk)</h3>
+              <div style={styles.bitGrid}>
+                <StatusBit label="Ready" active={statusMask.isReady} />
+                <StatusBit label="Enabled" active={statusMask.isEnabled} />
+                <StatusBit label="Switched On" active={statusMask.isSwitchedOn} />
+                <StatusBit label="Homed" active={statusMask.isHomed} />
+                <StatusBit label="Commutated" active={statusMask.isCommutated} />
+                <StatusBit label="In Velocity" active={statusMask.isInVelocity} />
+                <StatusBit label="Override" active={statusMask.overrideEnabled} />
+                <StatusBit label="HW Enable" active={statusMask.hardwareEnableActivated} />
+                <StatusBit label="Internal Limit" active={statusMask.internalLimitIsActive} warning />
+                <StatusBit label="Warning" active={statusMask.hasWarning} warning />
+                <StatusBit label="Error" active={statusMask.hasError} warning />
+                <StatusBit label="Home Switch" active={statusMask.hardwareHomeSwitchActivated} />
+                <StatusBit label="HW Limit-" active={statusMask.hardwareLimitSwitchNegativeActivated} warning />
+                <StatusBit label="HW Limit+" active={statusMask.hardwareLimitSwitchPositiveActivated} warning />
+                <StatusBit label="SW Limit-" active={statusMask.softwareLimitSwitchNegativeActivated} warning />
+                <StatusBit label="SW Limit+" active={statusMask.softwareLimitSwitchPositiveActivated} warning />
+                <StatusBit label="SW Reached-" active={statusMask.softwareLimitSwitchNegativeReached} warning />
+                <StatusBit label="SW Reached+" active={statusMask.softwareLimitSwitchPositiveReached} warning />
+                <StatusBit label="Emergency" active={statusMask.emergencyDetectedDelayedEnabled} warning />
+              </div>
+            </div>
+
+            {/* Activity Status (mtAcMk) */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Activity Status (mtAcMk)</h3>
+              <div style={styles.bitGrid}>
+                <StatusBit label="Motion Active" active={activityBits.motionIsActive} />
+                <StatusBit label="Jog-" active={activityBits.jogNegativeIsActive} />
+                <StatusBit label="Jog+" active={activityBits.jogPositiveIsActive} />
+                <StatusBit label="Homing" active={activityBits.homingIsActive} />
+                <StatusBit label="Vel+" active={activityBits.velocityPositiveIsActive} />
+                <StatusBit label="Vel-" active={activityBits.velocityNegativeIsActive} />
+                <StatusBit label="Stopping" active={activityBits.stoppingIsActive} />
+                <StatusBit label="Reset Fault" active={activityBits.resetControllerFaultIsActive} />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Error Log - Always visible */}
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}>Error Log (Last 5)</h3>
         {nodeState.errors.length === 0 ? (
@@ -408,7 +438,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'Arial, sans-serif',
   },
   header: {
-    marginBottom: '16px',
+    marginBottom: '12px',
     paddingBottom: '12px',
     borderBottom: '2px solid #ddd',
   },
@@ -437,6 +467,38 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '2px 8px',
     borderRadius: '4px',
     fontWeight: 'bold',
+  },
+  tabContainer: {
+    display: 'flex',
+    gap: '4px',
+    marginBottom: '16px',
+    borderBottom: '2px solid #dee2e6',
+    paddingBottom: '0',
+  },
+  tabButton: {
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '6px 6px 0 0',
+    backgroundColor: '#e9ecef',
+    color: '#495057',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    marginBottom: '-2px',
+    borderBottom: '2px solid transparent',
+  },
+  tabButtonActive: {
+    backgroundColor: '#007bff',
+    color: '#fff',
+    borderBottom: '2px solid #007bff',
+  },
+  tabButtonDisabled: {
+    opacity: 0.5,
+    cursor: 'not-allowed',
+  },
+  tabContent: {
+    minHeight: '200px',
   },
   release10Notice: {
     display: 'flex',
@@ -555,7 +617,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
-    maxHeight: '200px',
+    maxHeight: '150px',
     overflowY: 'auto',
   },
   errorItem: {

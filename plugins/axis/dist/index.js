@@ -107,6 +107,7 @@ var AxisDetailsPopup = ({ data }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [stepControlEnabled, setStepControlEnabled] = useState(() => isStepControlAvailable());
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
+  const [activeTab, setActiveTab] = useState("control");
   useEffect(() => {
     const interval = setInterval(() => {
       const newState = getNodeState(nodeId);
@@ -163,136 +164,163 @@ var AxisDetailsPopup = ({ data }) => {
         )
       ] })
     ] }),
-    mqttFormat === "release11" ? /* @__PURE__ */ jsxs(Fragment2, { children: [
-      /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-        /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Status Flags (motMsk)" }),
-        /* @__PURE__ */ jsxs("div", { style: styles.bitGrid, children: [
-          /* @__PURE__ */ jsx(StatusBit, { label: "Ready", active: statusMask.isReady }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Enabled", active: statusMask.isEnabled }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Switched On", active: statusMask.isSwitchedOn }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Homed", active: statusMask.isHomed }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Commutated", active: statusMask.isCommutated }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "In Velocity", active: statusMask.isInVelocity }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Override", active: statusMask.overrideEnabled }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "HW Enable", active: statusMask.hardwareEnableActivated }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Internal Limit", active: statusMask.internalLimitIsActive, warning: true }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Warning", active: statusMask.hasWarning, warning: true }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Error", active: statusMask.hasError, warning: true }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Home Switch", active: statusMask.hardwareHomeSwitchActivated }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "HW Limit-", active: statusMask.hardwareLimitSwitchNegativeActivated, warning: true }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "HW Limit+", active: statusMask.hardwareLimitSwitchPositiveActivated, warning: true }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "SW Limit-", active: statusMask.softwareLimitSwitchNegativeActivated, warning: true }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "SW Limit+", active: statusMask.softwareLimitSwitchPositiveActivated, warning: true }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "SW Reached-", active: statusMask.softwareLimitSwitchNegativeReached, warning: true }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "SW Reached+", active: statusMask.softwareLimitSwitchPositiveReached, warning: true }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Emergency", active: statusMask.emergencyDetectedDelayedEnabled, warning: true })
+    /* @__PURE__ */ jsxs("div", { style: styles.tabContainer, children: [
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          onClick: () => setActiveTab("control"),
+          style: {
+            ...styles.tabButton,
+            ...activeTab === "control" ? styles.tabButtonActive : {}
+          },
+          children: "Control & Position"
+        }
+      ),
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          onClick: () => setActiveTab("status"),
+          style: {
+            ...styles.tabButton,
+            ...activeTab === "status" ? styles.tabButtonActive : {},
+            ...mqttFormat !== "release11" ? styles.tabButtonDisabled : {}
+          },
+          disabled: mqttFormat !== "release11",
+          children: "Status Flags"
+        }
+      )
+    ] }),
+    /* @__PURE__ */ jsxs("div", { style: styles.tabContent, children: [
+      activeTab === "control" && /* @__PURE__ */ jsxs(Fragment2, { children: [
+        /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Position & Velocity" }),
+          /* @__PURE__ */ jsxs("div", { style: styles.dataGrid, children: [
+            /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
+              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "World Position:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataValue, children: [
+                nodeState.worldPosition.toFixed(3),
+                " mm"
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
+              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Actual Position:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataValue, children: [
+                nodeState.position.toFixed(3),
+                " mm"
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
+              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Velocity:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataValue, children: [
+                nodeState.velocity.toFixed(3),
+                " mm/s"
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
+              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Last Update:" }),
+              /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: nodeState.lastUpdate ? nodeState.lastUpdate.toLocaleTimeString() : "Never" })
+            ] })
+          ] })
+        ] }),
+        stepControlEnabled ? /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Step Control" }),
+          /* @__PURE__ */ jsxs("div", { style: styles.stepControl, children: [
+            /* @__PURE__ */ jsxs("div", { style: styles.stepSizeSelector, children: [
+              /* @__PURE__ */ jsx("span", { style: styles.stepLabel, children: "Step Size:" }),
+              /* @__PURE__ */ jsx("div", { style: styles.stepButtons, children: STEP_SIZES.map((size) => /* @__PURE__ */ jsx(
+                "button",
+                {
+                  onClick: () => handleStepSizeChange(size),
+                  style: {
+                    ...styles.stepSizeButton,
+                    backgroundColor: selectedStep === size ? "#007bff" : "#e9ecef",
+                    color: selectedStep === size ? "#fff" : "#333"
+                  },
+                  children: size
+                },
+                size
+              )) })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { style: styles.stepActions, children: [
+              /* @__PURE__ */ jsxs(
+                "button",
+                {
+                  onClick: () => handleStep(-1),
+                  disabled: isLoading,
+                  style: {
+                    ...styles.stepActionButton,
+                    backgroundColor: "#dc3545"
+                  },
+                  children: [
+                    "- ",
+                    selectedStep
+                  ]
+                }
+              ),
+              /* @__PURE__ */ jsxs(
+                "button",
+                {
+                  onClick: () => handleStep(1),
+                  disabled: isLoading,
+                  style: {
+                    ...styles.stepActionButton,
+                    backgroundColor: "#28a745"
+                  },
+                  children: [
+                    "+ ",
+                    selectedStep
+                  ]
+                }
+              )
+            ] }),
+            isLoading && /* @__PURE__ */ jsx("div", { style: styles.loadingIndicator, children: "Sending command..." })
+          ] })
+        ] }) : /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Step Control" }),
+          /* @__PURE__ */ jsxs("div", { style: styles.release10Notice, children: [
+            /* @__PURE__ */ jsx("span", { style: { fontSize: "18px" }, children: "\u24D8" }),
+            /* @__PURE__ */ jsx("span", { children: "Step-Betrieb nur mit Release 11 Format verfuegbar" })
+          ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-        /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Activity Status (mtAcMk)" }),
-        /* @__PURE__ */ jsxs("div", { style: styles.bitGrid, children: [
-          /* @__PURE__ */ jsx(StatusBit, { label: "Motion Active", active: activityBits.motionIsActive }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Jog-", active: activityBits.jogNegativeIsActive }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Jog+", active: activityBits.jogPositiveIsActive }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Homing", active: activityBits.homingIsActive }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Vel+", active: activityBits.velocityPositiveIsActive }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Vel-", active: activityBits.velocityNegativeIsActive }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Stopping", active: activityBits.stoppingIsActive }),
-          /* @__PURE__ */ jsx(StatusBit, { label: "Reset Fault", active: activityBits.resetControllerFaultIsActive })
+      activeTab === "status" && mqttFormat === "release11" && /* @__PURE__ */ jsxs(Fragment2, { children: [
+        /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Status Flags (motMsk)" }),
+          /* @__PURE__ */ jsxs("div", { style: styles.bitGrid, children: [
+            /* @__PURE__ */ jsx(StatusBit, { label: "Ready", active: statusMask.isReady }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Enabled", active: statusMask.isEnabled }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Switched On", active: statusMask.isSwitchedOn }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Homed", active: statusMask.isHomed }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Commutated", active: statusMask.isCommutated }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "In Velocity", active: statusMask.isInVelocity }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Override", active: statusMask.overrideEnabled }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "HW Enable", active: statusMask.hardwareEnableActivated }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Internal Limit", active: statusMask.internalLimitIsActive, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Warning", active: statusMask.hasWarning, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Error", active: statusMask.hasError, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Home Switch", active: statusMask.hardwareHomeSwitchActivated }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "HW Limit-", active: statusMask.hardwareLimitSwitchNegativeActivated, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "HW Limit+", active: statusMask.hardwareLimitSwitchPositiveActivated, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "SW Limit-", active: statusMask.softwareLimitSwitchNegativeActivated, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "SW Limit+", active: statusMask.softwareLimitSwitchPositiveActivated, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "SW Reached-", active: statusMask.softwareLimitSwitchNegativeReached, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "SW Reached+", active: statusMask.softwareLimitSwitchPositiveReached, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Emergency", active: statusMask.emergencyDetectedDelayedEnabled, warning: true })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Activity Status (mtAcMk)" }),
+          /* @__PURE__ */ jsxs("div", { style: styles.bitGrid, children: [
+            /* @__PURE__ */ jsx(StatusBit, { label: "Motion Active", active: activityBits.motionIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Jog-", active: activityBits.jogNegativeIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Jog+", active: activityBits.jogPositiveIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Homing", active: activityBits.homingIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Vel+", active: activityBits.velocityPositiveIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Vel-", active: activityBits.velocityNegativeIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Stopping", active: activityBits.stoppingIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: "Reset Fault", active: activityBits.resetControllerFaultIsActive })
+          ] })
         ] })
-      ] })
-    ] }) : /* @__PURE__ */ jsx("div", { style: styles.section, children: /* @__PURE__ */ jsxs("div", { style: styles.release10Notice, children: [
-      /* @__PURE__ */ jsx("span", { style: { fontSize: "18px" }, children: "\u24D8" }),
-      /* @__PURE__ */ jsx("span", { children: "Release 10 Format: Status-Bits (motMsk, mtAcMk) nicht verfuegbar" })
-    ] }) }),
-    /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-      /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Position & Velocity" }),
-      /* @__PURE__ */ jsxs("div", { style: styles.dataGrid, children: [
-        /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-          /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "World Position:" }),
-          /* @__PURE__ */ jsxs("span", { style: styles.dataValue, children: [
-            nodeState.worldPosition.toFixed(3),
-            " mm"
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-          /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Actual Position:" }),
-          /* @__PURE__ */ jsxs("span", { style: styles.dataValue, children: [
-            nodeState.position.toFixed(3),
-            " mm"
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-          /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Velocity:" }),
-          /* @__PURE__ */ jsxs("span", { style: styles.dataValue, children: [
-            nodeState.velocity.toFixed(3),
-            " mm/s"
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-          /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Last Update:" }),
-          /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: nodeState.lastUpdate ? nodeState.lastUpdate.toLocaleTimeString() : "Never" })
-        ] })
-      ] })
-    ] }),
-    stepControlEnabled ? /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-      /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Step Control" }),
-      /* @__PURE__ */ jsxs("div", { style: styles.stepControl, children: [
-        /* @__PURE__ */ jsxs("div", { style: styles.stepSizeSelector, children: [
-          /* @__PURE__ */ jsx("span", { style: styles.stepLabel, children: "Step Size:" }),
-          /* @__PURE__ */ jsx("div", { style: styles.stepButtons, children: STEP_SIZES.map((size) => /* @__PURE__ */ jsx(
-            "button",
-            {
-              onClick: () => handleStepSizeChange(size),
-              style: {
-                ...styles.stepSizeButton,
-                backgroundColor: selectedStep === size ? "#007bff" : "#e9ecef",
-                color: selectedStep === size ? "#fff" : "#333"
-              },
-              children: size
-            },
-            size
-          )) })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { style: styles.stepActions, children: [
-          /* @__PURE__ */ jsxs(
-            "button",
-            {
-              onClick: () => handleStep(-1),
-              disabled: isLoading,
-              style: {
-                ...styles.stepActionButton,
-                backgroundColor: "#dc3545"
-              },
-              children: [
-                "- ",
-                selectedStep
-              ]
-            }
-          ),
-          /* @__PURE__ */ jsxs(
-            "button",
-            {
-              onClick: () => handleStep(1),
-              disabled: isLoading,
-              style: {
-                ...styles.stepActionButton,
-                backgroundColor: "#28a745"
-              },
-              children: [
-                "+ ",
-                selectedStep
-              ]
-            }
-          )
-        ] }),
-        isLoading && /* @__PURE__ */ jsx("div", { style: styles.loadingIndicator, children: "Sending command..." })
-      ] })
-    ] }) : /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-      /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Step Control" }),
-      /* @__PURE__ */ jsxs("div", { style: styles.release10Notice, children: [
-        /* @__PURE__ */ jsx("span", { style: { fontSize: "18px" }, children: "\u24D8" }),
-        /* @__PURE__ */ jsx("span", { children: "Step-Betrieb nur mit Release 11 Format verfuegbar" })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
@@ -363,7 +391,7 @@ var styles = {
     fontFamily: "Arial, sans-serif"
   },
   header: {
-    marginBottom: "16px",
+    marginBottom: "12px",
     paddingBottom: "12px",
     borderBottom: "2px solid #ddd"
   },
@@ -392,6 +420,38 @@ var styles = {
     padding: "2px 8px",
     borderRadius: "4px",
     fontWeight: "bold"
+  },
+  tabContainer: {
+    display: "flex",
+    gap: "4px",
+    marginBottom: "16px",
+    borderBottom: "2px solid #dee2e6",
+    paddingBottom: "0"
+  },
+  tabButton: {
+    padding: "10px 20px",
+    border: "none",
+    borderRadius: "6px 6px 0 0",
+    backgroundColor: "#e9ecef",
+    color: "#495057",
+    fontSize: "14px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    marginBottom: "-2px",
+    borderBottom: "2px solid transparent"
+  },
+  tabButtonActive: {
+    backgroundColor: "#007bff",
+    color: "#fff",
+    borderBottom: "2px solid #007bff"
+  },
+  tabButtonDisabled: {
+    opacity: 0.5,
+    cursor: "not-allowed"
+  },
+  tabContent: {
+    minHeight: "200px"
   },
   release10Notice: {
     display: "flex",
@@ -510,7 +570,7 @@ var styles = {
     display: "flex",
     flexDirection: "column",
     gap: "8px",
-    maxHeight: "200px",
+    maxHeight: "150px",
     overflowY: "auto"
   },
   errorItem: {

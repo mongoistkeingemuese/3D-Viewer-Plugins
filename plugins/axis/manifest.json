@@ -1,7 +1,7 @@
 {
   "id": "com.rexat.axis",
   "name": "Axis",
-  "version": "1.0.0",
+  "version": "1.2.1",
   "author": "RexAt",
   "description": "Axis monitoring plugin with comprehensive status display, step control function, and HTTP API integration",
   "license": "MIT",

@@ -900,6 +900,11 @@ function handleValveData(ctx, nodeId, rawPayload) {
   const nodeState = pluginState.getNode(nodeId);
   if (!nodeState)
     return;
+  ctx.log.debug("MQTT message received", {
+    nodeId,
+    valveName: nodeState.valveName,
+    payloadType: typeof rawPayload
+  });
   try {
     let parsedPayload;
     if (typeof rawPayload === "string") {
@@ -908,13 +913,24 @@ function handleValveData(ctx, nodeId, rawPayload) {
       parsedPayload = rawPayload;
     }
     if (!parsedPayload.pack || parsedPayload.pack.length === 0) {
+      ctx.log.warn("No pack array in payload", { payload: parsedPayload });
       return;
     }
+    ctx.log.debug("Payload parsed", {
+      packCount: parsedPayload.pack.length
+    });
     for (const packItem of parsedPayload.pack) {
       const valveData = packItem.Valve;
-      if (!valveData)
+      if (!valveData) {
+        ctx.log.debug("No Valve object in pack item", { packItem });
         continue;
+      }
       const incomingValveName = normalizeValveName(valveData.name);
+      ctx.log.debug("Checking valve name", {
+        incoming: incomingValveName,
+        expected: nodeState.valveName,
+        match: incomingValveName === nodeState.valveName
+      });
       if (incomingValveName !== nodeState.valveName)
         continue;
       const genericState = hexToInt(valveData.gS.val);
@@ -1007,11 +1023,18 @@ function setupSubscriptions(ctx, nodeId) {
     ctx.ui.notify("Keine MQTT-Broker konfiguriert", "error");
     return;
   }
+  ctx.log.info("Subscribing to MQTT topic", {
+    nodeId,
+    valveName: nodeState.valveName,
+    topic: mainTopic,
+    mqttSource: globalConfig.mqttSource || "default"
+  });
   const valveUnsub = mqtt.subscribe(mainTopic, (msg) => {
+    ctx.log.debug("MQTT callback fired", { topic: mainTopic, nodeId });
     handleValveData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(valveUnsub);
-  ctx.log.info("Valve subscription setup", {
+  ctx.log.info("Valve subscription setup complete", {
     nodeId,
     valveName: nodeState.valveName,
     mainTopic

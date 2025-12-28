@@ -1,0 +1,178 @@
+{
+  "id": "com.rexat.valve",
+  "name": "Valve",
+  "version": "1.0.0",
+  "author": "RexAt",
+  "description": "Valve monitoring and control plugin with status display, position animation, and HTTP command integration for Release 8-11",
+  "license": "MIT",
+  "icon": "🔧",
+  "entryPoint": "index.js",
+
+  "permissions": [
+    "mqtt:subscribe",
+    "http:fetch",
+    "nodes:read",
+    "nodes:write",
+    "ui:popup",
+    "state:persist"
+  ],
+
+  "sandbox": "proxy",
+
+  "nodeBinding": {
+    "mode": "manual"
+  },
+
+  "ui": {
+    "toolbar": {
+      "enabled": true,
+      "icon": "🔧",
+      "tooltip": "Open Valve Control"
+    },
+    "popups": {
+      "ValveDetails": {
+        "component": "ValveDetailsPopup",
+        "width": 500,
+        "height": 600,
+        "resizable": true
+      }
+    },
+    "contextMenu": [
+      {
+        "id": "show-valve-details",
+        "label": "Show Valve Details",
+        "icon": "📊"
+      }
+    ]
+  },
+
+  "config": {
+    "global": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "mqttSource": {
+            "type": "string",
+            "title": "MQTT Broker",
+            "description": "MQTT broker source ID (leave empty for default broker)",
+            "x-source-type": "mqtt"
+          },
+          "mqttFormat": {
+            "type": "string",
+            "title": "MQTT Format",
+            "description": "Select the MQTT payload format version",
+            "enum": ["release8", "release9", "release10", "release11"],
+            "enumNames": ["Release 8", "Release 9", "Release 10", "Release 11"],
+            "default": "release10"
+          },
+          "mainTopic": {
+            "type": "string",
+            "title": "MQTT Valve Topic",
+            "description": "Main MQTT topic for valve data",
+            "default": "machine/valves"
+          },
+          "errorTopic": {
+            "type": "string",
+            "title": "MQTT Error Topic",
+            "description": "MQTT topic for error messages",
+            "default": "machine/errors"
+          },
+          "httpBaseUrl": {
+            "type": "string",
+            "title": "HTTP API Base URL",
+            "description": "Base URL for function call API (e.g., http://192.168.1.100:3021)",
+            "default": "http://localhost:3021"
+          },
+          "highlightColor": {
+            "type": "string",
+            "title": "Highlight Color (Moving)",
+            "description": "Emissive color when valve is moving",
+            "format": "color",
+            "default": "#00aaff"
+          },
+          "highlightIntensity": {
+            "type": "number",
+            "title": "Highlight Intensity",
+            "description": "Emissive intensity for moving states (0-1)",
+            "default": 0.6,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "errorColor": {
+            "type": "string",
+            "title": "Error Color",
+            "description": "Emissive color for error state",
+            "format": "color",
+            "default": "#ff0000"
+          }
+        }
+      }
+    },
+    "instance": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "valveName": {
+            "type": "string",
+            "title": "Valve Name",
+            "description": "Name from MQTT payload for filtering"
+          },
+          "functionNo": {
+            "type": "integer",
+            "title": "Function Number",
+            "description": "Function number for HTTP command calls"
+          },
+          "astPosX": {
+            "type": "number",
+            "title": "AST Position X",
+            "description": "Work position X coordinate",
+            "default": 0
+          },
+          "astPosY": {
+            "type": "number",
+            "title": "AST Position Y",
+            "description": "Work position Y coordinate",
+            "default": 0
+          },
+          "astPosZ": {
+            "type": "number",
+            "title": "AST Position Z",
+            "description": "Work position Z coordinate",
+            "default": 0
+          },
+          "astRotX": {
+            "type": "number",
+            "title": "AST Rotation X (rad)",
+            "description": "Work position rotation X",
+            "default": 0
+          },
+          "astRotY": {
+            "type": "number",
+            "title": "AST Rotation Y (rad)",
+            "description": "Work position rotation Y",
+            "default": 0
+          },
+          "astRotZ": {
+            "type": "number",
+            "title": "AST Rotation Z (rad)",
+            "description": "Work position rotation Z",
+            "default": 0
+          },
+          "durationMoveAST": {
+            "type": "integer",
+            "title": "Animation Duration AST (ms)",
+            "description": "Duration of animation to work position",
+            "default": 500
+          },
+          "durationMoveGST": {
+            "type": "integer",
+            "title": "Animation Duration GST (ms)",
+            "description": "Duration of animation to base position",
+            "default": 500
+          }
+        },
+        "required": ["valveName", "functionNo"]
+      }
+    }
+  }
+}

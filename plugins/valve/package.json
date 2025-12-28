@@ -1,0 +1,19 @@
+{
+  "name": "com.rexat.valve",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Valve monitoring and control plugin with status display, position animation, and HTTP command integration for Release 8-11",
+  "scripts": {
+    "build": "../../packages/plugin-devtools/dist/cli.js build .",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@3dviewer/plugin-sdk": "*",
+    "@types/react": "^18.2.45",
+    "react": "^18.2.0",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  }
+}

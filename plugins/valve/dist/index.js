@@ -1007,15 +1007,16 @@ function setupSubscriptions(ctx, nodeId) {
   }
   const errorTopic = globalConfig.errorTopic || "machine/errors";
   if (!pluginState.hasErrorSubscription()) {
-    ctx.log.info("TEST: Subscribing to errorTopic FIRST", { errorTopic });
+    ctx.log.info("Subscribing to errorTopic", { errorTopic });
     const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
       ctx.log.info("ERROR CALLBACK fired!", {
         topic: errorTopic,
         payload: msg.payload
       });
     });
+    nodeState.subscriptions.push(errorUnsub);
     pluginState.setErrorSubscription(errorUnsub);
-    ctx.log.info("Error subscription created FIRST", { errorTopic });
+    ctx.log.info("Error subscription created (stored in nodeState)", { errorTopic });
   }
   ctx.log.info("Subscribing to valve topic SECOND", { mainTopic });
   const valveUnsub = mqtt.subscribe(mainTopic, (msg) => {

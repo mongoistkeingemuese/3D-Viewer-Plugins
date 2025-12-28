@@ -391,8 +391,16 @@ function handleValveData(
 /**
  * Handle incoming error messages from MQTT
  */
-function handleErrorMessage(ctx: PluginContext, payload: ErrorPayload): void {
+function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
   try {
+    // Parse payload if it's a string
+    let payload: ErrorPayload;
+    if (typeof rawPayload === 'string') {
+      payload = JSON.parse(rawPayload);
+    } else {
+      payload = rawPayload as ErrorPayload;
+    }
+
     ctx.log.info('Error message received', {
       rawPayload: payload,
       src: payload.src,
@@ -499,7 +507,7 @@ function setupErrorSubscription(ctx: PluginContext): void {
       payloadType: typeof msg.payload,
       payload: msg.payload,
     });
-    handleErrorMessage(ctx, msg.payload as ErrorPayload);
+    handleErrorMessage(ctx, msg.payload);
   });
   pluginState.setErrorSubscription(errorUnsub);
 

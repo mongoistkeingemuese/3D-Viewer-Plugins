@@ -989,8 +989,14 @@ function handleValveData(ctx, nodeId, rawPayload) {
     ctx.log.error("Failed to process valve data", { nodeId, error });
   }
 }
-function handleErrorMessage(ctx, payload) {
+function handleErrorMessage(ctx, rawPayload) {
   try {
+    let payload;
+    if (typeof rawPayload === "string") {
+      payload = JSON.parse(rawPayload);
+    } else {
+      payload = rawPayload;
+    }
     ctx.log.info("Error message received", {
       rawPayload: payload,
       src: payload.src,

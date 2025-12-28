@@ -819,11 +819,6 @@ function getMqttApi(ctx) {
   const mqttSource = globalConfig.mqttSource;
   if (mqttSource) {
     const availableSources = pluginState.getMqttSources();
-    ctx.log.info("Using MQTT source", {
-      configured: mqttSource,
-      available: availableSources,
-      found: availableSources.includes(mqttSource)
-    });
     if (!availableSources.includes(mqttSource)) {
       ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
         available: availableSources
@@ -832,7 +827,6 @@ function getMqttApi(ctx) {
     }
     return ctx.mqtt.withSource(mqttSource);
   }
-  ctx.log.info("Using default MQTT (no source configured)");
   return ctx.mqtt;
 }
 function getAstPosition(ctx, nodeId) {
@@ -906,11 +900,6 @@ function handleValveData(ctx, nodeId, rawPayload) {
   const nodeState = pluginState.getNode(nodeId);
   if (!nodeState)
     return;
-  ctx.log.info("Processing MQTT payload", {
-    nodeId,
-    valveName: nodeState.valveName,
-    payloadType: typeof rawPayload
-  });
   try {
     let parsedPayload;
     if (typeof rawPayload === "string") {
@@ -919,25 +908,14 @@ function handleValveData(ctx, nodeId, rawPayload) {
       parsedPayload = rawPayload;
     }
     if (!parsedPayload.pack || parsedPayload.pack.length === 0) {
-      ctx.log.warn("No pack array in payload", { payload: parsedPayload });
       return;
     }
-    ctx.log.info("Payload parsed", {
-      packCount: parsedPayload.pack.length
-    });
     for (const packItem of parsedPayload.pack) {
       const valveData = packItem.Valve;
-      if (!valveData) {
-        ctx.log.warn("No Valve object in pack item", { packItem });
+      if (!valveData)
         continue;
-      }
       const incomingValveName = normalizeValveName(valveData.name);
       const expectedValveName = normalizeValveName(nodeState.valveName);
-      ctx.log.info("Checking valve name", {
-        incoming: incomingValveName,
-        expected: expectedValveName,
-        match: incomingValveName === expectedValveName
-      });
       if (incomingValveName !== expectedValveName)
         continue;
       const genericState = hexToInt(valveData.gS.val);
@@ -988,7 +966,8 @@ function handleErrorMessage(ctx, payload) {
   try {
     const source = normalizeValveName(payload.src);
     pluginState.getAllNodes().forEach((nodeState) => {
-      if (source === nodeState.valveName) {
+      const expectedValveName = normalizeValveName(nodeState.valveName);
+      if (source === expectedValveName) {
         const errorEntry = {
           timestamp: payload.utc,
           level: payload.lvl,
@@ -1030,26 +1009,14 @@ function setupSubscriptions(ctx, nodeId) {
     ctx.ui.notify("Keine MQTT-Broker konfiguriert", "error");
     return;
   }
-  ctx.log.info("Subscribing to MQTT topic", {
-    nodeId,
-    valveName: nodeState.valveName,
-    topic: mainTopic,
-    mqttSource: globalConfig.mqttSource || "default"
-  });
   const valveUnsub = mqtt.subscribe(mainTopic, (msg) => {
-    ctx.log.info("MQTT message received (configured source)", { topic: mainTopic, nodeId });
     handleValveData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(valveUnsub);
-  const defaultUnsub = ctx.mqtt.subscribe(mainTopic, (msg) => {
-    ctx.log.info("MQTT message received (default source)", { topic: mainTopic, nodeId });
-    handleValveData(ctx, nodeId, msg.payload);
-  });
-  nodeState.subscriptions.push(defaultUnsub);
-  ctx.log.info("Valve subscription setup complete", {
+  ctx.log.info("Valve subscription setup", {
     nodeId,
     valveName: nodeState.valveName,
-    mainTopic
+    topic: mainTopic
   });
 }
 function setupErrorSubscription(ctx) {

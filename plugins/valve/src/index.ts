@@ -482,30 +482,33 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
     return;
   }
 
-  const valveUnsub = mqtt.subscribe(mainTopic, (msg: MqttMessage) => {
-    handleValveData(ctx, nodeId, msg.payload);
-  });
-  nodeState.subscriptions.push(valveUnsub);
-
-  ctx.log.info('Valve subscription setup', {
-    nodeId,
-    valveName: nodeState.valveName,
-    topic: mainTopic,
-  });
-
-  // TEST: Subscribe to SAME topic as valve to test if multiple subscriptions work
+  // TEST: Subscribe to ERROR topic FIRST
+  const errorTopic = (globalConfig.errorTopic as string) || 'machine/errors';
   if (!pluginState.hasErrorSubscription()) {
-    // Try subscribing to mainTopic (same as valve) to test multiple callbacks
-    ctx.log.info('TEST: Subscribing to mainTopic for error test', { mainTopic });
-    const errorUnsub = mqtt.subscribe(mainTopic, (msg: MqttMessage) => {
-      ctx.log.info('SECOND CALLBACK on mainTopic fired!', {
-        topic: mainTopic,
+    ctx.log.info('TEST: Subscribing to errorTopic FIRST', { errorTopic });
+    const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
+      ctx.log.info('ERROR CALLBACK fired!', {
+        topic: errorTopic,
         payload: msg.payload,
       });
     });
     pluginState.setErrorSubscription(errorUnsub);
-    ctx.log.info('Error subscription setup (on mainTopic for test)', { mainTopic });
+    ctx.log.info('Error subscription created FIRST', { errorTopic });
   }
+
+  // Then subscribe to valve topic SECOND
+  ctx.log.info('Subscribing to valve topic SECOND', { mainTopic });
+  const valveUnsub = mqtt.subscribe(mainTopic, (msg: MqttMessage) => {
+    ctx.log.info('VALVE CALLBACK fired!', { topic: mainTopic });
+    handleValveData(ctx, nodeId, msg.payload);
+  });
+  nodeState.subscriptions.push(valveUnsub);
+
+  ctx.log.info('Valve subscription created SECOND', {
+    nodeId,
+    valveName: nodeState.valveName,
+    topic: mainTopic,
+  });
 }
 
 // ============================================================================

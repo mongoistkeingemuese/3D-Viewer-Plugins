@@ -1005,26 +1005,29 @@ function setupSubscriptions(ctx, nodeId) {
     ctx.ui.notify("Keine MQTT-Broker konfiguriert", "error");
     return;
   }
-  const valveUnsub = mqtt.subscribe(mainTopic, (msg) => {
-    handleValveData(ctx, nodeId, msg.payload);
-  });
-  nodeState.subscriptions.push(valveUnsub);
-  ctx.log.info("Valve subscription setup", {
-    nodeId,
-    valveName: nodeState.valveName,
-    topic: mainTopic
-  });
+  const errorTopic = globalConfig.errorTopic || "machine/errors";
   if (!pluginState.hasErrorSubscription()) {
-    ctx.log.info("TEST: Subscribing to mainTopic for error test", { mainTopic });
-    const errorUnsub = mqtt.subscribe(mainTopic, (msg) => {
-      ctx.log.info("SECOND CALLBACK on mainTopic fired!", {
-        topic: mainTopic,
+    ctx.log.info("TEST: Subscribing to errorTopic FIRST", { errorTopic });
+    const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
+      ctx.log.info("ERROR CALLBACK fired!", {
+        topic: errorTopic,
         payload: msg.payload
       });
     });
     pluginState.setErrorSubscription(errorUnsub);
-    ctx.log.info("Error subscription setup (on mainTopic for test)", { mainTopic });
+    ctx.log.info("Error subscription created FIRST", { errorTopic });
   }
+  ctx.log.info("Subscribing to valve topic SECOND", { mainTopic });
+  const valveUnsub = mqtt.subscribe(mainTopic, (msg) => {
+    ctx.log.info("VALVE CALLBACK fired!", { topic: mainTopic });
+    handleValveData(ctx, nodeId, msg.payload);
+  });
+  nodeState.subscriptions.push(valveUnsub);
+  ctx.log.info("Valve subscription created SECOND", {
+    nodeId,
+    valveName: nodeState.valveName,
+    topic: mainTopic
+  });
 }
 async function sendValveCommand(nodeId, functionCommand) {
   const ctx = pluginState.getContext();

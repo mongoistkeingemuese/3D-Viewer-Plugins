@@ -179,6 +179,10 @@ var ValveDetailsPopup = ({ data }) => {
     acknowledgeError(nodeId, errorIndex);
     setUpdateCounter((c) => c + 1);
   };
+  const handleAcknowledgeAll = () => {
+    acknowledgeAllErrors(nodeId);
+    setUpdateCounter((c) => c + 1);
+  };
   const handleMoveToGst = async () => {
     setIsLoadingGst(true);
     await sendMoveToBase(nodeId);
@@ -423,10 +427,20 @@ var ValveDetailsPopup = ({ data }) => {
         ] })
       ] }),
       activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-        /* @__PURE__ */ jsxs("h3", { style: styles.sectionTitle, children: [
-          "Errors (",
-          unacknowledgedCount,
-          " unbest\xE4tigt)"
+        /* @__PURE__ */ jsxs("div", { style: styles.errorSectionHeader, children: [
+          /* @__PURE__ */ jsxs("h3", { style: { ...styles.sectionTitle, marginBottom: 0 }, children: [
+            "Errors (",
+            unacknowledgedCount,
+            " unbest\xE4tigt)"
+          ] }),
+          unacknowledgedCount > 0 && /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: handleAcknowledgeAll,
+              style: styles.ackAllButton,
+              children: "Alle Quittieren"
+            }
+          )
         ] }),
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsxs("div", { style: styles.noErrors, children: [
           /* @__PURE__ */ jsx("span", { style: { fontSize: "24px" }, children: "\u2713" }),
@@ -659,6 +673,24 @@ var styles = {
     textAlign: "center",
     padding: "20px",
     color: "#28a745"
+  },
+  errorSectionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "12px",
+    paddingBottom: "6px",
+    borderBottom: "1px solid #eee"
+  },
+  ackAllButton: {
+    padding: "6px 12px",
+    backgroundColor: "#28a745",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "12px",
+    cursor: "pointer",
+    fontWeight: "bold"
   },
   errorList: {
     display: "flex",
@@ -992,6 +1024,72 @@ function handleValveData(ctx, nodeId, rawPayload) {
     ctx.log.error("Failed to process valve data", { nodeId, error });
   }
 }
+function handleErrorMessage(ctx, rawPayload) {
+  try {
+    let payload;
+    if (typeof rawPayload === "string") {
+      payload = JSON.parse(rawPayload);
+    } else {
+      payload = rawPayload;
+    }
+    ctx.log.info("Error message received", {
+      rawPayload: payload,
+      src: payload.src,
+      lvl: payload.lvl,
+      msg: payload.msg?.txt
+    });
+    const source = normalizeValveName(payload.src || "");
+    const allNodes = pluginState.getAllNodes();
+    ctx.log.debug("Checking error against nodes", {
+      normalizedSource: source,
+      nodeCount: allNodes.length,
+      nodeNames: allNodes.map((n) => n.valveName)
+    });
+    allNodes.forEach((nodeState) => {
+      const expectedValveName = normalizeValveName(nodeState.valveName);
+      ctx.log.debug("Comparing valve names", {
+        source,
+        expectedValveName,
+        match: source === expectedValveName
+      });
+      if (source === expectedValveName) {
+        const errorEntry = {
+          timestamp: payload.utc,
+          level: payload.lvl,
+          source: payload.src,
+          message: payload.msg.txt,
+          acknowledged: false
+        };
+        nodeState.errors.unshift(errorEntry);
+        if (nodeState.errors.length > 10) {
+          nodeState.errors = nodeState.errors.slice(0, 10);
+        }
+        ctx.log.error("Valve error received", {
+          nodeId: nodeState.nodeId,
+          valveName: nodeState.valveName,
+          level: payload.lvl,
+          message: payload.msg.txt,
+          timestamp: new Date(payload.utc).toISOString()
+        });
+        if (payload.lvl === "ERR") {
+          nodeState.genericState = 3 /* Error */;
+          updateNodeVisuals(ctx, nodeState.nodeId, 3 /* Error */, nodeState.specificState);
+          ctx.ui.notify(
+            `Valve Error: ${nodeState.valveName} - ${payload.msg.txt}`,
+            "error"
+          );
+        } else if (payload.lvl === "WARN") {
+          ctx.ui.notify(
+            `Valve Warning: ${nodeState.valveName} - ${payload.msg.txt}`,
+            "warning"
+          );
+        }
+      }
+    });
+  } catch (error) {
+    ctx.log.error("Failed to process error message", { error });
+  }
+}
 function setupSubscriptions(ctx, nodeId) {
   const nodeState = pluginState.getNode(nodeId);
   if (!nodeState)
@@ -1013,8 +1111,9 @@ function setupSubscriptions(ctx, nodeId) {
   });
   nodeState.subscriptions.push(valveUnsub);
   ctx.log.info("SUB 2: error topic", { errorTopic });
-  const errorUnsub = mqtt.subscribe(errorTopic, (_msg) => {
-    ctx.log.info("CALLBACK 2 (error) fired!", { topic: errorTopic });
+  const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
+    ctx.log.info("CALLBACK 2 (error) fired!", { topic: errorTopic, payload: msg.payload });
+    handleErrorMessage(ctx, msg.payload);
   });
   nodeState.subscriptions.push(errorUnsub);
   ctx.log.info("Both subscriptions created", { mainTopic, errorTopic });
@@ -1133,8 +1232,55 @@ function acknowledgeError(nodeId, errorIndex) {
   if (!nodeState || errorIndex < 0 || errorIndex >= nodeState.errors.length) {
     return;
   }
-  nodeState.errors[errorIndex].acknowledged = true;
-  ctx.log.info("Error acknowledged", { nodeId, errorIndex });
+  const error = nodeState.errors[errorIndex];
+  error.acknowledged = true;
+  ctx.log.info("Error acknowledged", {
+    nodeId,
+    valveName: nodeState.valveName,
+    errorIndex,
+    level: error.level,
+    message: error.message,
+    acknowledgedAt: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  const hasUnacknowledgedErrors = nodeState.errors.some((e) => !e.acknowledged);
+  if (!hasUnacknowledgedErrors && nodeState.genericState === 3 /* Error */) {
+    nodeState.genericState = 0 /* Idle */;
+    updateNodeVisuals(ctx, nodeId, 0 /* Idle */, nodeState.specificState);
+    ctx.log.info("Node error state reset after acknowledgement", {
+      nodeId,
+      valveName: nodeState.valveName
+    });
+    ctx.ui.notify(`${nodeState.valveName}: Fehler quittiert`, "success");
+  }
+}
+function acknowledgeAllErrors(nodeId) {
+  const ctx = pluginState.getContext();
+  const nodeState = pluginState.getNode(nodeId);
+  if (!nodeState) {
+    return;
+  }
+  const unacknowledgedCount = nodeState.errors.filter((e) => !e.acknowledged).length;
+  if (unacknowledgedCount === 0) {
+    return;
+  }
+  nodeState.errors.forEach((e) => {
+    e.acknowledged = true;
+  });
+  ctx.log.info("All errors acknowledged", {
+    nodeId,
+    valveName: nodeState.valveName,
+    count: unacknowledgedCount,
+    acknowledgedAt: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  if (nodeState.genericState === 3 /* Error */) {
+    nodeState.genericState = 0 /* Idle */;
+    updateNodeVisuals(ctx, nodeId, 0 /* Idle */, nodeState.specificState);
+    ctx.log.info("Node error state reset after bulk acknowledgement", {
+      nodeId,
+      valveName: nodeState.valveName
+    });
+  }
+  ctx.ui.notify(`${nodeState.valveName}: ${unacknowledgedCount} Fehler quittiert`, "success");
 }
 function getNodeState(nodeId) {
   return pluginState.getNode(nodeId);
@@ -1236,6 +1382,7 @@ var plugin = {
 };
 var src_default = plugin;
 export {
+  acknowledgeAllErrors,
   acknowledgeError,
   src_default as default,
   getCurrentMqttFormat,

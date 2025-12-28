@@ -33,8 +33,8 @@ import {
   FunctionCommand,
   type NodeState,
   type ValvePayload,
-  // type ErrorPayload,  // Unused - for future error handling
-  // type ErrorEntry,    // Unused - for future error handling
+  type ErrorPayload,
+  type ErrorEntry,
   type AstPosition,
   type MqttFormat,
 } from './types';
@@ -394,9 +394,7 @@ function handleValveData(
 
 /**
  * Handle incoming error messages from MQTT
- * NOTE: Currently unused - kept for potential future error handling
  */
-/*
 function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
   try {
     // Parse payload if it's a string
@@ -439,21 +437,34 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           acknowledged: false,
         };
 
+        // Add to errors list
         nodeState.errors.unshift(errorEntry);
-        if (nodeState.errors.length > 5) {
-          nodeState.errors = nodeState.errors.slice(0, 5);
+        if (nodeState.errors.length > 10) {
+          nodeState.errors = nodeState.errors.slice(0, 10);
         }
 
-        ctx.log.warn('Valve error received', {
+        // Log the error
+        ctx.log.error('Valve error received', {
           nodeId: nodeState.nodeId,
           valveName: nodeState.valveName,
-          error: errorEntry,
+          level: payload.lvl,
+          message: payload.msg.txt,
+          timestamp: new Date(payload.utc).toISOString(),
         });
 
+        // Set node to error state visually
         if (payload.lvl === 'ERR') {
+          nodeState.genericState = GenericState.Error;
+          updateNodeVisuals(ctx, nodeState.nodeId, GenericState.Error, nodeState.specificState);
+
           ctx.ui.notify(
             `Valve Error: ${nodeState.valveName} - ${payload.msg.txt}`,
             'error'
+          );
+        } else if (payload.lvl === 'WARN') {
+          ctx.ui.notify(
+            `Valve Warning: ${nodeState.valveName} - ${payload.msg.txt}`,
+            'warning'
           );
         }
       }
@@ -462,7 +473,6 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
     ctx.log.error('Failed to process error message', { error });
   }
 }
-*/
 
 /**
  * Setup MQTT subscriptions for a node
@@ -492,10 +502,11 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
   });
   nodeState.subscriptions.push(valveUnsub);
 
-  // SUBSCRIPTION 2: Error topic - IDENTICAL pattern
+  // SUBSCRIPTION 2: Error topic
   ctx.log.info('SUB 2: error topic', { errorTopic });
-  const errorUnsub = mqtt.subscribe(errorTopic, (_msg: MqttMessage) => {
-    ctx.log.info('CALLBACK 2 (error) fired!', { topic: errorTopic });
+  const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
+    ctx.log.info('CALLBACK 2 (error) fired!', { topic: errorTopic, payload: msg.payload });
+    handleErrorMessage(ctx, msg.payload);
   });
   nodeState.subscriptions.push(errorUnsub);
 
@@ -658,7 +669,7 @@ export async function sendModeBistableMiddle(nodeId: string): Promise<boolean> {
 // ============================================================================
 
 /**
- * Acknowledge an error
+ * Acknowledge an error and reset node visual state
  */
 export function acknowledgeError(nodeId: string, errorIndex: number): void {
   const ctx = pluginState.getContext();
@@ -668,8 +679,78 @@ export function acknowledgeError(nodeId: string, errorIndex: number): void {
     return;
   }
 
-  nodeState.errors[errorIndex].acknowledged = true;
-  ctx.log.info('Error acknowledged', { nodeId, errorIndex });
+  const error = nodeState.errors[errorIndex];
+  error.acknowledged = true;
+
+  // Log the acknowledgement
+  ctx.log.info('Error acknowledged', {
+    nodeId,
+    valveName: nodeState.valveName,
+    errorIndex,
+    level: error.level,
+    message: error.message,
+    acknowledgedAt: new Date().toISOString(),
+  });
+
+  // Check if all errors are acknowledged
+  const hasUnacknowledgedErrors = nodeState.errors.some(e => !e.acknowledged);
+
+  // Reset node visual state if no more unacknowledged errors
+  if (!hasUnacknowledgedErrors && nodeState.genericState === GenericState.Error) {
+    // Reset to Idle state (the actual state will be updated by next MQTT message)
+    nodeState.genericState = GenericState.Idle;
+    updateNodeVisuals(ctx, nodeId, GenericState.Idle, nodeState.specificState);
+
+    ctx.log.info('Node error state reset after acknowledgement', {
+      nodeId,
+      valveName: nodeState.valveName,
+    });
+
+    ctx.ui.notify(`${nodeState.valveName}: Fehler quittiert`, 'success');
+  }
+}
+
+/**
+ * Acknowledge all errors for a node
+ */
+export function acknowledgeAllErrors(nodeId: string): void {
+  const ctx = pluginState.getContext();
+  const nodeState = pluginState.getNode(nodeId);
+
+  if (!nodeState) {
+    return;
+  }
+
+  const unacknowledgedCount = nodeState.errors.filter(e => !e.acknowledged).length;
+  if (unacknowledgedCount === 0) {
+    return;
+  }
+
+  // Mark all as acknowledged
+  nodeState.errors.forEach(e => {
+    e.acknowledged = true;
+  });
+
+  // Log the acknowledgement
+  ctx.log.info('All errors acknowledged', {
+    nodeId,
+    valveName: nodeState.valveName,
+    count: unacknowledgedCount,
+    acknowledgedAt: new Date().toISOString(),
+  });
+
+  // Reset node visual state
+  if (nodeState.genericState === GenericState.Error) {
+    nodeState.genericState = GenericState.Idle;
+    updateNodeVisuals(ctx, nodeId, GenericState.Idle, nodeState.specificState);
+
+    ctx.log.info('Node error state reset after bulk acknowledgement', {
+      nodeId,
+      valveName: nodeState.valveName,
+    });
+  }
+
+  ctx.ui.notify(`${nodeState.valveName}: ${unacknowledgedCount} Fehler quittiert`, 'success');
 }
 
 /**

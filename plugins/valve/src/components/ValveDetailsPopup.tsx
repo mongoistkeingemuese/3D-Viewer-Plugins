@@ -10,6 +10,7 @@ import React, { useEffect, useState } from 'react';
 import {
   getNodeState,
   acknowledgeError,
+  acknowledgeAllErrors,
   sendMoveToBase,
   sendMoveToWork,
   sendPressureFree,
@@ -144,6 +145,11 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
 
   const handleAcknowledge = (errorIndex: number): void => {
     acknowledgeError(nodeId, errorIndex);
+    setUpdateCounter((c) => c + 1);
+  };
+
+  const handleAcknowledgeAll = (): void => {
+    acknowledgeAllErrors(nodeId);
     setUpdateCounter((c) => c + 1);
   };
 
@@ -412,9 +418,19 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
         {/* ERRORS TAB */}
         {activeTab === 'errors' && (
           <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>
-              Errors ({unacknowledgedCount} unbestätigt)
-            </h3>
+            <div style={styles.errorSectionHeader}>
+              <h3 style={{ ...styles.sectionTitle, marginBottom: 0 }}>
+                Errors ({unacknowledgedCount} unbestätigt)
+              </h3>
+              {unacknowledgedCount > 0 && (
+                <button
+                  onClick={handleAcknowledgeAll}
+                  style={styles.ackAllButton}
+                >
+                  Alle Quittieren
+                </button>
+              )}
+            </div>
             {nodeState.errors.length === 0 ? (
               <div style={styles.noErrors}>
                 <span style={{ fontSize: '24px' }}>&#10003;</span>
@@ -657,6 +673,24 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
     padding: '20px',
     color: '#28a745',
+  },
+  errorSectionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '12px',
+    paddingBottom: '6px',
+    borderBottom: '1px solid #eee',
+  },
+  ackAllButton: {
+    padding: '6px 12px',
+    backgroundColor: '#28a745',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
   },
   errorList: {
     display: 'flex',

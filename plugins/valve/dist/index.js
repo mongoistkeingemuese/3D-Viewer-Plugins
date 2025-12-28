@@ -1079,20 +1079,31 @@ function setupErrorSubscription(ctx) {
   const globalConfig = ctx.config.global.getAll();
   const errorTopic = globalConfig.errorTopic || "machine/errors";
   const mqtt = getMqttApi(ctx);
+  const globalMqttSource = globalConfig.mqttSource || "";
   ctx.log.info("Setting up error subscription", {
     errorTopic,
-    availableSources: ctx.mqtt.getSources()
+    mqttSource: globalMqttSource || "(default)",
+    availableSources: ctx.mqtt.getSources(),
+    mqttApi: mqtt ? "available" : "null"
   });
-  const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
-    ctx.log.info("MQTT error topic message received", {
-      topic: errorTopic,
-      payloadType: typeof msg.payload,
-      payload: msg.payload
+  try {
+    const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
+      ctx.log.info("MQTT error topic message received", {
+        topic: errorTopic,
+        payloadType: typeof msg.payload,
+        payload: msg.payload
+      });
+      handleErrorMessage(ctx, msg.payload);
     });
-    handleErrorMessage(ctx, msg.payload);
-  });
-  pluginState.setErrorSubscription(errorUnsub);
-  ctx.log.info("Error subscription setup complete", { errorTopic });
+    ctx.log.info("Error subscription created", {
+      errorTopic,
+      unsubFunction: typeof errorUnsub
+    });
+    pluginState.setErrorSubscription(errorUnsub);
+    ctx.log.info("Error subscription setup complete", { errorTopic });
+  } catch (err) {
+    ctx.log.error("Failed to subscribe to error topic", { errorTopic, error: err });
+  }
 }
 async function sendValveCommand(nodeId, functionCommand) {
   const ctx = pluginState.getContext();

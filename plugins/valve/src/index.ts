@@ -505,22 +505,35 @@ function setupErrorSubscription(ctx: PluginContext): void {
   const errorTopic = (globalConfig.errorTopic as string) || 'machine/errors';
   const mqtt = getMqttApi(ctx);
 
+  const globalMqttSource = globalConfig.mqttSource as string || '';
+
   ctx.log.info('Setting up error subscription', {
     errorTopic,
+    mqttSource: globalMqttSource || '(default)',
     availableSources: ctx.mqtt.getSources(),
+    mqttApi: mqtt ? 'available' : 'null',
   });
 
-  const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
-    ctx.log.info('MQTT error topic message received', {
-      topic: errorTopic,
-      payloadType: typeof msg.payload,
-      payload: msg.payload,
+  try {
+    const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
+      ctx.log.info('MQTT error topic message received', {
+        topic: errorTopic,
+        payloadType: typeof msg.payload,
+        payload: msg.payload,
+      });
+      handleErrorMessage(ctx, msg.payload);
     });
-    handleErrorMessage(ctx, msg.payload);
-  });
-  pluginState.setErrorSubscription(errorUnsub);
 
-  ctx.log.info('Error subscription setup complete', { errorTopic });
+    ctx.log.info('Error subscription created', {
+      errorTopic,
+      unsubFunction: typeof errorUnsub,
+    });
+
+    pluginState.setErrorSubscription(errorUnsub);
+    ctx.log.info('Error subscription setup complete', { errorTopic });
+  } catch (err) {
+    ctx.log.error('Failed to subscribe to error topic', { errorTopic, error: err });
+  }
 }
 
 // ============================================================================

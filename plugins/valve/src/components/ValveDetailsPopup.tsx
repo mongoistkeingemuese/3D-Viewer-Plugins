@@ -304,36 +304,48 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
         {/* CONTROL TAB */}
         {activeTab === 'control' && (
           <>
+            {/* Warning if no function number */}
+            {!nodeState.functionNo && (
+              <div style={styles.section}>
+                <div style={styles.warningBox}>
+                  Keine Funktionsnummer konfiguriert - Befehle deaktiviert
+                </div>
+              </div>
+            )}
+
             {/* Main Controls */}
             <div style={styles.section}>
               <h3 style={styles.sectionTitle}>Hauptbedienung</h3>
               <div style={styles.controlGrid}>
                 <button
                   onClick={handleMoveToAst}
-                  disabled={isLoadingAst}
+                  disabled={isLoadingAst || !nodeState.functionNo}
                   style={{
                     ...styles.controlButton,
                     backgroundColor: '#28a745',
+                    opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
                   {isLoadingAst ? 'Sende...' : 'AST fahren'}
                 </button>
                 <button
                   onClick={handleMoveToGst}
-                  disabled={isLoadingGst}
+                  disabled={isLoadingGst || !nodeState.functionNo}
                   style={{
                     ...styles.controlButton,
                     backgroundColor: '#007bff',
+                    opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
                   {isLoadingGst ? 'Sende...' : 'GST fahren'}
                 </button>
                 <button
                   onClick={handlePressureFree}
-                  disabled={isLoadingPressureFree}
+                  disabled={isLoadingPressureFree || !nodeState.functionNo}
                   style={{
                     ...styles.controlButton,
                     backgroundColor: '#6c757d',
+                    opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
                   {isLoadingPressureFree ? 'Sende...' : 'Drucklos'}
@@ -347,40 +359,44 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
               <div style={styles.modeGrid}>
                 <button
                   onClick={() => handleModeChange('mono', sendModeMonostable)}
-                  disabled={isLoadingMode !== null}
+                  disabled={isLoadingMode !== null || !nodeState.functionNo}
                   style={{
                     ...styles.modeButton,
                     ...(isLoadingMode === 'mono' ? styles.modeButtonLoading : {}),
+                    opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
                   {isLoadingMode === 'mono' ? '...' : 'Mono'}
                 </button>
                 <button
                   onClick={() => handleModeChange('biPuls', sendModeBistablePulsed)}
-                  disabled={isLoadingMode !== null}
+                  disabled={isLoadingMode !== null || !nodeState.functionNo}
                   style={{
                     ...styles.modeButton,
                     ...(isLoadingMode === 'biPuls' ? styles.modeButtonLoading : {}),
+                    opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
                   {isLoadingMode === 'biPuls' ? '...' : 'BiPuls'}
                 </button>
                 <button
                   onClick={() => handleModeChange('biPerm', sendModeBistablePermanent)}
-                  disabled={isLoadingMode !== null}
+                  disabled={isLoadingMode !== null || !nodeState.functionNo}
                   style={{
                     ...styles.modeButton,
                     ...(isLoadingMode === 'biPerm' ? styles.modeButtonLoading : {}),
+                    opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
                   {isLoadingMode === 'biPerm' ? '...' : 'BiPerm'}
                 </button>
                 <button
                   onClick={() => handleModeChange('biMitte', sendModeBistableMiddle)}
-                  disabled={isLoadingMode !== null}
+                  disabled={isLoadingMode !== null || !nodeState.functionNo}
                   style={{
                     ...styles.modeButton,
                     ...(isLoadingMode === 'biMitte' ? styles.modeButtonLoading : {}),
+                    opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
                   {isLoadingMode === 'biMitte' ? '...' : 'BiMitte'}
@@ -561,6 +577,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#444',
     borderBottom: '1px solid #eee',
     paddingBottom: '6px',
+  },
+  warningBox: {
+    padding: '12px',
+    backgroundColor: '#fff3cd',
+    border: '1px solid #ffc107',
+    borderRadius: '4px',
+    color: '#856404',
+    fontSize: '13px',
+    textAlign: 'center',
   },
   dataGrid: {
     display: 'flex',

@@ -318,6 +318,7 @@ var ValveDetailsPopup = ({ data }) => {
         ] }) })
       ] }),
       activeTab === "control" && /* @__PURE__ */ jsxs(Fragment2, { children: [
+        !nodeState.functionNo && /* @__PURE__ */ jsx("div", { style: styles.section, children: /* @__PURE__ */ jsx("div", { style: styles.warningBox, children: "Keine Funktionsnummer konfiguriert - Befehle deaktiviert" }) }),
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
           /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Hauptbedienung" }),
           /* @__PURE__ */ jsxs("div", { style: styles.controlGrid, children: [
@@ -325,10 +326,11 @@ var ValveDetailsPopup = ({ data }) => {
               "button",
               {
                 onClick: handleMoveToAst,
-                disabled: isLoadingAst,
+                disabled: isLoadingAst || !nodeState.functionNo,
                 style: {
                   ...styles.controlButton,
-                  backgroundColor: "#28a745"
+                  backgroundColor: "#28a745",
+                  opacity: !nodeState.functionNo ? 0.5 : 1
                 },
                 children: isLoadingAst ? "Sende..." : "AST fahren"
               }
@@ -337,10 +339,11 @@ var ValveDetailsPopup = ({ data }) => {
               "button",
               {
                 onClick: handleMoveToGst,
-                disabled: isLoadingGst,
+                disabled: isLoadingGst || !nodeState.functionNo,
                 style: {
                   ...styles.controlButton,
-                  backgroundColor: "#007bff"
+                  backgroundColor: "#007bff",
+                  opacity: !nodeState.functionNo ? 0.5 : 1
                 },
                 children: isLoadingGst ? "Sende..." : "GST fahren"
               }
@@ -349,10 +352,11 @@ var ValveDetailsPopup = ({ data }) => {
               "button",
               {
                 onClick: handlePressureFree,
-                disabled: isLoadingPressureFree,
+                disabled: isLoadingPressureFree || !nodeState.functionNo,
                 style: {
                   ...styles.controlButton,
-                  backgroundColor: "#6c757d"
+                  backgroundColor: "#6c757d",
+                  opacity: !nodeState.functionNo ? 0.5 : 1
                 },
                 children: isLoadingPressureFree ? "Sende..." : "Drucklos"
               }
@@ -366,10 +370,11 @@ var ValveDetailsPopup = ({ data }) => {
               "button",
               {
                 onClick: () => handleModeChange("mono", sendModeMonostable),
-                disabled: isLoadingMode !== null,
+                disabled: isLoadingMode !== null || !nodeState.functionNo,
                 style: {
                   ...styles.modeButton,
-                  ...isLoadingMode === "mono" ? styles.modeButtonLoading : {}
+                  ...isLoadingMode === "mono" ? styles.modeButtonLoading : {},
+                  opacity: !nodeState.functionNo ? 0.5 : 1
                 },
                 children: isLoadingMode === "mono" ? "..." : "Mono"
               }
@@ -378,10 +383,11 @@ var ValveDetailsPopup = ({ data }) => {
               "button",
               {
                 onClick: () => handleModeChange("biPuls", sendModeBistablePulsed),
-                disabled: isLoadingMode !== null,
+                disabled: isLoadingMode !== null || !nodeState.functionNo,
                 style: {
                   ...styles.modeButton,
-                  ...isLoadingMode === "biPuls" ? styles.modeButtonLoading : {}
+                  ...isLoadingMode === "biPuls" ? styles.modeButtonLoading : {},
+                  opacity: !nodeState.functionNo ? 0.5 : 1
                 },
                 children: isLoadingMode === "biPuls" ? "..." : "BiPuls"
               }
@@ -390,10 +396,11 @@ var ValveDetailsPopup = ({ data }) => {
               "button",
               {
                 onClick: () => handleModeChange("biPerm", sendModeBistablePermanent),
-                disabled: isLoadingMode !== null,
+                disabled: isLoadingMode !== null || !nodeState.functionNo,
                 style: {
                   ...styles.modeButton,
-                  ...isLoadingMode === "biPerm" ? styles.modeButtonLoading : {}
+                  ...isLoadingMode === "biPerm" ? styles.modeButtonLoading : {},
+                  opacity: !nodeState.functionNo ? 0.5 : 1
                 },
                 children: isLoadingMode === "biPerm" ? "..." : "BiPerm"
               }
@@ -402,10 +409,11 @@ var ValveDetailsPopup = ({ data }) => {
               "button",
               {
                 onClick: () => handleModeChange("biMitte", sendModeBistableMiddle),
-                disabled: isLoadingMode !== null,
+                disabled: isLoadingMode !== null || !nodeState.functionNo,
                 style: {
                   ...styles.modeButton,
-                  ...isLoadingMode === "biMitte" ? styles.modeButtonLoading : {}
+                  ...isLoadingMode === "biMitte" ? styles.modeButtonLoading : {},
+                  opacity: !nodeState.functionNo ? 0.5 : 1
                 },
                 children: isLoadingMode === "biMitte" ? "..." : "BiMitte"
               }
@@ -571,6 +579,15 @@ var styles = {
     color: "#444",
     borderBottom: "1px solid #eee",
     paddingBottom: "6px"
+  },
+  warningBox: {
+    padding: "12px",
+    backgroundColor: "#fff3cd",
+    border: "1px solid #ffc107",
+    borderRadius: "4px",
+    color: "#856404",
+    fontSize: "13px",
+    textAlign: "center"
   },
   dataGrid: {
     display: "flex",
@@ -1171,23 +1188,22 @@ var plugin = {
   onNodeBound(ctx, node) {
     const config = ctx.config.instance.getForNode(node.id);
     const valveName = config.valveName;
-    const functionNo = config.functionNo;
+    const functionNo = config.functionNo || 0;
     if (!valveName) {
       ctx.log.warn(`No valve name configured for node ${node.id}`);
       ctx.ui.notify(`Bitte Ventilname f\xFCr ${node.name} konfigurieren`, "warning");
       return;
     }
-    if (!functionNo) {
-      ctx.log.warn(`No function number configured for node ${node.id}`);
-      ctx.ui.notify(`Bitte Funktionsnummer f\xFCr ${node.name} konfigurieren`, "warning");
-      return;
-    }
     ctx.log.info(
-      `Node bound: ${node.name} (${node.id}) -> Valve: ${valveName}, FunctionNo: ${functionNo}`
+      `Node bound: ${node.name} (${node.id}) -> Valve: ${valveName}, FunctionNo: ${functionNo || "not set"}`
     );
     pluginState.addNode(node.id, valveName, functionNo);
     setupSubscriptions(ctx, node.id);
-    ctx.ui.notify(`Monitoring: ${valveName}`, "success");
+    if (!functionNo) {
+      ctx.ui.notify(`Monitoring: ${valveName} (Befehle deaktiviert - keine Funktionsnummer)`, "warning");
+    } else {
+      ctx.ui.notify(`Monitoring: ${valveName}`, "success");
+    }
   },
   onNodeUnbound(ctx, node) {
     ctx.log.info(`Node unbound: ${node.name} (${node.id})`);

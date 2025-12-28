@@ -682,7 +682,7 @@ const plugin: Plugin = {
   onNodeBound(ctx: PluginContext, node: BoundNode): void {
     const config = ctx.config.instance.getForNode(node.id);
     const valveName = config.valveName as string;
-    const functionNo = config.functionNo as number;
+    const functionNo = (config.functionNo as number) || 0;
 
     if (!valveName) {
       ctx.log.warn(`No valve name configured for node ${node.id}`);
@@ -690,20 +690,18 @@ const plugin: Plugin = {
       return;
     }
 
-    if (!functionNo) {
-      ctx.log.warn(`No function number configured for node ${node.id}`);
-      ctx.ui.notify(`Bitte Funktionsnummer für ${node.name} konfigurieren`, 'warning');
-      return;
-    }
-
     ctx.log.info(
-      `Node bound: ${node.name} (${node.id}) -> Valve: ${valveName}, FunctionNo: ${functionNo}`
+      `Node bound: ${node.name} (${node.id}) -> Valve: ${valveName}, FunctionNo: ${functionNo || 'not set'}`
     );
 
     pluginState.addNode(node.id, valveName, functionNo);
     setupSubscriptions(ctx, node.id);
 
-    ctx.ui.notify(`Monitoring: ${valveName}`, 'success');
+    if (!functionNo) {
+      ctx.ui.notify(`Monitoring: ${valveName} (Befehle deaktiviert - keine Funktionsnummer)`, 'warning');
+    } else {
+      ctx.ui.notify(`Monitoring: ${valveName}`, 'success');
+    }
   },
 
   onNodeUnbound(ctx: PluginContext, node: BoundNode): void {

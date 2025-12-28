@@ -58,16 +58,16 @@ export function parseMqttTimestamp(timestamp: string): number {
 }
 
 /**
- * Normalize valve name by trimming whitespace
+ * Normalize valve name by trimming whitespace and converting to lowercase
  *
- * Purpose: Handle padded valve names from MQTT
+ * Purpose: Handle padded valve names from MQTT with case-insensitive matching
  * Usage: For matching valve names in MQTT payloads
  *
  * @param name - Valve name potentially padded with spaces
- * @returns Trimmed valve name
+ * @returns Trimmed and lowercased valve name
  */
 export function normalizeValveName(name: string): string {
-  return name.trim();
+  return name.trim().toLowerCase();
 }
 
 /**

@@ -66,7 +66,7 @@ function parseMqttTimestamp(timestamp) {
   }
 }
 function normalizeValveName(name) {
-  return name.trim();
+  return name.trim().toLowerCase();
 }
 function formatDuration(durationMs) {
   if (durationMs === null) {

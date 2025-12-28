@@ -992,63 +992,6 @@ function handleValveData(ctx, nodeId, rawPayload) {
     ctx.log.error("Failed to process valve data", { nodeId, error });
   }
 }
-function handleErrorMessage(ctx, rawPayload) {
-  try {
-    let payload;
-    if (typeof rawPayload === "string") {
-      payload = JSON.parse(rawPayload);
-    } else {
-      payload = rawPayload;
-    }
-    ctx.log.info("Error message received", {
-      rawPayload: payload,
-      src: payload.src,
-      lvl: payload.lvl,
-      msg: payload.msg?.txt
-    });
-    const source = normalizeValveName(payload.src || "");
-    const allNodes = pluginState.getAllNodes();
-    ctx.log.debug("Checking error against nodes", {
-      normalizedSource: source,
-      nodeCount: allNodes.length,
-      nodeNames: allNodes.map((n) => n.valveName)
-    });
-    allNodes.forEach((nodeState) => {
-      const expectedValveName = normalizeValveName(nodeState.valveName);
-      ctx.log.debug("Comparing valve names", {
-        source,
-        expectedValveName,
-        match: source === expectedValveName
-      });
-      if (source === expectedValveName) {
-        const errorEntry = {
-          timestamp: payload.utc,
-          level: payload.lvl,
-          source: payload.src,
-          message: payload.msg.txt,
-          acknowledged: false
-        };
-        nodeState.errors.unshift(errorEntry);
-        if (nodeState.errors.length > 5) {
-          nodeState.errors = nodeState.errors.slice(0, 5);
-        }
-        ctx.log.warn("Valve error received", {
-          nodeId: nodeState.nodeId,
-          valveName: nodeState.valveName,
-          error: errorEntry
-        });
-        if (payload.lvl === "ERR") {
-          ctx.ui.notify(
-            `Valve Error: ${nodeState.valveName} - ${payload.msg.txt}`,
-            "error"
-          );
-        }
-      }
-    });
-  } catch (error) {
-    ctx.log.error("Failed to process error message", { error });
-  }
-}
 function setupSubscriptions(ctx, nodeId) {
   const nodeState = pluginState.getNode(nodeId);
   if (!nodeState)
@@ -1071,17 +1014,16 @@ function setupSubscriptions(ctx, nodeId) {
     valveName: nodeState.valveName,
     topic: mainTopic
   });
-  const errorTopic = globalConfig.errorTopic || "machine/errors";
   if (!pluginState.hasErrorSubscription()) {
-    const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
-      ctx.log.info("Error message received on topic", {
-        topic: errorTopic,
+    ctx.log.info("TEST: Subscribing to mainTopic for error test", { mainTopic });
+    const errorUnsub = mqtt.subscribe(mainTopic, (msg) => {
+      ctx.log.info("SECOND CALLBACK on mainTopic fired!", {
+        topic: mainTopic,
         payload: msg.payload
       });
-      handleErrorMessage(ctx, msg.payload);
     });
     pluginState.setErrorSubscription(errorUnsub);
-    ctx.log.info("Error subscription setup (inline)", { errorTopic });
+    ctx.log.info("Error subscription setup (on mainTopic for test)", { mainTopic });
   }
 }
 async function sendValveCommand(nodeId, functionCommand) {

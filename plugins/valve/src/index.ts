@@ -33,8 +33,8 @@ import {
   FunctionCommand,
   type NodeState,
   type ValvePayload,
-  type ErrorPayload,
-  type ErrorEntry,
+  // type ErrorPayload,  // Unused - for future error handling
+  // type ErrorEntry,    // Unused - for future error handling
   type AstPosition,
   type MqttFormat,
 } from './types';
@@ -394,7 +394,9 @@ function handleValveData(
 
 /**
  * Handle incoming error messages from MQTT
+ * NOTE: Currently unused - kept for potential future error handling
  */
+/*
 function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
   try {
     // Parse payload if it's a string
@@ -460,6 +462,7 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
     ctx.log.error('Failed to process error message', { error });
   }
 }
+*/
 
 /**
  * Setup MQTT subscriptions for a node
@@ -490,18 +493,18 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
     topic: mainTopic,
   });
 
-  // Subscribe to error topic for this node (same pattern as valve subscription)
-  const errorTopic = (globalConfig.errorTopic as string) || 'machine/errors';
+  // TEST: Subscribe to SAME topic as valve to test if multiple subscriptions work
   if (!pluginState.hasErrorSubscription()) {
-    const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
-      ctx.log.info('Error message received on topic', {
-        topic: errorTopic,
+    // Try subscribing to mainTopic (same as valve) to test multiple callbacks
+    ctx.log.info('TEST: Subscribing to mainTopic for error test', { mainTopic });
+    const errorUnsub = mqtt.subscribe(mainTopic, (msg: MqttMessage) => {
+      ctx.log.info('SECOND CALLBACK on mainTopic fired!', {
+        topic: mainTopic,
         payload: msg.payload,
       });
-      handleErrorMessage(ctx, msg.payload);
     });
     pluginState.setErrorSubscription(errorUnsub);
-    ctx.log.info('Error subscription setup (inline)', { errorTopic });
+    ctx.log.info('Error subscription setup (on mainTopic for test)', { mainTopic });
   }
 }
 

@@ -269,7 +269,7 @@ function handleValveData(
   const nodeState = pluginState.getNode(nodeId);
   if (!nodeState) return;
 
-  ctx.log.debug('MQTT message received', {
+  ctx.log.info('Processing MQTT payload', {
     nodeId,
     valveName: nodeState.valveName,
     payloadType: typeof rawPayload,
@@ -443,7 +443,7 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
   });
 
   const valveUnsub = mqtt.subscribe(mainTopic, (msg: MqttMessage) => {
-    ctx.log.debug('MQTT callback fired', { topic: mainTopic, nodeId });
+    ctx.log.info('MQTT message received on topic', { topic: mainTopic, nodeId });
     handleValveData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(valveUnsub);

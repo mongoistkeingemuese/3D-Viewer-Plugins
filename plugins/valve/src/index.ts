@@ -482,36 +482,24 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
     return;
   }
 
-  // Subscribe to ERROR topic - store in nodeState.subscriptions like valve!
   const errorTopic = (globalConfig.errorTopic as string) || 'machine/errors';
-  if (!pluginState.hasErrorSubscription()) {
-    ctx.log.info('Subscribing to errorTopic', { errorTopic });
-    const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
-      ctx.log.info('ERROR CALLBACK fired!', {
-        topic: errorTopic,
-        payload: msg.payload,
-      });
-    });
-    // Store in nodeState.subscriptions like valve subscription!
-    nodeState.subscriptions.push(errorUnsub);
-    // Also mark as having error subscription to prevent duplicates
-    pluginState.setErrorSubscription(errorUnsub);
-    ctx.log.info('Error subscription created (stored in nodeState)', { errorTopic });
-  }
 
-  // Then subscribe to valve topic SECOND
-  ctx.log.info('Subscribing to valve topic SECOND', { mainTopic });
+  // SUBSCRIPTION 1: Valve topic
+  ctx.log.info('SUB 1: valve topic', { mainTopic });
   const valveUnsub = mqtt.subscribe(mainTopic, (msg: MqttMessage) => {
-    ctx.log.info('VALVE CALLBACK fired!', { topic: mainTopic });
+    ctx.log.info('CALLBACK 1 (valve) fired!', { topic: mainTopic });
     handleValveData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(valveUnsub);
 
-  ctx.log.info('Valve subscription created SECOND', {
-    nodeId,
-    valveName: nodeState.valveName,
-    topic: mainTopic,
+  // SUBSCRIPTION 2: Error topic - IDENTICAL pattern
+  ctx.log.info('SUB 2: error topic', { errorTopic });
+  const errorUnsub = mqtt.subscribe(errorTopic, (_msg: MqttMessage) => {
+    ctx.log.info('CALLBACK 2 (error) fired!', { topic: errorTopic });
   });
+  nodeState.subscriptions.push(errorUnsub);
+
+  ctx.log.info('Both subscriptions created', { mainTopic, errorTopic });
 }
 
 // ============================================================================

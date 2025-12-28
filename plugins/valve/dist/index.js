@@ -925,20 +925,47 @@ function handleValveData(ctx, nodeId, rawPayload) {
       const previousState = nodeState.specificState;
       if ((specificState === 1 /* MovingToBasePosition */ || specificState === 2 /* MovingToWorkPosition */) && previousState !== specificState) {
         nodeState.moveStartTimestamp = timestamp;
-        ctx.log.debug("Movement started", {
+        ctx.log.info("Movement started", {
           nodeId,
           previousState,
+          previousStateName: ValvePositionNames[previousState],
           specificState,
-          timestamp
+          specificStateName: ValvePositionNames[specificState],
+          startTimestamp: timestamp
         });
       } else if ((specificState === 3 /* IsInBasePosition */ || specificState === 4 /* IsInWorkPosition */) && nodeState.moveStartTimestamp !== null) {
         const duration = timestamp - nodeState.moveStartTimestamp;
+        ctx.log.info("Movement completed - calculating duration", {
+          nodeId,
+          previousState,
+          previousStateName: ValvePositionNames[previousState],
+          specificState,
+          specificStateName: ValvePositionNames[specificState],
+          startTimestamp: nodeState.moveStartTimestamp,
+          endTimestamp: timestamp,
+          durationMs: duration
+        });
         if (previousState === 2 /* MovingToWorkPosition */) {
           nodeState.lastDurationGstToAst = duration;
-          ctx.log.info("GST\u2192AST completed", { nodeId, duration });
+          ctx.log.info("GST\u2192AST duration stored", {
+            nodeId,
+            durationMs: duration,
+            durationSec: duration / 1e3
+          });
         } else if (previousState === 1 /* MovingToBasePosition */) {
           nodeState.lastDurationAstToGst = duration;
-          ctx.log.info("AST\u2192GST completed", { nodeId, duration });
+          ctx.log.info("AST\u2192GST duration stored", {
+            nodeId,
+            durationMs: duration,
+            durationSec: duration / 1e3
+          });
+        } else {
+          ctx.log.warn("Duration calculated but previousState not a moving state", {
+            nodeId,
+            previousState,
+            previousStateName: ValvePositionNames[previousState],
+            durationMs: duration
+          });
         }
         nodeState.moveStartTimestamp = null;
       }

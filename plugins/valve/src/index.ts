@@ -29,6 +29,7 @@ import { ValveDetailsPopup } from './components/ValveDetailsPopup';
 import {
   GenericState,
   ValvePosition,
+  ValvePositionNames,
   FunctionCommand,
   type NodeState,
   type ValvePayload,
@@ -299,18 +300,22 @@ function handleValveData(
       const previousState = nodeState.specificState;
 
       // Handle runtime measurement
+      // AST Laufzeit: IsInBasePosition → MovingToWorkPosition (start) → IsInWorkPosition (stop)
+      // GST Laufzeit: IsInWorkPosition → MovingToBasePosition (start) → IsInBasePosition (stop)
       if (
         (specificState === ValvePosition.MovingToBasePosition ||
           specificState === ValvePosition.MovingToWorkPosition) &&
         previousState !== specificState
       ) {
-        // Movement started
+        // Movement started - record start timestamp
         nodeState.moveStartTimestamp = timestamp;
-        ctx.log.debug('Movement started', {
+        ctx.log.info('Movement started', {
           nodeId,
           previousState,
+          previousStateName: ValvePositionNames[previousState],
           specificState,
-          timestamp,
+          specificStateName: ValvePositionNames[specificState],
+          startTimestamp: timestamp,
         });
       } else if (
         (specificState === ValvePosition.IsInBasePosition ||
@@ -320,12 +325,38 @@ function handleValveData(
         // Movement completed - calculate duration
         const duration = timestamp - nodeState.moveStartTimestamp;
 
+        ctx.log.info('Movement completed - calculating duration', {
+          nodeId,
+          previousState,
+          previousStateName: ValvePositionNames[previousState],
+          specificState,
+          specificStateName: ValvePositionNames[specificState],
+          startTimestamp: nodeState.moveStartTimestamp,
+          endTimestamp: timestamp,
+          durationMs: duration,
+        });
+
         if (previousState === ValvePosition.MovingToWorkPosition) {
           nodeState.lastDurationGstToAst = duration;
-          ctx.log.info('GST→AST completed', { nodeId, duration });
+          ctx.log.info('GST→AST duration stored', {
+            nodeId,
+            durationMs: duration,
+            durationSec: duration / 1000,
+          });
         } else if (previousState === ValvePosition.MovingToBasePosition) {
           nodeState.lastDurationAstToGst = duration;
-          ctx.log.info('AST→GST completed', { nodeId, duration });
+          ctx.log.info('AST→GST duration stored', {
+            nodeId,
+            durationMs: duration,
+            durationSec: duration / 1000,
+          });
+        } else {
+          ctx.log.warn('Duration calculated but previousState not a moving state', {
+            nodeId,
+            previousState,
+            previousStateName: ValvePositionNames[previousState],
+            durationMs: duration,
+          });
         }
 
         nodeState.moveStartTimestamp = null;

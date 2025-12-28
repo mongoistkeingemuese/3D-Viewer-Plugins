@@ -922,22 +922,23 @@ function handleValveData(ctx, nodeId, rawPayload) {
       ctx.log.warn("No pack array in payload", { payload: parsedPayload });
       return;
     }
-    ctx.log.debug("Payload parsed", {
+    ctx.log.info("Payload parsed", {
       packCount: parsedPayload.pack.length
     });
     for (const packItem of parsedPayload.pack) {
       const valveData = packItem.Valve;
       if (!valveData) {
-        ctx.log.debug("No Valve object in pack item", { packItem });
+        ctx.log.warn("No Valve object in pack item", { packItem });
         continue;
       }
       const incomingValveName = normalizeValveName(valveData.name);
-      ctx.log.debug("Checking valve name", {
+      const expectedValveName = normalizeValveName(nodeState.valveName);
+      ctx.log.info("Checking valve name", {
         incoming: incomingValveName,
-        expected: nodeState.valveName,
-        match: incomingValveName === nodeState.valveName
+        expected: expectedValveName,
+        match: incomingValveName === expectedValveName
       });
-      if (incomingValveName !== nodeState.valveName)
+      if (incomingValveName !== expectedValveName)
         continue;
       const genericState = hexToInt(valveData.gS.val);
       const specificState = hexToInt(valveData.sS.val);

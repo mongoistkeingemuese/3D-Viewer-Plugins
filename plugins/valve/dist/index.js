@@ -761,6 +761,9 @@ var PluginState = class {
   setErrorSubscription(unsub) {
     this.errorSubscription = unsub;
   }
+  hasErrorSubscription() {
+    return this.errorSubscription !== null;
+  }
   getContext() {
     if (!this.ctx)
       throw new Error("Plugin not initialized");
@@ -1070,14 +1073,16 @@ function setupSubscriptions(ctx, nodeId) {
   });
 }
 function setupErrorSubscription(ctx) {
+  if (pluginState.hasErrorSubscription()) {
+    return;
+  }
   const globalConfig = ctx.config.global.getAll();
   const errorTopic = globalConfig.errorTopic || "machine/errors";
   const mqtt = getMqttApi(ctx);
-  const availableSources = ctx.mqtt.getSources();
-  if (availableSources.length === 0) {
-    ctx.log.warn("No MQTT sources available for error subscription");
-    return;
-  }
+  ctx.log.info("Setting up error subscription", {
+    errorTopic,
+    availableSources: ctx.mqtt.getSources()
+  });
   const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
     ctx.log.info("MQTT error topic message received", {
       topic: errorTopic,
@@ -1087,7 +1092,7 @@ function setupErrorSubscription(ctx) {
     handleErrorMessage(ctx, msg.payload);
   });
   pluginState.setErrorSubscription(errorUnsub);
-  ctx.log.info("Error subscription setup", { errorTopic });
+  ctx.log.info("Error subscription setup complete", { errorTopic });
 }
 async function sendValveCommand(nodeId, functionCommand) {
   const ctx = pluginState.getContext();
@@ -1231,7 +1236,6 @@ var plugin = {
     ctx.log.info("Valve Plugin loaded", {
       pluginId: ctx.pluginId
     });
-    setupErrorSubscription(ctx);
     ctx.events.on("context-menu-action", (data) => {
       const event = data;
       if (event.action === "show-valve-details") {
@@ -1256,6 +1260,7 @@ var plugin = {
     );
     pluginState.addNode(node.id, valveName, functionNo);
     setupSubscriptions(ctx, node.id);
+    setupErrorSubscription(ctx);
     if (!functionNo) {
       ctx.ui.notify(`Monitoring: ${valveName} (Befehle deaktiviert - keine Funktionsnummer)`, "warning");
     } else {

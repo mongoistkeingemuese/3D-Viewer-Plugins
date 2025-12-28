@@ -65,6 +65,10 @@ class PluginState {
     this.errorSubscription = unsub;
   }
 
+  hasErrorSubscription(): boolean {
+    return this.errorSubscription !== null;
+  }
+
   getContext(): PluginContext {
     if (!this.ctx) throw new Error('Plugin not initialized');
     return this.ctx;
@@ -489,17 +493,22 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
 
 /**
  * Setup shared error subscription
+ * Called from onNodeBound to ensure MQTT sources are available
  */
 function setupErrorSubscription(ctx: PluginContext): void {
+  // Only setup once
+  if (pluginState.hasErrorSubscription()) {
+    return;
+  }
+
   const globalConfig = ctx.config.global.getAll();
   const errorTopic = (globalConfig.errorTopic as string) || 'machine/errors';
   const mqtt = getMqttApi(ctx);
 
-  const availableSources = ctx.mqtt.getSources();
-  if (availableSources.length === 0) {
-    ctx.log.warn('No MQTT sources available for error subscription');
-    return;
-  }
+  ctx.log.info('Setting up error subscription', {
+    errorTopic,
+    availableSources: ctx.mqtt.getSources(),
+  });
 
   const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
     ctx.log.info('MQTT error topic message received', {
@@ -511,7 +520,7 @@ function setupErrorSubscription(ctx: PluginContext): void {
   });
   pluginState.setErrorSubscription(errorUnsub);
 
-  ctx.log.info('Error subscription setup', { errorTopic });
+  ctx.log.info('Error subscription setup complete', { errorTopic });
 }
 
 // ============================================================================
@@ -731,8 +740,6 @@ const plugin: Plugin = {
       pluginId: ctx.pluginId,
     });
 
-    setupErrorSubscription(ctx);
-
     ctx.events.on('context-menu-action', (data: unknown) => {
       const event = data as { action: string; nodeId: string };
       if (event.action === 'show-valve-details') {
@@ -761,6 +768,9 @@ const plugin: Plugin = {
 
     pluginState.addNode(node.id, valveName, functionNo);
     setupSubscriptions(ctx, node.id);
+
+    // Setup error subscription on first node bound (ensures MQTT is ready)
+    setupErrorSubscription(ctx);
 
     if (!functionNo) {
       ctx.ui.notify(`Monitoring: ${valveName} (Befehle deaktiviert - keine Funktionsnummer)`, 'warning');

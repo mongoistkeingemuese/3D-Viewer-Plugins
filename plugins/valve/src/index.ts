@@ -393,10 +393,29 @@ function handleValveData(
  */
 function handleErrorMessage(ctx: PluginContext, payload: ErrorPayload): void {
   try {
-    const source = normalizeValveName(payload.src);
+    ctx.log.info('Error message received', {
+      rawPayload: payload,
+      src: payload.src,
+      lvl: payload.lvl,
+      msg: payload.msg?.txt,
+    });
 
-    pluginState.getAllNodes().forEach((nodeState) => {
+    const source = normalizeValveName(payload.src || '');
+    const allNodes = pluginState.getAllNodes();
+
+    ctx.log.debug('Checking error against nodes', {
+      normalizedSource: source,
+      nodeCount: allNodes.length,
+      nodeNames: allNodes.map((n) => n.valveName),
+    });
+
+    allNodes.forEach((nodeState) => {
       const expectedValveName = normalizeValveName(nodeState.valveName);
+      ctx.log.debug('Comparing valve names', {
+        source,
+        expectedValveName,
+        match: source === expectedValveName,
+      });
       if (source === expectedValveName) {
         const errorEntry: ErrorEntry = {
           timestamp: payload.utc,
@@ -475,6 +494,11 @@ function setupErrorSubscription(ctx: PluginContext): void {
   }
 
   const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
+    ctx.log.info('MQTT error topic message received', {
+      topic: errorTopic,
+      payloadType: typeof msg.payload,
+      payload: msg.payload,
+    });
     handleErrorMessage(ctx, msg.payload as ErrorPayload);
   });
   pluginState.setErrorSubscription(errorUnsub);

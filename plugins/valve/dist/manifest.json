@@ -1,7 +1,7 @@
 {
   "id": "com.rexat.valve",
   "name": "Valve",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "RexAt",
   "description": "Valve monitoring and control plugin with status display, position animation, and HTTP command integration for Release 8-11",
   "license": "MIT",
@@ -118,7 +118,7 @@
             "description": "Name from MQTT payload for filtering"
           },
           "functionNo": {
-            "type": "integer",
+            "type": "number",
             "title": "Function Number",
             "description": "Function number for HTTP command calls"
           },
@@ -159,13 +159,13 @@
             "default": 0
           },
           "durationMoveAST": {
-            "type": "integer",
+            "type": "number",
             "title": "Animation Duration AST (ms)",
             "description": "Duration of animation to work position",
             "default": 500
           },
           "durationMoveGST": {
-            "type": "integer",
+            "type": "number",
             "title": "Animation Duration GST (ms)",
             "description": "Duration of animation to base position",
             "default": 500

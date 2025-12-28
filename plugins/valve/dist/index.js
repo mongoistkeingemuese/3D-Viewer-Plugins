@@ -1071,38 +1071,17 @@ function setupSubscriptions(ctx, nodeId) {
     valveName: nodeState.valveName,
     topic: mainTopic
   });
-}
-function setupErrorSubscription(ctx) {
-  if (pluginState.hasErrorSubscription()) {
-    return;
-  }
-  const globalConfig = ctx.config.global.getAll();
   const errorTopic = globalConfig.errorTopic || "machine/errors";
-  const mqtt = getMqttApi(ctx);
-  const globalMqttSource = globalConfig.mqttSource || "";
-  ctx.log.info("Setting up error subscription", {
-    errorTopic,
-    mqttSource: globalMqttSource || "(default)",
-    availableSources: ctx.mqtt.getSources(),
-    mqttApi: mqtt ? "available" : "null"
-  });
-  try {
+  if (!pluginState.hasErrorSubscription()) {
     const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
-      ctx.log.info("MQTT error topic message received", {
+      ctx.log.info("Error message received on topic", {
         topic: errorTopic,
-        payloadType: typeof msg.payload,
         payload: msg.payload
       });
       handleErrorMessage(ctx, msg.payload);
     });
-    ctx.log.info("Error subscription created", {
-      errorTopic,
-      unsubFunction: typeof errorUnsub
-    });
     pluginState.setErrorSubscription(errorUnsub);
-    ctx.log.info("Error subscription setup complete", { errorTopic });
-  } catch (err) {
-    ctx.log.error("Failed to subscribe to error topic", { errorTopic, error: err });
+    ctx.log.info("Error subscription setup (inline)", { errorTopic });
   }
 }
 async function sendValveCommand(nodeId, functionCommand) {
@@ -1271,7 +1250,6 @@ var plugin = {
     );
     pluginState.addNode(node.id, valveName, functionNo);
     setupSubscriptions(ctx, node.id);
-    setupErrorSubscription(ctx);
     if (!functionNo) {
       ctx.ui.notify(`Monitoring: ${valveName} (Befehle deaktiviert - keine Funktionsnummer)`, "warning");
     } else {

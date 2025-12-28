@@ -489,50 +489,19 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
     valveName: nodeState.valveName,
     topic: mainTopic,
   });
-}
 
-/**
- * Setup shared error subscription
- * Called from onNodeBound to ensure MQTT sources are available
- */
-function setupErrorSubscription(ctx: PluginContext): void {
-  // Only setup once
-  if (pluginState.hasErrorSubscription()) {
-    return;
-  }
-
-  const globalConfig = ctx.config.global.getAll();
+  // Subscribe to error topic for this node (same pattern as valve subscription)
   const errorTopic = (globalConfig.errorTopic as string) || 'machine/errors';
-  const mqtt = getMqttApi(ctx);
-
-  const globalMqttSource = globalConfig.mqttSource as string || '';
-
-  ctx.log.info('Setting up error subscription', {
-    errorTopic,
-    mqttSource: globalMqttSource || '(default)',
-    availableSources: ctx.mqtt.getSources(),
-    mqttApi: mqtt ? 'available' : 'null',
-  });
-
-  try {
+  if (!pluginState.hasErrorSubscription()) {
     const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
-      ctx.log.info('MQTT error topic message received', {
+      ctx.log.info('Error message received on topic', {
         topic: errorTopic,
-        payloadType: typeof msg.payload,
         payload: msg.payload,
       });
       handleErrorMessage(ctx, msg.payload);
     });
-
-    ctx.log.info('Error subscription created', {
-      errorTopic,
-      unsubFunction: typeof errorUnsub,
-    });
-
     pluginState.setErrorSubscription(errorUnsub);
-    ctx.log.info('Error subscription setup complete', { errorTopic });
-  } catch (err) {
-    ctx.log.error('Failed to subscribe to error topic', { errorTopic, error: err });
+    ctx.log.info('Error subscription setup (inline)', { errorTopic });
   }
 }
 
@@ -781,9 +750,6 @@ const plugin: Plugin = {
 
     pluginState.addNode(node.id, valveName, functionNo);
     setupSubscriptions(ctx, node.id);
-
-    // Setup error subscription on first node bound (ensures MQTT is ready)
-    setupErrorSubscription(ctx);
 
     if (!functionNo) {
       ctx.ui.notify(`Monitoring: ${valveName} (Befehle deaktiviert - keine Funktionsnummer)`, 'warning');

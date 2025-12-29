@@ -88,15 +88,22 @@ export interface ValvePayload {
 
 /**
  * Error message payload structure
+ *
+ * Note: msg can have different formats depending on the source:
+ * - string: direct message text
+ * - { txt: string, val: object }: structured message
+ * - { text: string }: alternative format
+ * - { val: { txt: string } }: nested format
  */
 export interface ErrorPayload {
   utc: number;
   lvl: string;
   src: string;
   typ: string;
-  msg: {
-    txt: string;
-    val: Record<string, unknown>;
+  msg: string | {
+    txt?: string;
+    text?: string;
+    val?: Record<string, unknown>;
   };
 }
 

@@ -406,16 +406,36 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
     }
 
     // Extract message text safely (handle different payload formats)
-    const messageText = typeof payload.msg === 'string'
-      ? payload.msg
-      : payload.msg?.txt || 'Unknown error';
+    // Possible formats:
+    // 1. msg: "string"
+    // 2. msg: { txt: "string", val: {...} }
+    // 3. msg: { val: { txt: "string" } }
+    // 4. msg: { text: "string" }
+    let messageText = 'Unknown error';
+    if (typeof payload.msg === 'string') {
+      messageText = payload.msg;
+    } else if (payload.msg) {
+      if (typeof payload.msg.txt === 'string' && payload.msg.txt) {
+        messageText = payload.msg.txt;
+      } else if (typeof payload.msg.text === 'string' && payload.msg.text) {
+        messageText = (payload.msg as { text: string }).text;
+      } else if (payload.msg.val && typeof payload.msg.val === 'object') {
+        const val = payload.msg.val as Record<string, unknown>;
+        if (typeof val.txt === 'string' && val.txt) {
+          messageText = val.txt;
+        } else if (typeof val.text === 'string' && val.text) {
+          messageText = val.text as string;
+        }
+      }
+    }
 
     ctx.log.info('Error message received', {
-      rawPayload: payload,
+      rawPayload: JSON.stringify(payload).slice(0, 500),
       src: payload.src,
       lvl: payload.lvl,
-      msg: messageText,
+      extractedMessage: messageText,
       msgType: typeof payload.msg,
+      msgStructure: payload.msg ? Object.keys(payload.msg) : 'undefined',
     });
 
     const source = normalizeValveName(payload.src || '');

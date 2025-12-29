@@ -1032,13 +1032,30 @@ function handleErrorMessage(ctx, rawPayload) {
     } else {
       payload = rawPayload;
     }
-    const messageText = typeof payload.msg === "string" ? payload.msg : payload.msg?.txt || "Unknown error";
+    let messageText = "Unknown error";
+    if (typeof payload.msg === "string") {
+      messageText = payload.msg;
+    } else if (payload.msg) {
+      if (typeof payload.msg.txt === "string" && payload.msg.txt) {
+        messageText = payload.msg.txt;
+      } else if (typeof payload.msg.text === "string" && payload.msg.text) {
+        messageText = payload.msg.text;
+      } else if (payload.msg.val && typeof payload.msg.val === "object") {
+        const val = payload.msg.val;
+        if (typeof val.txt === "string" && val.txt) {
+          messageText = val.txt;
+        } else if (typeof val.text === "string" && val.text) {
+          messageText = val.text;
+        }
+      }
+    }
     ctx.log.info("Error message received", {
-      rawPayload: payload,
+      rawPayload: JSON.stringify(payload).slice(0, 500),
       src: payload.src,
       lvl: payload.lvl,
-      msg: messageText,
-      msgType: typeof payload.msg
+      extractedMessage: messageText,
+      msgType: typeof payload.msg,
+      msgStructure: payload.msg ? Object.keys(payload.msg) : "undefined"
     });
     const source = normalizeValveName(payload.src || "");
     const allNodes = pluginState.getAllNodes();

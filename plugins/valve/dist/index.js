@@ -443,11 +443,13 @@ var ValveDetailsPopup = ({ data }) => {
             "div",
             {
               style: {
-                backgroundColor: "#fff",
-                border: `3px solid ${levelColor}`,
+                backgroundColor: "#ff0000",
+                border: "5px solid #000",
                 borderRadius: "6px",
                 overflow: "hidden",
-                marginBottom: "8px"
+                marginBottom: "8px",
+                padding: "20px",
+                minHeight: "100px"
               },
               children: [
                 /* @__PURE__ */ jsxs("div", { style: {

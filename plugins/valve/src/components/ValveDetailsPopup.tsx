@@ -458,11 +458,13 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                     <div
                       key={idx}
                       style={{
-                        backgroundColor: '#fff',
-                        border: `3px solid ${levelColor}`,
+                        backgroundColor: '#ff0000',
+                        border: '5px solid #000',
                         borderRadius: '6px',
                         overflow: 'hidden',
                         marginBottom: '8px',
+                        padding: '20px',
+                        minHeight: '100px',
                       }}
                     >
                       {/* Debug info for this card */}

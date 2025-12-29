@@ -120,6 +120,9 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
   const [isLoadingPressureFree, setIsLoadingPressureFree] = useState(false);
   const [isLoadingMode, setIsLoadingMode] = useState<string | null>(null);
 
+  // Expanded error indices
+  const [expandedErrors, setExpandedErrors] = useState<Set<number>>(new Set());
+
   // Poll for updates
   useEffect(() => {
     const interval = setInterval(() => {
@@ -146,6 +149,18 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
   const handleAcknowledge = (errorIndex: number): void => {
     acknowledgeError(nodeId, errorIndex);
     setUpdateCounter((c) => c + 1);
+  };
+
+  const toggleErrorExpanded = (errorIndex: number): void => {
+    setExpandedErrors((prev) => {
+      const next = new Set(prev);
+      if (next.has(errorIndex)) {
+        next.delete(errorIndex);
+      } else {
+        next.add(errorIndex);
+      }
+      return next;
+    });
   };
 
   const handleAcknowledgeAll = (): void => {
@@ -438,76 +453,115 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
               </div>
             ) : (
               <div style={styles.errorList}>
-                {nodeState.errors.map((err, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      ...styles.errorItem,
-                      backgroundColor: err.acknowledged ? '#f8f9fa' : '#fff',
-                      borderLeft: `4px solid ${getErrorLevelColor(err.level)}`,
-                    }}
-                  >
-                    {/* Error Header: Level + Error Number + Timestamp */}
-                    <div style={styles.errorHeader}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span
-                          style={{
-                            ...styles.errorLevel,
-                            backgroundColor: getErrorLevelColor(err.level),
-                            color: '#fff',
-                            padding: '2px 6px',
-                            borderRadius: '3px',
-                          }}
-                        >
-                          {err.level}
-                        </span>
-                        {err.errorNo !== undefined && (
-                          <span style={styles.errorNumber}>
-                            #{err.errorNo}
+                {nodeState.errors.map((err, idx) => {
+                  const isExpanded = expandedErrors.has(idx);
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        ...styles.errorItem,
+                        backgroundColor: err.acknowledged ? '#f8f9fa' : '#fff',
+                        borderLeft: `4px solid ${getErrorLevelColor(err.level)}`,
+                      }}
+                    >
+                      {/* Clickable Header */}
+                      <div
+                        style={styles.errorDropdownHeader}
+                        onClick={() => toggleErrorExpanded(idx)}
+                      >
+                        {/* Left side: Expand icon + Level + ErrorNo + Message preview */}
+                        <div style={styles.errorHeaderLeft}>
+                          <span style={styles.expandIcon}>
+                            {isExpanded ? '▼' : '▶'}
                           </span>
-                        )}
-                      </div>
-                      <span style={styles.errorTime}>
-                        {formatTimestamp(err.timestamp)}
-                      </span>
-                    </div>
-
-                    {/* Error Message - prominent display */}
-                    <div style={styles.errorMessage}>
-                      {err.message}
-                    </div>
-
-                    {/* Error Values (if present) */}
-                    {err.values && Object.keys(err.values).length > 0 && (
-                      <div style={styles.errorValues}>
-                        {Object.entries(err.values).map(([key, value]) => (
-                          <span key={key} style={styles.errorValueItem}>
-                            {key}: {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                          <span
+                            style={{
+                              ...styles.errorLevelBadge,
+                              backgroundColor: getErrorLevelColor(err.level),
+                            }}
+                          >
+                            {err.level}
                           </span>
-                        ))}
-                      </div>
-                    )}
+                          {err.errorNo !== undefined && (
+                            <span style={styles.errorNumber}>
+                              #{err.errorNo}
+                            </span>
+                          )}
+                          <span style={styles.errorMessagePreview}>
+                            {err.message.length > 50
+                              ? `${err.message.substring(0, 50)}...`
+                              : err.message}
+                          </span>
+                        </div>
 
-                    {/* Error Footer: Source + Acknowledge Button */}
-                    <div style={styles.errorFooter}>
-                      <span style={styles.errorSource}>
-                        Quelle: {err.source}
-                      </span>
-                      {!err.acknowledged ? (
-                        <button
-                          onClick={() => handleAcknowledge(idx)}
-                          style={styles.ackButton}
-                        >
-                          Quittieren
-                        </button>
-                      ) : (
-                        <span style={styles.acknowledgedBadge}>
-                          &#10003; Quittiert
-                        </span>
+                        {/* Right side: Timestamp + Acknowledge */}
+                        <div style={styles.errorHeaderRight}>
+                          <span style={styles.errorTime}>
+                            {formatTimestamp(err.timestamp)}
+                          </span>
+                          {!err.acknowledged ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAcknowledge(idx);
+                              }}
+                              style={styles.ackButtonSmall}
+                            >
+                              ✓
+                            </button>
+                          ) : (
+                            <span style={styles.acknowledgedIcon}>✓</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Expanded Content: Full Payload */}
+                      {isExpanded && (
+                        <div style={styles.errorExpandedContent}>
+                          {/* Full Message */}
+                          <div style={styles.errorDetailSection}>
+                            <div style={styles.errorDetailLabel}>Message:</div>
+                            <div style={styles.errorDetailValue}>{err.message}</div>
+                          </div>
+
+                          {/* Source */}
+                          <div style={styles.errorDetailSection}>
+                            <div style={styles.errorDetailLabel}>Quelle:</div>
+                            <div style={styles.errorDetailValue}>{err.source}</div>
+                          </div>
+
+                          {/* Timestamp */}
+                          <div style={styles.errorDetailSection}>
+                            <div style={styles.errorDetailLabel}>Zeitpunkt:</div>
+                            <div style={styles.errorDetailValue}>
+                              {new Date(err.timestamp).toLocaleString('de-DE')}
+                            </div>
+                          </div>
+
+                          {/* Raw Payload */}
+                          <div style={styles.errorDetailSection}>
+                            <div style={styles.errorDetailLabel}>Raw Payload:</div>
+                            <pre style={styles.errorPayload}>
+                              {JSON.stringify(err.rawMsg, null, 2)}
+                            </pre>
+                          </div>
+
+                          {/* Acknowledge Button (if not acknowledged) */}
+                          {!err.acknowledged && (
+                            <div style={styles.errorActions}>
+                              <button
+                                onClick={() => handleAcknowledge(idx)}
+                                style={styles.ackButton}
+                              >
+                                Fehler Quittieren
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -727,12 +781,131 @@ const styles: Record<string, React.CSSProperties> = {
   errorList: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
+    gap: '4px',
   },
   errorItem: {
-    padding: '10px',
     borderRadius: '4px',
     boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+    overflow: 'hidden',
+  },
+  errorDropdownHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '10px 12px',
+    cursor: 'pointer',
+    userSelect: 'none',
+    transition: 'background-color 0.15s',
+  },
+  errorHeaderLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flex: 1,
+    minWidth: 0,
+  },
+  errorHeaderRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexShrink: 0,
+  },
+  expandIcon: {
+    fontSize: '10px',
+    color: '#666',
+    width: '12px',
+  },
+  errorLevelBadge: {
+    fontSize: '10px',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    color: '#fff',
+    padding: '2px 6px',
+    borderRadius: '3px',
+    flexShrink: 0,
+  },
+  errorNumber: {
+    fontSize: '12px',
+    fontWeight: 'bold',
+    color: '#333',
+    fontFamily: 'monospace',
+    flexShrink: 0,
+  },
+  errorMessagePreview: {
+    fontSize: '12px',
+    color: '#333',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    flex: 1,
+    minWidth: 0,
+  },
+  errorTime: {
+    fontSize: '11px',
+    color: '#666',
+    flexShrink: 0,
+  },
+  ackButtonSmall: {
+    width: '24px',
+    height: '24px',
+    padding: 0,
+    backgroundColor: '#007bff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  acknowledgedIcon: {
+    width: '24px',
+    height: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#28a745',
+    fontSize: '14px',
+  },
+  errorExpandedContent: {
+    padding: '12px',
+    backgroundColor: '#f8f9fa',
+    borderTop: '1px solid #dee2e6',
+  },
+  errorDetailSection: {
+    marginBottom: '12px',
+  },
+  errorDetailLabel: {
+    fontSize: '11px',
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: '4px',
+    textTransform: 'uppercase',
+  },
+  errorDetailValue: {
+    fontSize: '13px',
+    color: '#212529',
+    lineHeight: '1.4',
+    wordBreak: 'break-word',
+  },
+  errorPayload: {
+    fontSize: '11px',
+    fontFamily: 'monospace',
+    backgroundColor: '#1e1e1e',
+    color: '#d4d4d4',
+    padding: '12px',
+    borderRadius: '4px',
+    overflow: 'auto',
+    maxHeight: '200px',
+    margin: 0,
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+  },
+  errorActions: {
+    marginTop: '12px',
+    paddingTop: '12px',
+    borderTop: '1px solid #dee2e6',
   },
   errorHeader: {
     display: 'flex',
@@ -743,16 +916,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '11px',
     fontWeight: 'bold',
     textTransform: 'uppercase',
-  },
-  errorTime: {
-    fontSize: '11px',
-    color: '#666',
-  },
-  errorNumber: {
-    fontSize: '13px',
-    fontWeight: 'bold',
-    color: '#333',
-    fontFamily: 'monospace',
   },
   errorMessage: {
     fontSize: '14px',

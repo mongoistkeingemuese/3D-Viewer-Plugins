@@ -97,6 +97,9 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
   const [activeTab, setActiveTab] = useState<TabType>('status');
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
 
+  // Expanded error indices
+  const [expandedErrors, setExpandedErrors] = useState<Set<number>>(new Set());
+
   // Loading states for buttons
   const [isLoadingGst, setIsLoadingGst] = useState(false);
   const [isLoadingAst, setIsLoadingAst] = useState(false);
@@ -391,11 +394,128 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
         {/* ERRORS TAB */}
         {activeTab === 'errors' && (
           <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Fehlermeldungen</h3>
-            <div style={{ color: '#333', fontSize: '14px' }}>
-              <p style={{ margin: '0 0 8px 0' }}>Anzahl Errors: <strong>{nodeState.errors.length}</strong></p>
-              <p style={{ margin: 0, color: '#666', fontStyle: 'italic' }}>Error-Anzeige wird neu aufgebaut...</p>
-            </div>
+            <h3 style={styles.sectionTitle}>Fehlermeldungen ({nodeState.errors.length})</h3>
+
+            {nodeState.errors.length === 0 ? (
+              <div style={{ color: '#28a745', textAlign: 'center', padding: '20px' }}>
+                Keine Fehlermeldungen
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {nodeState.errors.map((err, idx) => {
+                  const isExpanded = expandedErrors.has(idx);
+                  const toggleExpand = (): void => {
+                    setExpandedErrors(prev => {
+                      const next = new Set(prev);
+                      if (next.has(idx)) {
+                        next.delete(idx);
+                      } else {
+                        next.add(idx);
+                      }
+                      return next;
+                    });
+                  };
+
+                  // Extract message from rawPayload
+                  let messageText = 'Fehlermeldung';
+                  try {
+                    const payload = JSON.parse(err.rawPayload);
+                    if (typeof payload.msg === 'string') {
+                      messageText = payload.msg;
+                    } else if (payload.msg?.txt) {
+                      messageText = payload.msg.txt;
+                    } else if (payload.msg?.text) {
+                      messageText = payload.msg.text;
+                    }
+                  } catch {
+                    messageText = err.source || 'Fehlermeldung';
+                  }
+
+                  // Level color
+                  const levelColor = err.level === 'ERR' ? '#dc3545'
+                    : err.level === 'WARN' ? '#ffc107'
+                    : '#17a2b8';
+
+                  return (
+                    <div
+                      key={idx}
+                      onClick={toggleExpand}
+                      style={{
+                        backgroundColor: '#fff',
+                        border: `2px solid ${levelColor}`,
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {/* Header - always visible */}
+                      <div style={{
+                        padding: '10px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        backgroundColor: isExpanded ? '#f8f9fa' : '#fff',
+                      }}>
+                        <span style={{
+                          backgroundColor: levelColor,
+                          color: '#fff',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                        }}>
+                          {err.level}
+                        </span>
+                        <span style={{
+                          flex: 1,
+                          color: '#333',
+                          fontSize: '13px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: isExpanded ? 'normal' : 'nowrap',
+                        }}>
+                          {messageText}
+                        </span>
+                        <span style={{
+                          color: '#666',
+                          fontSize: '16px',
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s',
+                        }}>
+                          ▼
+                        </span>
+                      </div>
+
+                      {/* Expanded content - JSON payload */}
+                      {isExpanded && (
+                        <div style={{ borderTop: '1px solid #ddd' }}>
+                          <pre style={{
+                            margin: 0,
+                            padding: '12px',
+                            backgroundColor: '#1e1e1e',
+                            color: '#d4d4d4',
+                            fontSize: '11px',
+                            fontFamily: 'Consolas, Monaco, monospace',
+                            overflow: 'auto',
+                            maxHeight: '300px',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                          }}>
+                            {(() => {
+                              try {
+                                return JSON.stringify(JSON.parse(err.rawPayload), null, 2);
+                              } catch {
+                                return err.rawPayload;
+                              }
+                            })()}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>

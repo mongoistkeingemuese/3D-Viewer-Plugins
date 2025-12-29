@@ -134,6 +134,7 @@ var ValveDetailsPopup = ({ data }) => {
   const [updateCounter, setUpdateCounter] = useState(0);
   const [activeTab, setActiveTab] = useState("status");
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
+  const [expandedErrors, setExpandedErrors] = useState(/* @__PURE__ */ new Set());
   const [isLoadingGst, setIsLoadingGst] = useState(false);
   const [isLoadingAst, setIsLoadingAst] = useState(false);
   const [isLoadingPressureFree, setIsLoadingPressureFree] = useState(false);
@@ -397,14 +398,103 @@ var ValveDetailsPopup = ({ data }) => {
         ] })
       ] }),
       activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-        /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Fehlermeldungen" }),
-        /* @__PURE__ */ jsxs("div", { style: { color: "#333", fontSize: "14px" }, children: [
-          /* @__PURE__ */ jsxs("p", { style: { margin: "0 0 8px 0" }, children: [
-            "Anzahl Errors: ",
-            /* @__PURE__ */ jsx("strong", { children: nodeState.errors.length })
-          ] }),
-          /* @__PURE__ */ jsx("p", { style: { margin: 0, color: "#666", fontStyle: "italic" }, children: "Error-Anzeige wird neu aufgebaut..." })
-        ] })
+        /* @__PURE__ */ jsxs("h3", { style: styles.sectionTitle, children: [
+          "Fehlermeldungen (",
+          nodeState.errors.length,
+          ")"
+        ] }),
+        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("div", { style: { color: "#28a745", textAlign: "center", padding: "20px" }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsx("div", { style: { display: "flex", flexDirection: "column", gap: "8px" }, children: nodeState.errors.map((err, idx) => {
+          const isExpanded = expandedErrors.has(idx);
+          const toggleExpand = () => {
+            setExpandedErrors((prev) => {
+              const next = new Set(prev);
+              if (next.has(idx)) {
+                next.delete(idx);
+              } else {
+                next.add(idx);
+              }
+              return next;
+            });
+          };
+          let messageText = "Fehlermeldung";
+          try {
+            const payload = JSON.parse(err.rawPayload);
+            if (typeof payload.msg === "string") {
+              messageText = payload.msg;
+            } else if (payload.msg?.txt) {
+              messageText = payload.msg.txt;
+            } else if (payload.msg?.text) {
+              messageText = payload.msg.text;
+            }
+          } catch {
+            messageText = err.source || "Fehlermeldung";
+          }
+          const levelColor = err.level === "ERR" ? "#dc3545" : err.level === "WARN" ? "#ffc107" : "#17a2b8";
+          return /* @__PURE__ */ jsxs(
+            "div",
+            {
+              onClick: toggleExpand,
+              style: {
+                backgroundColor: "#fff",
+                border: `2px solid ${levelColor}`,
+                borderRadius: "6px",
+                cursor: "pointer",
+                overflow: "hidden"
+              },
+              children: [
+                /* @__PURE__ */ jsxs("div", { style: {
+                  padding: "10px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  backgroundColor: isExpanded ? "#f8f9fa" : "#fff"
+                }, children: [
+                  /* @__PURE__ */ jsx("span", { style: {
+                    backgroundColor: levelColor,
+                    color: "#fff",
+                    padding: "2px 8px",
+                    borderRadius: "4px",
+                    fontSize: "11px",
+                    fontWeight: "bold"
+                  }, children: err.level }),
+                  /* @__PURE__ */ jsx("span", { style: {
+                    flex: 1,
+                    color: "#333",
+                    fontSize: "13px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: isExpanded ? "normal" : "nowrap"
+                  }, children: messageText }),
+                  /* @__PURE__ */ jsx("span", { style: {
+                    color: "#666",
+                    fontSize: "16px",
+                    transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s"
+                  }, children: "\u25BC" })
+                ] }),
+                isExpanded && /* @__PURE__ */ jsx("div", { style: { borderTop: "1px solid #ddd" }, children: /* @__PURE__ */ jsx("pre", { style: {
+                  margin: 0,
+                  padding: "12px",
+                  backgroundColor: "#1e1e1e",
+                  color: "#d4d4d4",
+                  fontSize: "11px",
+                  fontFamily: "Consolas, Monaco, monospace",
+                  overflow: "auto",
+                  maxHeight: "300px",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-all"
+                }, children: (() => {
+                  try {
+                    return JSON.stringify(JSON.parse(err.rawPayload), null, 2);
+                  } catch {
+                    return err.rawPayload;
+                  }
+                })() }) })
+              ]
+            },
+            idx
+          );
+        }) })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.footer, children: [

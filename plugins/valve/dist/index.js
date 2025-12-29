@@ -403,13 +403,23 @@ var ValveDetailsPopup = ({ data }) => {
           nodeState.errors.length,
           ")"
         ] }),
+        /* @__PURE__ */ jsxs("div", { style: {
+          marginBottom: "12px",
+          padding: "8px",
+          backgroundColor: "#e7f3ff",
+          border: "1px solid #007bff",
+          borderRadius: "4px",
+          fontSize: "11px",
+          fontFamily: "monospace"
+        }, children: [
+          /* @__PURE__ */ jsx("strong", { children: "DEBUG - errors Array:" }),
+          /* @__PURE__ */ jsx("pre", { style: { margin: "4px 0 0 0", whiteSpace: "pre-wrap", wordBreak: "break-all" }, children: JSON.stringify(nodeState.errors, null, 2) })
+        ] }),
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("div", { style: { color: "#28a745", textAlign: "center", padding: "20px" }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsx("div", { style: { display: "flex", flexDirection: "column", gap: "8px" }, children: nodeState.errors.map((err, idx) => {
           const isExpanded = expandedErrors.has(idx);
           let messageText = "";
-          let hasPayload = false;
           let formattedPayload = "";
           if (err.rawPayload) {
-            hasPayload = true;
             try {
               const payload = JSON.parse(err.rawPayload);
               formattedPayload = JSON.stringify(payload, null, 2);
@@ -458,7 +468,7 @@ var ValveDetailsPopup = ({ data }) => {
                       alignItems: "center",
                       gap: "10px",
                       backgroundColor: isExpanded ? "#f8f9fa" : "#fff",
-                      cursor: hasPayload ? "pointer" : "default"
+                      cursor: "pointer"
                     },
                     children: [
                       /* @__PURE__ */ jsx("span", { style: {
@@ -475,7 +485,7 @@ var ValveDetailsPopup = ({ data }) => {
                         color: "#333",
                         fontSize: "13px"
                       }, children: messageText }),
-                      hasPayload && /* @__PURE__ */ jsx("span", { style: {
+                      /* @__PURE__ */ jsx("span", { style: {
                         color: "#666",
                         fontSize: "14px",
                         flexShrink: 0
@@ -483,7 +493,7 @@ var ValveDetailsPopup = ({ data }) => {
                     ]
                   }
                 ),
-                isExpanded && hasPayload && /* @__PURE__ */ jsx("div", { style: { borderTop: "1px solid #ddd" }, children: /* @__PURE__ */ jsx("pre", { style: {
+                isExpanded && /* @__PURE__ */ jsx("div", { style: { borderTop: "1px solid #ddd" }, children: /* @__PURE__ */ jsx("pre", { style: {
                   margin: 0,
                   padding: "12px",
                   backgroundColor: "#1e1e1e",
@@ -494,21 +504,9 @@ var ValveDetailsPopup = ({ data }) => {
                   maxHeight: "300px",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-all"
-                }, children: formattedPayload }) }),
-                !hasPayload && /* @__PURE__ */ jsxs("div", { style: {
-                  padding: "8px 12px",
-                  backgroundColor: "#fff3cd",
-                  color: "#856404",
-                  fontSize: "11px",
-                  borderTop: "1px solid #ffc107"
-                }, children: [
-                  "Debug: rawPayload ist leer. level=",
-                  err.level,
-                  ", source=",
-                  err.source,
-                  ", timestamp=",
-                  err.timestamp
-                ] })
+                }, children: formattedPayload || `rawPayload: ${err.rawPayload}
+level: ${err.level}
+source: ${err.source}` }) })
               ]
             },
             idx

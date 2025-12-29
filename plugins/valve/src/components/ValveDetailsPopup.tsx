@@ -396,6 +396,22 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
           <div style={styles.section}>
             <h3 style={styles.sectionTitle}>Fehlermeldungen ({nodeState.errors.length})</h3>
 
+            {/* Debug: Show raw error data */}
+            <div style={{
+              marginBottom: '12px',
+              padding: '8px',
+              backgroundColor: '#e7f3ff',
+              border: '1px solid #007bff',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontFamily: 'monospace',
+            }}>
+              <strong>DEBUG - errors Array:</strong>
+              <pre style={{ margin: '4px 0 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                {JSON.stringify(nodeState.errors, null, 2)}
+              </pre>
+            </div>
+
             {nodeState.errors.length === 0 ? (
               <div style={{ color: '#28a745', textAlign: 'center', padding: '20px' }}>
                 Keine Fehlermeldungen
@@ -407,11 +423,9 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
 
                   // Extract message from rawPayload
                   let messageText = '';
-                  let hasPayload = false;
                   let formattedPayload = '';
 
                   if (err.rawPayload) {
-                    hasPayload = true;
                     try {
                       const payload = JSON.parse(err.rawPayload);
                       formattedPayload = JSON.stringify(payload, null, 2);
@@ -468,7 +482,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                           alignItems: 'center',
                           gap: '10px',
                           backgroundColor: isExpanded ? '#f8f9fa' : '#fff',
-                          cursor: hasPayload ? 'pointer' : 'default',
+                          cursor: 'pointer',
                         }}
                       >
                         <span style={{
@@ -489,19 +503,17 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                         }}>
                           {messageText}
                         </span>
-                        {hasPayload && (
-                          <span style={{
-                            color: '#666',
-                            fontSize: '14px',
-                            flexShrink: 0,
-                          }}>
-                            {isExpanded ? '▲' : '▼'}
-                          </span>
-                        )}
+                        <span style={{
+                          color: '#666',
+                          fontSize: '14px',
+                          flexShrink: 0,
+                        }}>
+                          {isExpanded ? '▲' : '▼'}
+                        </span>
                       </div>
 
                       {/* Expanded content - JSON payload */}
-                      {isExpanded && hasPayload && (
+                      {isExpanded && (
                         <div style={{ borderTop: '1px solid #ddd' }}>
                           <pre style={{
                             margin: 0,
@@ -515,21 +527,8 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-all',
                           }}>
-                            {formattedPayload}
+                            {formattedPayload || `rawPayload: ${err.rawPayload}\nlevel: ${err.level}\nsource: ${err.source}`}
                           </pre>
-                        </div>
-                      )}
-
-                      {/* Debug info if no payload */}
-                      {!hasPayload && (
-                        <div style={{
-                          padding: '8px 12px',
-                          backgroundColor: '#fff3cd',
-                          color: '#856404',
-                          fontSize: '11px',
-                          borderTop: '1px solid #ffc107',
-                        }}>
-                          Debug: rawPayload ist leer. level={err.level}, source={err.source}, timestamp={err.timestamp}
                         </div>
                       )}
                     </div>

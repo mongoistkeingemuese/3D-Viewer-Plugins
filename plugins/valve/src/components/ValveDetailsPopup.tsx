@@ -123,6 +123,9 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
   // Expanded error indices
   const [expandedErrors, setExpandedErrors] = useState<Set<number>>(new Set());
 
+  // Hover state for error headers
+  const [hoveredError, setHoveredError] = useState<number | null>(null);
+
   // Poll for updates
   useEffect(() => {
     const interval = setInterval(() => {
@@ -466,8 +469,26 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                     >
                       {/* Clickable Header */}
                       <div
-                        style={styles.errorDropdownHeader}
-                        onClick={() => toggleErrorExpanded(idx)}
+                        style={{
+                          ...styles.errorDropdownHeader,
+                          cursor: 'pointer',
+                          backgroundColor: hoveredError === idx ? '#e9ecef' : 'transparent',
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleErrorExpanded(idx);
+                        }}
+                        onMouseEnter={() => setHoveredError(idx)}
+                        onMouseLeave={() => setHoveredError(null)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleErrorExpanded(idx);
+                          }
+                        }}
                       >
                         {/* Left side: Expand icon + Level + ErrorNo + Message preview */}
                         <div style={styles.errorHeaderLeft}>

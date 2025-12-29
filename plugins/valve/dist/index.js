@@ -161,6 +161,7 @@ var ValveDetailsPopup = ({ data }) => {
   const [isLoadingPressureFree, setIsLoadingPressureFree] = useState(false);
   const [isLoadingMode, setIsLoadingMode] = useState(null);
   const [expandedErrors, setExpandedErrors] = useState(/* @__PURE__ */ new Set());
+  const [hoveredError, setHoveredError] = useState(null);
   useEffect(() => {
     const interval = setInterval(() => {
       const newState = getNodeState(nodeId);
@@ -471,8 +472,26 @@ var ValveDetailsPopup = ({ data }) => {
                 /* @__PURE__ */ jsxs(
                   "div",
                   {
-                    style: styles.errorDropdownHeader,
-                    onClick: () => toggleErrorExpanded(idx),
+                    style: {
+                      ...styles.errorDropdownHeader,
+                      cursor: "pointer",
+                      backgroundColor: hoveredError === idx ? "#e9ecef" : "transparent"
+                    },
+                    onClick: (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleErrorExpanded(idx);
+                    },
+                    onMouseEnter: () => setHoveredError(idx),
+                    onMouseLeave: () => setHoveredError(null),
+                    role: "button",
+                    tabIndex: 0,
+                    onKeyDown: (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleErrorExpanded(idx);
+                      }
+                    },
                     children: [
                       /* @__PURE__ */ jsxs("div", { style: styles.errorHeaderLeft, children: [
                         /* @__PURE__ */ jsx("span", { style: styles.expandIcon, children: isExpanded ? "\u25BC" : "\u25B6" }),

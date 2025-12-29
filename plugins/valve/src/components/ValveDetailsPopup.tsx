@@ -453,7 +453,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                       [{err.level}] {formatTimestamp(err.timestamp)}
                     </div>
                     <div style={{ fontSize: '14px', margin: '8px 0', padding: '8px', backgroundColor: '#ffffcc', border: '2px solid #ffc107' }}>
-                      <strong>Message:</strong> {err.message}
+                      <strong>Message:</strong> TEST_HARDCODED_TEXT --- real: {String(err.message)} --- keys: {Object.keys(err).join(',')}
                     </div>
                     <div style={{ fontSize: '11px', color: '#666' }}>
                       Source: {err.source}

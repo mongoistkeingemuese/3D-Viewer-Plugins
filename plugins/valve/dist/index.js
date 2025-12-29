@@ -452,8 +452,10 @@ var ValveDetailsPopup = ({ data }) => {
               ] }),
               /* @__PURE__ */ jsxs("div", { style: { fontSize: "14px", margin: "8px 0", padding: "8px", backgroundColor: "#ffffcc", border: "2px solid #ffc107" }, children: [
                 /* @__PURE__ */ jsx("strong", { children: "Message:" }),
-                " ",
-                err.message
+                " TEST_HARDCODED_TEXT --- real: ",
+                String(err.message),
+                " --- keys: ",
+                Object.keys(err).join(",")
               ] }),
               /* @__PURE__ */ jsxs("div", { style: { fontSize: "11px", color: "#666" }, children: [
                 "Source: ",

@@ -435,7 +435,11 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
       lvl: payload.lvl,
       extractedMessage: messageText,
       msgType: typeof payload.msg,
-      msgStructure: payload.msg ? Object.keys(payload.msg) : 'undefined',
+      msgIsObject: typeof payload.msg === 'object',
+      msgKeys: payload.msg && typeof payload.msg === 'object' ? Object.keys(payload.msg) : [],
+      msgTxt: payload.msg && typeof payload.msg === 'object' ? (payload.msg as Record<string, unknown>).txt : undefined,
+      msgText: payload.msg && typeof payload.msg === 'object' ? (payload.msg as Record<string, unknown>).text : undefined,
+      msgVal: payload.msg && typeof payload.msg === 'object' ? (payload.msg as Record<string, unknown>).val : undefined,
     });
 
     const source = normalizeValveName(payload.src || '');
@@ -468,22 +472,18 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           acknowledged: false,
         };
 
-        // Debug: Log what we're storing
-        console.log('[VALVE] Creating ErrorEntry:', {
-          message: messageText,
-          values: values,
-          fullEntry: errorEntry,
-        });
-
         // Add to errors list
         nodeState.errors.unshift(errorEntry);
         if (nodeState.errors.length > 10) {
           nodeState.errors = nodeState.errors.slice(0, 10);
         }
 
-        // Debug: Verify storage
-        console.log('[VALVE] Stored errors count:', nodeState.errors.length);
-        console.log('[VALVE] First error message:', nodeState.errors[0]?.message);
+        // Debug: Log what we stored
+        ctx.log.info('ErrorEntry created and stored', {
+          storedMessage: errorEntry.message,
+          storedValues: errorEntry.values,
+          errorCount: nodeState.errors.length,
+        });
 
         // Log the error to Viewer Log
         ctx.log.error(`Valve error: ${messageText}`, {

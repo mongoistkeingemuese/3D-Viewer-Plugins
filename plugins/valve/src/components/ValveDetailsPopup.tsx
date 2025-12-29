@@ -438,13 +438,6 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
               </div>
             ) : (
               <div style={styles.errorList}>
-                {/* Debug: Log errors on render */}
-                {console.log('[VALVE POPUP] Rendering errors:', nodeState.errors.map(e => ({
-                  message: e.message,
-                  messageType: typeof e.message,
-                  values: e.values,
-                  level: e.level,
-                })))}
                 {nodeState.errors.map((error, index) => (
                   <div
                     key={index}
@@ -468,8 +461,6 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                       </span>
                     </div>
                     <div style={styles.errorMessage}>
-                      {/* Debug */}
-                      {console.log('[VALVE POPUP] Error item:', index, 'message:', error.message, 'type:', typeof error.message)}
                       {error.message || '(kein Text)'}
                     </div>
                     {error.values && Object.keys(error.values).length > 0 && (

@@ -445,63 +445,52 @@ var ValveDetailsPopup = ({ data }) => {
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsxs("div", { style: styles.noErrors, children: [
           /* @__PURE__ */ jsx("span", { style: { fontSize: "24px" }, children: "\u2713" }),
           /* @__PURE__ */ jsx("p", { children: "Keine Errors aufgezeichnet" })
-        ] }) : /* @__PURE__ */ jsxs("div", { style: styles.errorList, children: [
-          console.log("[VALVE POPUP] Rendering errors:", nodeState.errors.map((e) => ({
-            message: e.message,
-            messageType: typeof e.message,
-            values: e.values,
-            level: e.level
-          }))),
-          nodeState.errors.map((error, index) => /* @__PURE__ */ jsxs(
-            "div",
-            {
-              style: {
-                ...styles.errorItem,
-                backgroundColor: error.acknowledged ? "#f0f0f0" : "#ffffff",
-                borderLeft: `4px solid ${getErrorLevelColor(error.level)}`
-              },
-              children: [
-                /* @__PURE__ */ jsxs("div", { style: styles.errorHeader, children: [
-                  /* @__PURE__ */ jsx(
-                    "span",
-                    {
-                      style: {
-                        ...styles.errorLevel,
-                        color: getErrorLevelColor(error.level)
-                      },
-                      children: error.level
-                    }
-                  ),
-                  /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(error.timestamp) })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { style: styles.errorMessage, children: [
-                  console.log("[VALVE POPUP] Error item:", index, "message:", error.message, "type:", typeof error.message),
-                  error.message || "(kein Text)"
-                ] }),
-                error.values && Object.keys(error.values).length > 0 && /* @__PURE__ */ jsx("div", { style: styles.errorValues, children: Object.entries(error.values).map(([key, value]) => /* @__PURE__ */ jsxs("span", { style: styles.errorValueItem, children: [
-                  key,
-                  ": ",
-                  String(value)
-                ] }, key)) }),
-                /* @__PURE__ */ jsxs("div", { style: styles.errorFooter, children: [
-                  /* @__PURE__ */ jsxs("span", { style: styles.errorSource, children: [
-                    "Source: ",
-                    error.source
-                  ] }),
-                  !error.acknowledged ? /* @__PURE__ */ jsx(
-                    "button",
-                    {
-                      onClick: () => handleAcknowledge(index),
-                      style: styles.ackButton,
-                      children: "Acknowledge"
-                    }
-                  ) : /* @__PURE__ */ jsx("span", { style: styles.acknowledgedBadge, children: "\u2713 Acknowledged" })
-                ] })
-              ]
+        ] }) : /* @__PURE__ */ jsx("div", { style: styles.errorList, children: nodeState.errors.map((error, index) => /* @__PURE__ */ jsxs(
+          "div",
+          {
+            style: {
+              ...styles.errorItem,
+              backgroundColor: error.acknowledged ? "#f0f0f0" : "#ffffff",
+              borderLeft: `4px solid ${getErrorLevelColor(error.level)}`
             },
-            index
-          ))
-        ] })
+            children: [
+              /* @__PURE__ */ jsxs("div", { style: styles.errorHeader, children: [
+                /* @__PURE__ */ jsx(
+                  "span",
+                  {
+                    style: {
+                      ...styles.errorLevel,
+                      color: getErrorLevelColor(error.level)
+                    },
+                    children: error.level
+                  }
+                ),
+                /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(error.timestamp) })
+              ] }),
+              /* @__PURE__ */ jsx("div", { style: styles.errorMessage, children: error.message || "(kein Text)" }),
+              error.values && Object.keys(error.values).length > 0 && /* @__PURE__ */ jsx("div", { style: styles.errorValues, children: Object.entries(error.values).map(([key, value]) => /* @__PURE__ */ jsxs("span", { style: styles.errorValueItem, children: [
+                key,
+                ": ",
+                String(value)
+              ] }, key)) }),
+              /* @__PURE__ */ jsxs("div", { style: styles.errorFooter, children: [
+                /* @__PURE__ */ jsxs("span", { style: styles.errorSource, children: [
+                  "Source: ",
+                  error.source
+                ] }),
+                !error.acknowledged ? /* @__PURE__ */ jsx(
+                  "button",
+                  {
+                    onClick: () => handleAcknowledge(index),
+                    style: styles.ackButton,
+                    children: "Acknowledge"
+                  }
+                ) : /* @__PURE__ */ jsx("span", { style: styles.acknowledgedBadge, children: "\u2713 Acknowledged" })
+              ] })
+            ]
+          },
+          index
+        )) })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.footer, children: [
@@ -1089,7 +1078,11 @@ function handleErrorMessage(ctx, rawPayload) {
       lvl: payload.lvl,
       extractedMessage: messageText,
       msgType: typeof payload.msg,
-      msgStructure: payload.msg ? Object.keys(payload.msg) : "undefined"
+      msgIsObject: typeof payload.msg === "object",
+      msgKeys: payload.msg && typeof payload.msg === "object" ? Object.keys(payload.msg) : [],
+      msgTxt: payload.msg && typeof payload.msg === "object" ? payload.msg.txt : void 0,
+      msgText: payload.msg && typeof payload.msg === "object" ? payload.msg.text : void 0,
+      msgVal: payload.msg && typeof payload.msg === "object" ? payload.msg.val : void 0
     });
     const source = normalizeValveName(payload.src || "");
     const allNodes = pluginState.getAllNodes();
@@ -1116,17 +1109,15 @@ function handleErrorMessage(ctx, rawPayload) {
           values,
           acknowledged: false
         };
-        console.log("[VALVE] Creating ErrorEntry:", {
-          message: messageText,
-          values,
-          fullEntry: errorEntry
-        });
         nodeState.errors.unshift(errorEntry);
         if (nodeState.errors.length > 10) {
           nodeState.errors = nodeState.errors.slice(0, 10);
         }
-        console.log("[VALVE] Stored errors count:", nodeState.errors.length);
-        console.log("[VALVE] First error message:", nodeState.errors[0]?.message);
+        ctx.log.info("ErrorEntry created and stored", {
+          storedMessage: errorEntry.message,
+          storedValues: errorEntry.values,
+          errorCount: nodeState.errors.length
+        });
         ctx.log.error(`Valve error: ${messageText}`, {
           nodeId: nodeState.nodeId,
           nodeName: nodeState.valveName,

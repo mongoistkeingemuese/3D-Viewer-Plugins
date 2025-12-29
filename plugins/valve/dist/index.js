@@ -1262,7 +1262,8 @@ function handleErrorMessage(ctx, rawPayload) {
           message: messageText,
           errorNo,
           values,
-          rawMsg: payload.msg,
+          rawMsg: payload,
+          // Store complete payload, not just msg
           acknowledged: false
         };
         nodeState.errors.unshift(errorEntry);

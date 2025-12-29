@@ -509,7 +509,7 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           message: messageText,
           errorNo: errorNo,
           values: values,
-          rawMsg: payload.msg,
+          rawMsg: payload,  // Store complete payload, not just msg
           acknowledged: false,
         };
 

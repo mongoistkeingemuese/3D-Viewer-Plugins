@@ -497,9 +497,8 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
       </div>
 
       {/* Debug Info */}
-      <div style={{ fontSize: '9px', color: '#666', backgroundColor: '#ffffcc', padding: '4px', margin: '8px 0', borderRadius: '3px' }}>
-        DEBUG nodeState.errors.length: {nodeState.errors.length},
-        first error msg: "{nodeState.errors[0]?.message}"
+      <div style={{ fontSize: '9px', color: '#666', backgroundColor: '#ffffcc', padding: '4px', margin: '8px 0', borderRadius: '3px', wordBreak: 'break-all' }}>
+        DEBUG errors array: {JSON.stringify(nodeState.errors)}
       </div>
 
       {/* Footer */}

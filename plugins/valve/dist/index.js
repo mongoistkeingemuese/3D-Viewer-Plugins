@@ -134,7 +134,6 @@ var ValveDetailsPopup = ({ data }) => {
   const [updateCounter, setUpdateCounter] = useState(0);
   const [activeTab, setActiveTab] = useState("status");
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
-  const [expandedErrors, setExpandedErrors] = useState(/* @__PURE__ */ new Set());
   const [isLoadingGst, setIsLoadingGst] = useState(false);
   const [isLoadingAst, setIsLoadingAst] = useState(false);
   const [isLoadingPressureFree, setIsLoadingPressureFree] = useState(false);
@@ -417,13 +416,10 @@ var ValveDetailsPopup = ({ data }) => {
           /* @__PURE__ */ jsx("pre", { style: { margin: "4px 0 0 0", whiteSpace: "pre-wrap", wordBreak: "break-all", color: "#000" }, children: JSON.stringify(nodeState.errors, null, 2) })
         ] }),
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("div", { style: { color: "#28a745", textAlign: "center", padding: "20px" }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsx("div", { style: { display: "flex", flexDirection: "column", gap: "8px" }, children: nodeState.errors.map((err, idx) => {
-          const isExpanded = expandedErrors.has(idx);
           let messageText = "";
-          let formattedPayload = "";
           if (err.rawPayload) {
             try {
               const payload = JSON.parse(err.rawPayload);
-              formattedPayload = JSON.stringify(payload, null, 2);
               if (typeof payload.msg === "string") {
                 messageText = payload.msg;
               } else if (payload.msg?.txt) {
@@ -432,13 +428,11 @@ var ValveDetailsPopup = ({ data }) => {
                 messageText = payload.msg.text;
               }
             } catch {
-              formattedPayload = err.rawPayload;
             }
           }
           if (!messageText) {
             messageText = err.source ? `Source: ${err.source}` : "Keine Nachricht";
           }
-          const levelColor = err.level === "ERR" ? "#dc3545" : err.level === "WARN" ? "#ffc107" : "#17a2b8";
           return /* @__PURE__ */ jsxs(
             "div",
             {
@@ -446,110 +440,24 @@ var ValveDetailsPopup = ({ data }) => {
                 backgroundColor: "#ff0000",
                 border: "5px solid #000",
                 borderRadius: "6px",
-                overflow: "hidden",
                 marginBottom: "8px",
                 padding: "20px",
-                minHeight: "100px"
+                color: "#fff",
+                fontSize: "14px",
+                fontWeight: "bold"
               },
               children: [
-                /* @__PURE__ */ jsxs("div", { style: {
-                  padding: "6px",
-                  backgroundColor: "#ffffcc",
-                  borderBottom: "1px solid #ccc",
-                  fontSize: "10px",
-                  fontFamily: "monospace",
-                  color: "#000"
-                }, children: [
-                  /* @__PURE__ */ jsxs("div", { style: { color: "#000" }, children: [
-                    /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "idx:" }),
-                    " ",
-                    idx
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { style: { color: "#000" }, children: [
-                    /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "err.level:" }),
-                    ' "',
-                    err.level,
-                    '"'
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { style: { color: "#000" }, children: [
-                    /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "err.source:" }),
-                    ' "',
-                    err.source,
-                    '"'
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { style: { color: "#000" }, children: [
-                    /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "messageText:" }),
-                    ' "',
-                    messageText,
-                    '"'
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { style: { color: "#000" }, children: [
-                    /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "hasRawPayload:" }),
-                    " ",
-                    err.rawPayload ? "YES" : "NO"
-                  ] })
+                /* @__PURE__ */ jsxs("span", { style: { color: "#fff" }, children: [
+                  "Level: ",
+                  err.level,
+                  " | "
                 ] }),
-                /* @__PURE__ */ jsxs(
-                  "div",
-                  {
-                    onClick: () => {
-                      setExpandedErrors((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(idx)) {
-                          next.delete(idx);
-                        } else {
-                          next.add(idx);
-                        }
-                        return next;
-                      });
-                    },
-                    style: {
-                      padding: "10px 12px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      backgroundColor: isExpanded ? "#e0e0e0" : "#fff",
-                      cursor: "pointer"
-                    },
-                    children: [
-                      /* @__PURE__ */ jsx("span", { style: {
-                        backgroundColor: levelColor,
-                        color: "#fff",
-                        padding: "4px 10px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        fontWeight: "bold",
-                        flexShrink: 0
-                      }, children: err.level || "INFO" }),
-                      /* @__PURE__ */ jsx("span", { style: {
-                        flex: 1,
-                        color: "#000",
-                        fontSize: "14px",
-                        fontWeight: "bold"
-                      }, children: messageText }),
-                      /* @__PURE__ */ jsx("span", { style: {
-                        color: "#000",
-                        fontSize: "16px",
-                        fontWeight: "bold",
-                        flexShrink: 0
-                      }, children: isExpanded ? "\u25B2" : "\u25BC" })
-                    ]
-                  }
-                ),
-                isExpanded && /* @__PURE__ */ jsx("div", { style: { borderTop: "2px solid #000" }, children: /* @__PURE__ */ jsx("pre", { style: {
-                  margin: 0,
-                  padding: "12px",
-                  backgroundColor: "#1e1e1e",
-                  color: "#0f0",
-                  fontSize: "11px",
-                  fontFamily: "Consolas, Monaco, monospace",
-                  overflow: "auto",
-                  maxHeight: "300px",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-all"
-                }, children: formattedPayload || `rawPayload: ${err.rawPayload}
-level: ${err.level}
-source: ${err.source}` }) })
+                /* @__PURE__ */ jsxs("span", { style: { color: "#fff" }, children: [
+                  "Message: ",
+                  messageText,
+                  " | "
+                ] }),
+                /* @__PURE__ */ jsx("span", { style: { color: "#ff0" }, children: "\u25BC Klick zum \xD6ffnen" })
               ]
             },
             idx

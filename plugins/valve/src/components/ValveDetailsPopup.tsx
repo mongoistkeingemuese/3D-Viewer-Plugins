@@ -97,8 +97,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
   const [activeTab, setActiveTab] = useState<TabType>('status');
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
 
-  // Expanded error indices
-  const [expandedErrors, setExpandedErrors] = useState<Set<number>>(new Set());
+  // Expanded error indices (removed - not used in simplified view)
 
   // Loading states for buttons
   const [isLoadingGst, setIsLoadingGst] = useState(false);
@@ -420,16 +419,12 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {nodeState.errors.map((err, idx) => {
-                  const isExpanded = expandedErrors.has(idx);
-
                   // Extract message from rawPayload
                   let messageText = '';
-                  let formattedPayload = '';
 
                   if (err.rawPayload) {
                     try {
                       const payload = JSON.parse(err.rawPayload);
-                      formattedPayload = JSON.stringify(payload, null, 2);
 
                       // Try different message formats
                       if (typeof payload.msg === 'string') {
@@ -440,7 +435,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                         messageText = payload.msg.text;
                       }
                     } catch {
-                      formattedPayload = err.rawPayload;
+                      // Ignore parse errors
                     }
                   }
 
@@ -449,11 +444,6 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                     messageText = err.source ? `Source: ${err.source}` : 'Keine Nachricht';
                   }
 
-                  // Level color
-                  const levelColor = err.level === 'ERR' ? '#dc3545'
-                    : err.level === 'WARN' ? '#ffc107'
-                    : '#17a2b8';
-
                   return (
                     <div
                       key={idx}
@@ -461,98 +451,16 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                         backgroundColor: '#ff0000',
                         border: '5px solid #000',
                         borderRadius: '6px',
-                        overflow: 'hidden',
                         marginBottom: '8px',
                         padding: '20px',
-                        minHeight: '100px',
+                        color: '#fff',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
                       }}
                     >
-                      {/* Debug info for this card */}
-                      <div style={{
-                        padding: '6px',
-                        backgroundColor: '#ffffcc',
-                        borderBottom: '1px solid #ccc',
-                        fontSize: '10px',
-                        fontFamily: 'monospace',
-                        color: '#000',
-                      }}>
-                        <div style={{ color: '#000' }}><strong style={{ color: '#000' }}>idx:</strong> {idx}</div>
-                        <div style={{ color: '#000' }}><strong style={{ color: '#000' }}>err.level:</strong> "{err.level}"</div>
-                        <div style={{ color: '#000' }}><strong style={{ color: '#000' }}>err.source:</strong> "{err.source}"</div>
-                        <div style={{ color: '#000' }}><strong style={{ color: '#000' }}>messageText:</strong> "{messageText}"</div>
-                        <div style={{ color: '#000' }}><strong style={{ color: '#000' }}>hasRawPayload:</strong> {err.rawPayload ? 'YES' : 'NO'}</div>
-                      </div>
-
-                      {/* Header - clickable */}
-                      <div
-                        onClick={() => {
-                          setExpandedErrors(prev => {
-                            const next = new Set(prev);
-                            if (next.has(idx)) {
-                              next.delete(idx);
-                            } else {
-                              next.add(idx);
-                            }
-                            return next;
-                          });
-                        }}
-                        style={{
-                          padding: '10px 12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          backgroundColor: isExpanded ? '#e0e0e0' : '#fff',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <span style={{
-                          backgroundColor: levelColor,
-                          color: '#fff',
-                          padding: '4px 10px',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          flexShrink: 0,
-                        }}>
-                          {err.level || 'INFO'}
-                        </span>
-                        <span style={{
-                          flex: 1,
-                          color: '#000',
-                          fontSize: '14px',
-                          fontWeight: 'bold',
-                        }}>
-                          {messageText}
-                        </span>
-                        <span style={{
-                          color: '#000',
-                          fontSize: '16px',
-                          fontWeight: 'bold',
-                          flexShrink: 0,
-                        }}>
-                          {isExpanded ? '▲' : '▼'}
-                        </span>
-                      </div>
-
-                      {/* Expanded content - JSON payload */}
-                      {isExpanded && (
-                        <div style={{ borderTop: '2px solid #000' }}>
-                          <pre style={{
-                            margin: 0,
-                            padding: '12px',
-                            backgroundColor: '#1e1e1e',
-                            color: '#0f0',
-                            fontSize: '11px',
-                            fontFamily: 'Consolas, Monaco, monospace',
-                            overflow: 'auto',
-                            maxHeight: '300px',
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-all',
-                          }}>
-                            {formattedPayload || `rawPayload: ${err.rawPayload}\nlevel: ${err.level}\nsource: ${err.source}`}
-                          </pre>
-                        </div>
-                      )}
+                      <span style={{ color: '#fff' }}>Level: {err.level} | </span>
+                      <span style={{ color: '#fff' }}>Message: {messageText} | </span>
+                      <span style={{ color: '#ff0' }}>▼ Klick zum Öffnen</span>
                     </div>
                   );
                 })}

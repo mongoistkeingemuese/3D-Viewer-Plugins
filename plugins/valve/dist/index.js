@@ -440,6 +440,27 @@ var ValveDetailsPopup = ({ data }) => {
         ] })
       ] }),
       activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
+        /* @__PURE__ */ jsxs("div", { style: {
+          fontSize: "10px",
+          color: "#666",
+          backgroundColor: "#fffbcc",
+          padding: "8px",
+          marginBottom: "12px",
+          borderRadius: "4px",
+          fontFamily: "monospace"
+        }, children: [
+          "DEBUG: errors.length = ",
+          nodeState.errors.length,
+          ", unack = ",
+          unacknowledgedCount,
+          ", errors = ",
+          JSON.stringify(nodeState.errors.map((e) => ({
+            msg: e.message?.substring(0, 30),
+            no: e.errorNo,
+            lvl: e.level,
+            raw: e.rawMsg ? "yes" : "no"
+          })))
+        ] }),
         /* @__PURE__ */ jsxs("div", { style: styles.errorSectionHeader, children: [
           /* @__PURE__ */ jsxs("h3", { style: { ...styles.sectionTitle, marginBottom: 0 }, children: [
             "Errors (",

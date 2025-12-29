@@ -436,6 +436,26 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
         {/* ERRORS TAB */}
         {activeTab === 'errors' && (
           <div style={styles.section}>
+            {/* Debug Info */}
+            <div style={{
+              fontSize: '10px',
+              color: '#666',
+              backgroundColor: '#fffbcc',
+              padding: '8px',
+              marginBottom: '12px',
+              borderRadius: '4px',
+              fontFamily: 'monospace',
+            }}>
+              DEBUG: errors.length = {nodeState.errors.length},
+              unack = {unacknowledgedCount},
+              errors = {JSON.stringify(nodeState.errors.map(e => ({
+                msg: e.message?.substring(0, 30),
+                no: e.errorNo,
+                lvl: e.level,
+                raw: e.rawMsg ? 'yes' : 'no'
+              })))}
+            </div>
+
             <div style={styles.errorSectionHeader}>
               <h3 style={{ ...styles.sectionTitle, marginBottom: 0 }}>
                 Errors ({unacknowledgedCount} unbestätigt)

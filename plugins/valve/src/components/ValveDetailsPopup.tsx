@@ -462,6 +462,9 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                     </div>
                     <div style={styles.errorMessage}>
                       {error.message || '(kein Text)'}
+                      <span style={{ fontSize: '9px', color: '#999', marginLeft: '8px' }}>
+                        [len:{error.message?.length ?? 0}]
+                      </span>
                     </div>
                     {error.values && Object.keys(error.values).length > 0 && (
                       <div style={styles.errorValues}>

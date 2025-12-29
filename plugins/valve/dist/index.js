@@ -467,7 +467,14 @@ var ValveDetailsPopup = ({ data }) => {
                 ),
                 /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(error.timestamp) })
               ] }),
-              /* @__PURE__ */ jsx("div", { style: styles.errorMessage, children: error.message || "(kein Text)" }),
+              /* @__PURE__ */ jsxs("div", { style: styles.errorMessage, children: [
+                error.message || "(kein Text)",
+                /* @__PURE__ */ jsxs("span", { style: { fontSize: "9px", color: "#999", marginLeft: "8px" }, children: [
+                  "[len:",
+                  error.message?.length ?? 0,
+                  "]"
+                ] })
+              ] }),
               error.values && Object.keys(error.values).length > 0 && /* @__PURE__ */ jsx("div", { style: styles.errorValues, children: Object.entries(error.values).map(([key, value]) => /* @__PURE__ */ jsxs("span", { style: styles.errorValueItem, children: [
                 key,
                 ": ",

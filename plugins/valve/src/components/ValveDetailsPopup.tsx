@@ -186,11 +186,6 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
 
   return (
     <div style={styles.container}>
-      {/* VERSION TEST BANNER */}
-      <div style={{ backgroundColor: 'red', color: 'white', padding: '20px', fontSize: '24px', fontWeight: 'bold', textAlign: 'center', marginBottom: '10px' }}>
-        🔴 VERSION 1.4.2 GELADEN 🔴
-      </div>
-
       {/* Header */}
       <div style={styles.header}>
         <h2 style={styles.title}>Valve: {nodeState.valveName}</h2>
@@ -447,41 +442,66 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                   <div
                     key={idx}
                     style={{
-                      padding: '12px',
-                      marginBottom: '8px',
-                      backgroundColor: err.acknowledged ? '#f0f0f0' : '#fff',
-                      border: '1px solid #ccc',
-                      borderRadius: '4px',
+                      ...styles.errorItem,
+                      backgroundColor: err.acknowledged ? '#f8f9fa' : '#fff',
+                      borderLeft: `4px solid ${getErrorLevelColor(err.level)}`,
                     }}
                   >
-                    <div style={{ fontWeight: 'bold', color: err.level === 'ERR' ? 'red' : 'orange' }}>
-                      [{err.level}] {formatTimestamp(err.timestamp)}
-                    </div>
-                    <div style={{ fontSize: '14px', margin: '8px 0', padding: '8px', backgroundColor: '#ffffcc', border: '2px solid #ffc107' }}>
-                      <strong>Message:</strong> TEST_HARDCODED_TEXT --- real: {String(err.message)} --- keys: {Object.keys(err).join(',')}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#666' }}>
-                      Source: {err.source}
-                    </div>
-                    {!err.acknowledged && (
-                      <button
-                        onClick={() => handleAcknowledge(idx)}
-                        style={{ marginTop: '8px', padding: '4px 12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    {/* Error Header: Level + Timestamp */}
+                    <div style={styles.errorHeader}>
+                      <span
+                        style={{
+                          ...styles.errorLevel,
+                          color: getErrorLevelColor(err.level),
+                        }}
                       >
-                        Quittieren
-                      </button>
+                        {err.level}
+                      </span>
+                      <span style={styles.errorTime}>
+                        {formatTimestamp(err.timestamp)}
+                      </span>
+                    </div>
+
+                    {/* Error Message */}
+                    <div style={styles.errorMessage}>
+                      {err.message || 'Keine Nachricht'}
+                    </div>
+
+                    {/* Error Values (if present) */}
+                    {err.values && Object.keys(err.values).length > 0 && (
+                      <div style={styles.errorValues}>
+                        {Object.entries(err.values).map(([key, value]) => (
+                          <span key={key} style={styles.errorValueItem}>
+                            {key}: {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                          </span>
+                        ))}
+                      </div>
                     )}
+
+                    {/* Error Footer: Source + Acknowledge Button */}
+                    <div style={styles.errorFooter}>
+                      <span style={styles.errorSource}>
+                        Quelle: {err.source}
+                      </span>
+                      {!err.acknowledged ? (
+                        <button
+                          onClick={() => handleAcknowledge(idx)}
+                          style={styles.ackButton}
+                        >
+                          Quittieren
+                        </button>
+                      ) : (
+                        <span style={styles.acknowledgedBadge}>
+                          &#10003; Quittiert
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
         )}
-      </div>
-
-      {/* Debug Info */}
-      <div style={{ fontSize: '9px', color: '#666', backgroundColor: '#ffffcc', padding: '4px', margin: '8px 0', borderRadius: '3px', wordBreak: 'break-all' }}>
-        DEBUG errors array: {JSON.stringify(nodeState.errors)}
       </div>
 
       {/* Footer */}

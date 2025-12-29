@@ -405,11 +405,17 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
       payload = rawPayload as ErrorPayload;
     }
 
+    // Extract message text safely (handle different payload formats)
+    const messageText = typeof payload.msg === 'string'
+      ? payload.msg
+      : payload.msg?.txt || 'Unknown error';
+
     ctx.log.info('Error message received', {
       rawPayload: payload,
       src: payload.src,
       lvl: payload.lvl,
-      msg: payload.msg?.txt,
+      msg: messageText,
+      msgType: typeof payload.msg,
     });
 
     const source = normalizeValveName(payload.src || '');
@@ -433,7 +439,7 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           timestamp: payload.utc,
           level: payload.lvl,
           source: payload.src,
-          message: payload.msg.txt,
+          message: messageText,
           acknowledged: false,
         };
 
@@ -448,7 +454,7 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           nodeId: nodeState.nodeId,
           valveName: nodeState.valveName,
           level: payload.lvl,
-          message: payload.msg.txt,
+          message: messageText,
           timestamp: new Date(payload.utc).toISOString(),
         });
 
@@ -458,12 +464,12 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           updateNodeVisuals(ctx, nodeState.nodeId, GenericState.Error, nodeState.specificState);
 
           ctx.ui.notify(
-            `Valve Error: ${nodeState.valveName} - ${payload.msg.txt}`,
+            `Valve Error: ${nodeState.valveName} - ${messageText}`,
             'error'
           );
         } else if (payload.lvl === 'WARN') {
           ctx.ui.notify(
-            `Valve Warning: ${nodeState.valveName} - ${payload.msg.txt}`,
+            `Valve Warning: ${nodeState.valveName} - ${messageText}`,
             'warning'
           );
         }
@@ -808,6 +814,35 @@ const plugin: Plugin = {
           data: { nodeId: event.nodeId },
         });
       }
+    });
+
+    // Listen for log acknowledgments from Viewer Log
+    ctx.events.onLogAcknowledged((entries) => {
+      entries.forEach((entry) => {
+        if (entry.nodeId) {
+          const nodeState = pluginState.getNode(entry.nodeId);
+          if (nodeState) {
+            // Mark all errors as acknowledged for this node
+            let hasUnacknowledged = false;
+            nodeState.errors.forEach((err) => {
+              if (!err.acknowledged) {
+                err.acknowledged = true;
+                hasUnacknowledged = true;
+              }
+            });
+
+            // Reset node visual state if errors were acknowledged
+            if (hasUnacknowledged && nodeState.genericState === GenericState.Error) {
+              nodeState.genericState = GenericState.Idle;
+              updateNodeVisuals(ctx, entry.nodeId, GenericState.Idle, nodeState.specificState);
+              ctx.log.info('Node error state reset via Viewer Log acknowledgement', {
+                nodeId: entry.nodeId,
+                valveName: nodeState.valveName,
+              });
+            }
+          }
+        }
+      });
     });
   },
 

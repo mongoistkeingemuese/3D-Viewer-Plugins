@@ -601,6 +601,13 @@ export interface EventsAPI {
    * Register deactivation callback (called when plugin is disabled)
    */
   onDeactivate(callback: () => void): void;
+
+  /**
+   * Subscribe to log acknowledgment events from Viewer Log
+   * @param callback Called when log entries are acknowledged, receives the acknowledged entries
+   * @returns Unsubscribe function
+   */
+  onLogAcknowledged(callback: (entries: Array<{ nodeId?: string; nodeName?: string; source?: string; message?: string }>) => void): Unsubscribe;
 }
 
 /**

@@ -1032,11 +1032,13 @@ function handleErrorMessage(ctx, rawPayload) {
     } else {
       payload = rawPayload;
     }
+    const messageText = typeof payload.msg === "string" ? payload.msg : payload.msg?.txt || "Unknown error";
     ctx.log.info("Error message received", {
       rawPayload: payload,
       src: payload.src,
       lvl: payload.lvl,
-      msg: payload.msg?.txt
+      msg: messageText,
+      msgType: typeof payload.msg
     });
     const source = normalizeValveName(payload.src || "");
     const allNodes = pluginState.getAllNodes();
@@ -1057,7 +1059,7 @@ function handleErrorMessage(ctx, rawPayload) {
           timestamp: payload.utc,
           level: payload.lvl,
           source: payload.src,
-          message: payload.msg.txt,
+          message: messageText,
           acknowledged: false
         };
         nodeState.errors.unshift(errorEntry);
@@ -1068,19 +1070,19 @@ function handleErrorMessage(ctx, rawPayload) {
           nodeId: nodeState.nodeId,
           valveName: nodeState.valveName,
           level: payload.lvl,
-          message: payload.msg.txt,
+          message: messageText,
           timestamp: new Date(payload.utc).toISOString()
         });
         if (payload.lvl === "ERR") {
           nodeState.genericState = 3 /* Error */;
           updateNodeVisuals(ctx, nodeState.nodeId, 3 /* Error */, nodeState.specificState);
           ctx.ui.notify(
-            `Valve Error: ${nodeState.valveName} - ${payload.msg.txt}`,
+            `Valve Error: ${nodeState.valveName} - ${messageText}`,
             "error"
           );
         } else if (payload.lvl === "WARN") {
           ctx.ui.notify(
-            `Valve Warning: ${nodeState.valveName} - ${payload.msg.txt}`,
+            `Valve Warning: ${nodeState.valveName} - ${messageText}`,
             "warning"
           );
         }
@@ -1315,6 +1317,30 @@ var plugin = {
           data: { nodeId: event.nodeId }
         });
       }
+    });
+    ctx.events.onLogAcknowledged((entries) => {
+      entries.forEach((entry) => {
+        if (entry.nodeId) {
+          const nodeState = pluginState.getNode(entry.nodeId);
+          if (nodeState) {
+            let hasUnacknowledged = false;
+            nodeState.errors.forEach((err) => {
+              if (!err.acknowledged) {
+                err.acknowledged = true;
+                hasUnacknowledged = true;
+              }
+            });
+            if (hasUnacknowledged && nodeState.genericState === 3 /* Error */) {
+              nodeState.genericState = 0 /* Idle */;
+              updateNodeVisuals(ctx, entry.nodeId, 0 /* Idle */, nodeState.specificState);
+              ctx.log.info("Node error state reset via Viewer Log acknowledgement", {
+                nodeId: entry.nodeId,
+                valveName: nodeState.valveName
+              });
+            }
+          }
+        }
+      });
     });
   },
   onNodeBound(ctx, node) {

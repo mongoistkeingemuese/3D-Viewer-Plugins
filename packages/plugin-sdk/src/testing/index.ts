@@ -525,6 +525,7 @@ export class MockEventsAPI implements EventsAPI {
   selectCallbacks: NodeEventCallback[] = [];
   boundCallbacks: ((node: BoundNode) => void)[] = [];
   unboundCallbacks: ((node: BoundNode) => void)[] = [];
+  logAcknowledgedCallbacks: ((entries: Array<{ nodeId?: string; nodeName?: string; source?: string; message?: string }>) => void)[] = [];
   customCallbacks: Map<string, ((data: unknown) => void)[]> = new Map();
   emittedEvents: Array<{ name: string; data?: unknown; timestamp: number }> = [];
   activateCallback?: () => void;
@@ -604,6 +605,14 @@ export class MockEventsAPI implements EventsAPI {
     this.deactivateCallback = callback;
   }
 
+  onLogAcknowledged(callback: (entries: Array<{ nodeId?: string; nodeName?: string; source?: string; message?: string }>) => void): Unsubscribe {
+    this.logAcknowledgedCallbacks.push(callback);
+    return () => {
+      const idx = this.logAcknowledgedCallbacks.indexOf(callback);
+      if (idx >= 0) this.logAcknowledgedCallbacks.splice(idx, 1);
+    };
+  }
+
   /** Simulate a click event */
   simulateClick(event: NodeEvent): void {
     for (const cb of this.clickCallbacks) {
@@ -649,12 +658,20 @@ export class MockEventsAPI implements EventsAPI {
     this.deactivateCallback?.();
   }
 
+  /** Simulate log acknowledgment (for testing) */
+  simulateLogAcknowledged(entries: Array<{ nodeId?: string; nodeName?: string; source?: string; message?: string }>): void {
+    for (const cb of this.logAcknowledgedCallbacks) {
+      cb(entries);
+    }
+  }
+
   reset(): void {
     this.clickCallbacks = [];
     this.hoverCallbacks = [];
     this.selectCallbacks = [];
     this.boundCallbacks = [];
     this.unboundCallbacks = [];
+    this.logAcknowledgedCallbacks = [];
     this.customCallbacks.clear();
     this.emittedEvents = [];
     this.activateCallback = undefined;

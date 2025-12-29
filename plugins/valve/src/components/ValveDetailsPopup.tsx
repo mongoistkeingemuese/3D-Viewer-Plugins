@@ -462,9 +462,9 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                     </div>
                     <div style={styles.errorMessage}>
                       {error.message || '(kein Text)'}
-                      <span style={{ fontSize: '9px', color: '#999', marginLeft: '8px' }}>
-                        [len:{error.message?.length ?? 0}]
-                      </span>
+                    </div>
+                    <div style={{ fontSize: '9px', color: '#666', backgroundColor: '#f5f5f5', padding: '4px', borderRadius: '3px', marginBottom: '4px', wordBreak: 'break-all' }}>
+                      DEBUG: {JSON.stringify(error)}
                     </div>
                     {error.values && Object.keys(error.values).length > 0 && (
                       <div style={styles.errorValues}>
@@ -494,6 +494,12 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
             )}
           </div>
         )}
+      </div>
+
+      {/* Debug Info */}
+      <div style={{ fontSize: '9px', color: '#666', backgroundColor: '#ffffcc', padding: '4px', margin: '8px 0', borderRadius: '3px' }}>
+        DEBUG nodeState.errors.length: {nodeState.errors.length},
+        first error msg: "{nodeState.errors[0]?.message}"
       </div>
 
       {/* Footer */}

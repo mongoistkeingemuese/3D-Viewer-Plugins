@@ -13,6 +13,8 @@
 | Open popup | `ctx.ui.showPopup()` | `ctx.ui.showPopup('Name', opts)` |
 | Read config | `ctx.config.global.get()` | `ctx.config.global.get('key')` |
 | Log message | `ctx.log.info()` | `ctx.log.info('message')` |
+| Log error to Viewer Log | `ctx.log.error()` | `ctx.log.error('msg', {nodeId})` |
+| Handle log acknowledgment | `ctx.events.onLogAcknowledged()` | Reset node error state |
 
 ---
 
@@ -206,6 +208,21 @@ ctx.events.on('my-custom-event', (data) => {
 // Activation events
 ctx.events.onActivate(() => console.log('Plugin activated'));
 ctx.events.onDeactivate(() => console.log('Plugin deactivated'));
+
+// Log acknowledgment events (Viewer Log integration)
+ctx.events.onLogAcknowledged((entries) => {
+  // Triggered when user acknowledges log entries in Viewer Log
+  entries.forEach((entry) => {
+    if (entry.nodeId) {
+      // Reset node visual state (e.g., remove error glow)
+      const node = ctx.nodes.get(entry.nodeId);
+      if (node) {
+        node.emissive = '#000000';
+        node.emissiveIntensity = 0;
+      }
+    }
+  });
+});
 ```
 
 ### UiAPI - Dialogs & Overlays
@@ -298,13 +315,35 @@ const appVersion = ctx.consts.get('version');
 const allConsts = ctx.consts.getAll();
 ```
 
-### LogAPI - Debugging
+### LogAPI - Debugging & Viewer Log Integration
 
 ```typescript
 ctx.log.debug('Debug info', { details: 'data' });  // Dev-Mode only
 ctx.log.info('Information', { nodeId: 'x' });
 ctx.log.warn('Warning message');
 ctx.log.error('Error occurred', new Error('details'));
+
+// Viewer Log integration (warn/error appear in Viewer Log panel)
+// Include nodeId/nodeName for acknowledgment support:
+ctx.log.error('Valve error', {
+  nodeId: 'valve-123',
+  nodeName: 'Valve_01',
+  message: 'Pressure too high',
+});
+
+// Listen for acknowledgment in Viewer Log:
+ctx.events.onLogAcknowledged((entries) => {
+  entries.forEach((entry) => {
+    if (entry.nodeId) {
+      // Reset error state when user acknowledges
+      const node = ctx.nodes.get(entry.nodeId);
+      if (node) {
+        node.emissive = '#000000';
+        node.emissiveIntensity = 0;
+      }
+    }
+  });
+});
 ```
 
 ---

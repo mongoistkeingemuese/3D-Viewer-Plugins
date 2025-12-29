@@ -580,10 +580,11 @@ function handleErrorMessage(ctx, payload) {
         if (nodeState.errors.length > 5) {
           nodeState.errors = nodeState.errors.slice(0, 5);
         }
-        ctx.log.warn("Axis error received", {
+        ctx.log.warn(`Axis error: ${payload.msg.txt}`, {
           nodeId: nodeState.nodeId,
-          axisName: nodeState.axisName,
-          error: errorEntry
+          nodeName: nodeState.axisName,
+          source: payload.src,
+          level: payload.lvl
         });
         if (payload.lvl === "ERR") {
           ctx.ui.notify(`Axis Error: ${nodeState.axisName} - ${payload.msg.txt}`, "error");
@@ -712,6 +713,32 @@ var plugin = {
           data: { nodeId: event.nodeId }
         });
       }
+    });
+    ctx.events.onLogAcknowledged((entries) => {
+      entries.forEach((entry) => {
+        if (entry.nodeId) {
+          const nodeState = pluginState.getNode(entry.nodeId);
+          if (nodeState) {
+            nodeState.errors.forEach((error) => {
+              error.acknowledged = true;
+            });
+            const hasUnacknowledgedErrors = nodeState.errors.some(
+              (error) => !error.acknowledged
+            );
+            if (!hasUnacknowledgedErrors && nodeState.currentState !== 0 /* ErrorStop */) {
+              const node = ctx.nodes.get(entry.nodeId);
+              if (node) {
+                node.emissive = "#000000";
+                node.emissiveIntensity = 0;
+              }
+            }
+            ctx.log.info("Axis errors acknowledged via Viewer Log", {
+              nodeId: entry.nodeId,
+              axisName: nodeState.axisName
+            });
+          }
+        }
+      });
     });
   },
   /**

@@ -470,10 +470,12 @@ function handleErrorMessage(
           nodeState.errors = nodeState.errors.slice(0, 5);
         }
 
-        ctx.log.warn('Axis error received', {
+        // Log to central Viewer Log (with nodeId for acknowledgment support)
+        ctx.log.warn(`Axis error: ${payload.msg.txt}`, {
           nodeId: nodeState.nodeId,
-          axisName: nodeState.axisName,
-          error: errorEntry,
+          nodeName: nodeState.axisName,
+          source: payload.src,
+          level: payload.lvl,
         });
 
         // Show notification for critical errors
@@ -689,6 +691,41 @@ const plugin: Plugin = {
           data: { nodeId: event.nodeId },
         });
       }
+    });
+
+    // Handle log acknowledgments from Viewer Log
+    ctx.events.onLogAcknowledged((entries) => {
+      entries.forEach((entry) => {
+        if (entry.nodeId) {
+          const nodeState = pluginState.getNode(entry.nodeId);
+          if (nodeState) {
+            // Mark all errors as acknowledged
+            nodeState.errors.forEach((error) => {
+              error.acknowledged = true;
+            });
+
+            // Check if there are any unacknowledged errors left
+            const hasUnacknowledgedErrors = nodeState.errors.some(
+              (error) => !error.acknowledged
+            );
+
+            // If all errors acknowledged, reset error visual state
+            // (but only if motion state is not ErrorStop)
+            if (!hasUnacknowledgedErrors && nodeState.currentState !== MotionState.ErrorStop) {
+              const node = ctx.nodes.get(entry.nodeId);
+              if (node) {
+                node.emissive = '#000000';
+                node.emissiveIntensity = 0;
+              }
+            }
+
+            ctx.log.info('Axis errors acknowledged via Viewer Log', {
+              nodeId: entry.nodeId,
+              axisName: nodeState.axisName,
+            });
+          }
+        }
+      });
     });
   },
 

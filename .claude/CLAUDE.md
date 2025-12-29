@@ -281,15 +281,18 @@ Each step waits for previous to complete.
 
 See `.claude/rules/parallelization.md` for full documentation.
 
-## Versioning
+## Versioning (CRITICAL)
 
-| Location | Format | Example |
-|----------|--------|---------|
-| `manifest.json` | `X.Y.Z` | `1.2.3` |
-| `package.json` | `X.Y.Z` | `1.2.3` |
-| Git tag | `vX.Y.Z` | `v1.2.3` |
+Every deploy MUST update versions - without this, the plugin cannot be installed:
 
-**All three MUST match.** See `.claude/rules/versioning.md` for details.
+| What | Bump | Example |
+|------|------|---------|
+| Plugin version (`manifest.json` + `package.json`) | Minor | `1.5.0` → `1.6.0` |
+| Monorepo git tag | Patch | `v1.5.1` → `v1.5.2` |
+
+**Why:** jsDelivr caches by tag. Same tag = old content forever.
+
+See `.claude/rules/versioning.md` for details.
 
 ## Plugin Templates
 

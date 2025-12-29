@@ -87,26 +87,47 @@ done
 
 ## Versioning Strategy
 
-This monorepo uses **two versioning approaches**:
+This monorepo uses **two versioning approaches** that are BOTH updated on every deploy:
 
-### 1. Monorepo Tags (for SDK/DevTools)
-- Tags like `v1.1.0` represent SDK releases
-- Used by jsDelivr for CDN access to ALL plugins
-- Increment when SDK or DevTools changes
+### 1. Plugin Version (Minor Bump - MANDATORY)
+- Each plugin has its own version in `manifest.json` and `package.json`
+- **MUST be bumped (minor) on EVERY deploy** - `1.5.1` → `1.6.0`
+- Without this, users won't see the update in the 3D Viewer
 
-### 2. Plugin Versions (individual)
-- Each plugin has its own version in manifest.json/package.json
-- Can differ from monorepo tag
-- Increment when plugin-specific code changes
+### 2. Monorepo Tag (Patch Bump - MANDATORY)
+- Tags like `v1.5.2` represent releases to jsDelivr CDN
+- **MUST be created on EVERY deploy** - `v1.5.1` → `v1.5.2`
+- Without this, jsDelivr returns cached (old) content
 
-### Example
+### Why Both Are Required
+
+**jsDelivr CDN caches aggressively by tag:**
+- Same tag = same content forever (even if you push new commits)
+- New tag = fresh content from GitHub
+
+**Plugin version identifies the release:**
+- Users see this version in 3D Viewer plugin settings
+- Must change so users know an update is available
+
+### Example Deploy Flow
 ```
-Git Tag:           v1.1.0 (monorepo release)
-├── plugin-sdk:    1.1.0
-├── axis-release-10: 1.0.8 (plugin version)
-├── blueprint-sandbox: 1.0.0
-└── blueprint-iframe: 1.0.0
+Before Deploy:
+├── Latest tag:        v1.5.1
+├── valve manifest:    1.5.0
+└── valve package:     1.5.0
+
+After Deploy:
+├── New tag:           v1.5.2  (patch bump)
+├── valve manifest:    1.6.0   (minor bump)
+└── valve package:     1.6.0   (minor bump)
 ```
+
+### CRITICAL: Never Deploy Without Version Bumps
+
+If you deploy without bumping versions:
+1. jsDelivr serves old cached content (tag unchanged)
+2. Users cannot install the new version (plugin version unchanged)
+3. **The deploy is effectively useless**
 
 ## Current Versions
 

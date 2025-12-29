@@ -77,23 +77,39 @@ npm run validate -- plugins/<plugin-name>/manifest.json
 
 ---
 
-## Step 3: Version Bump
+## Step 3: Version Bump (MANDATORY - AUTOMATIC)
 
-Ask the user (AskUserQuestion):
+**CRITICAL: Every deploy MUST bump the plugin's minor version. This is NOT optional.**
 
-**Header:** "Version Type"
-**Question:** "What type of release is this?"
+Without a version bump, the plugin cannot be installed via jsDelivr CDN.
 
-**Options:**
-- **Patch (x.x.X)** - Bug fixes, minor changes
-- **Minor (x.X.0)** - New features, backward compatible
-- **Major (X.0.0)** - Breaking changes
+### Plugin Version Bump (Minor - ALWAYS)
 
-Read current version from `plugins/<name>/manifest.json` and calculate new version.
+Read current version from `plugins/<name>/manifest.json` and bump the **minor** version:
+- `1.2.3` → `1.3.0`
+- `1.5.1` → `1.6.0`
 
-Update version in both files:
+Update version in BOTH files (must match):
 1. `plugins/<name>/manifest.json`
 2. `plugins/<name>/package.json`
+
+### Monorepo Tag (NEW - ALWAYS)
+
+Calculate the next monorepo tag by incrementing the patch version of the latest tag:
+```bash
+git tag -l "v*" --sort=-v:refname | head -1
+```
+- `v1.5.1` → `v1.5.2`
+- `v1.4.10` → `v1.4.11`
+
+**The new tag version will be used in Step 5.**
+
+### Why This Matters
+
+- jsDelivr CDN caches by tag - same tag = same content forever
+- Plugin version must change so users see the update
+- Monorepo tag must change for jsDelivr to serve new content
+- **Without these bumps, the deployed plugin will NOT be installable**
 
 ---
 
@@ -112,11 +128,17 @@ Verify build artifacts exist:
 ## Step 5: Commit & Tag
 
 ### Commit Message Format:
+
+Use `<plugin-version>` for the plugin's manifest version, and `<tag-version>` for the monorepo tag:
+
 ```
-release(<plugin-name>): v<version>
+release(<plugin-name>): v<plugin-version> - <brief summary>
 
 Changes:
 - <summary of changes from git diff>
+
+Plugin Version: <plugin-version> (minor bump)
+Monorepo Tag: v<tag-version>
 
 Quality Checks:
 - TypeScript: PASS
@@ -124,7 +146,7 @@ Quality Checks:
 - Build: PASS
 - Manifest: PASS
 
-Generated with [Claude Code](https://claude.com/claude-code)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
@@ -133,8 +155,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```bash
 git add -A
 git commit -m "<message>"
-git tag v<version>
+git tag v<tag-version>   # This is the MONOREPO tag, not plugin version
 ```
+
+**Important:** The git tag is the **monorepo tag** (incrementing patch), NOT the plugin version.
 
 ---
 
@@ -142,7 +166,7 @@ git tag v<version>
 
 ```bash
 git push origin main
-git push origin v<version>
+git push origin v<tag-version>
 ```
 
 ### Verify jsDelivr Access:
@@ -151,10 +175,17 @@ Wait 30 seconds for CDN propagation, then verify:
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}" \
-  "https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@v<version>/plugins/<name>/dist/manifest.json"
+  "https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@v<tag-version>/plugins/<name>/dist/manifest.json"
 ```
 
 Expected: `200`
+
+### Verify Plugin Version in Manifest:
+```bash
+curl -s "https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@v<tag-version>/plugins/<name>/dist/manifest.json" | jq '.version'
+```
+
+Expected: `"<plugin-version>"`
 
 ---
 
@@ -179,17 +210,17 @@ After deployment, document:
 ```
 Deployment SUCCESSFUL
 
-Plugin:  <plugin-name>
-Version: v<version>
-Tag:     v<version>
+Plugin:         <plugin-name>
+Plugin Version: <plugin-version> (in manifest.json)
+Monorepo Tag:   v<tag-version>
 
 CDN URLs:
-  Manifest: https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@v<version>/plugins/<name>/dist/manifest.json
-  Entry:    https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@v<version>/plugins/<name>/dist/index.js
+  Manifest: https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@v<tag-version>/plugins/<name>/dist/manifest.json
+  Entry:    https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@v<tag-version>/plugins/<name>/dist/index.js
 
 3DViewer Settings:
   Monorepo:    mongoistkeingemuese/3D-Viewer-Plugins
-  Version:     v<version>
+  Version:     v<tag-version>
   Plugin Path: plugins/<name>/dist
 ```
 

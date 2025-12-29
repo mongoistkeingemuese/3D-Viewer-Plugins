@@ -138,18 +138,6 @@ function getGenericStateColor(state) {
       return "#6c757d";
   }
 }
-function getErrorLevelColor(level) {
-  switch (level) {
-    case "ERR":
-      return "#dc3545";
-    case "WARN":
-      return "#ffc107";
-    case "INFO":
-      return "#007bff";
-    default:
-      return "#6c757d";
-  }
-}
 var ValveDetailsPopup = ({ data }) => {
   const nodeId = data?.nodeId;
   const [nodeState, setNodeState] = useState(() => getNodeState(nodeId));
@@ -426,89 +414,74 @@ var ValveDetailsPopup = ({ data }) => {
           /* @__PURE__ */ jsx("p", { style: styles.modeHint, children: "Hinweis: Modi werden ohne Feedback vom PLC gesendet" })
         ] })
       ] }),
-      activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-        /* @__PURE__ */ jsxs("div", { style: styles.errorSectionHeader, children: [
-          /* @__PURE__ */ jsxs("h3", { style: { ...styles.sectionTitle, marginBottom: 0 }, children: [
-            "Errors (",
+      activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: { padding: "8px" }, children: [
+        /* @__PURE__ */ jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }, children: [
+          /* @__PURE__ */ jsxs("span", { style: { fontWeight: "bold" }, children: [
+            nodeState.errors.length,
+            " Meldungen (",
             unacknowledgedCount,
-            " unbest\xE4tigt)"
+            " offen)"
           ] }),
           unacknowledgedCount > 0 && /* @__PURE__ */ jsx(
             "button",
             {
               onClick: handleAcknowledgeAll,
-              style: styles.ackAllButton,
+              style: { padding: "6px 12px", backgroundColor: "#28a745", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" },
               children: "Alle Quittieren"
             }
           )
         ] }),
-        nodeState.errors.length === 0 ? /* @__PURE__ */ jsxs("div", { style: styles.noErrors, children: [
-          /* @__PURE__ */ jsx("span", { style: { fontSize: "24px" }, children: "\u2713" }),
-          /* @__PURE__ */ jsx("p", { children: "Keine Errors aufgezeichnet" })
-        ] }) : /* @__PURE__ */ jsx("div", { style: { display: "flex", flexDirection: "column", gap: "8px" }, children: nodeState.errors.map((err, idx) => /* @__PURE__ */ jsxs(
+        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("div", { style: { textAlign: "center", padding: "20px", color: "#28a745" }, children: "Keine Meldungen" }) : nodeState.errors.map((err, idx) => /* @__PURE__ */ jsxs(
           "div",
           {
             style: {
-              backgroundColor: err.acknowledged ? "#f0f0f0" : "#fff",
-              border: "1px solid #ccc",
-              borderLeft: `4px solid ${getErrorLevelColor(err.level)}`,
-              borderRadius: "4px",
-              padding: "12px"
+              marginBottom: "10px",
+              padding: "10px",
+              backgroundColor: err.acknowledged ? "#f5f5f5" : "#fff",
+              border: `2px solid ${err.level === "ERR" ? "#dc3545" : err.level === "WARN" ? "#ffc107" : "#17a2b8"}`,
+              borderRadius: "4px"
             },
             children: [
               /* @__PURE__ */ jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
-                /* @__PURE__ */ jsxs("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
-                  /* @__PURE__ */ jsx(
-                    "span",
-                    {
-                      style: {
-                        backgroundColor: getErrorLevelColor(err.level),
-                        color: "#fff",
-                        padding: "2px 8px",
-                        borderRadius: "3px",
-                        fontSize: "11px",
-                        fontWeight: "bold"
-                      },
-                      children: err.level
-                    }
-                  ),
-                  /* @__PURE__ */ jsx("span", { style: { fontSize: "12px", color: "#666" }, children: formatTimestamp(err.timestamp) }),
-                  /* @__PURE__ */ jsx("span", { style: { fontSize: "12px", color: "#999" }, children: err.source })
+                /* @__PURE__ */ jsxs("div", { children: [
+                  /* @__PURE__ */ jsx("span", { style: {
+                    display: "inline-block",
+                    padding: "2px 8px",
+                    marginRight: "8px",
+                    backgroundColor: err.level === "ERR" ? "#dc3545" : err.level === "WARN" ? "#ffc107" : "#17a2b8",
+                    color: "#fff",
+                    fontWeight: "bold",
+                    fontSize: "11px",
+                    borderRadius: "3px"
+                  }, children: err.level }),
+                  /* @__PURE__ */ jsx("span", { style: { fontSize: "12px", color: "#666" }, children: formatTimestamp(err.timestamp) })
                 ] }),
                 !err.acknowledged ? /* @__PURE__ */ jsx(
                   "button",
                   {
                     onClick: () => handleAcknowledge(idx),
-                    style: {
-                      padding: "4px 12px",
-                      backgroundColor: "#007bff",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                      fontSize: "12px"
-                    },
+                    style: { padding: "4px 10px", backgroundColor: "#007bff", color: "#fff", border: "none", borderRadius: "3px", cursor: "pointer", fontSize: "12px" },
                     children: "Quittieren"
                   }
-                ) : /* @__PURE__ */ jsx("span", { style: { fontSize: "11px", color: "#28a745", fontWeight: "bold" }, children: "\u2713 Quittiert" })
+                ) : /* @__PURE__ */ jsx("span", { style: { color: "#28a745", fontWeight: "bold", fontSize: "12px" }, children: "\u2713" })
               ] }),
               /* @__PURE__ */ jsx("pre", { style: {
-                fontSize: "12px",
-                fontFamily: "monospace",
-                backgroundColor: "#1e1e1e",
-                color: "#d4d4d4",
-                padding: "10px",
-                borderRadius: "4px",
-                overflow: "auto",
-                maxHeight: "150px",
                 margin: 0,
+                padding: "8px",
+                backgroundColor: "#222",
+                color: "#0f0",
+                fontSize: "11px",
+                fontFamily: "Consolas, Monaco, monospace",
+                borderRadius: "3px",
+                overflow: "auto",
+                maxHeight: "200px",
                 whiteSpace: "pre-wrap",
-                wordBreak: "break-word"
-              }, children: JSON.stringify(err.rawMsg, null, 2) })
+                wordBreak: "break-all"
+              }, children: err.rawPayload })
             ]
           },
           idx
-        )) })
+        ))
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.footer, children: [
@@ -1187,113 +1160,40 @@ function handleValveData(ctx, nodeId, rawPayload) {
 }
 function handleErrorMessage(ctx, rawPayload) {
   try {
+    const payloadString = typeof rawPayload === "string" ? rawPayload : JSON.stringify(rawPayload, null, 2);
     let payload;
     if (typeof rawPayload === "string") {
       payload = JSON.parse(rawPayload);
     } else {
       payload = rawPayload;
     }
-    let messageText = "";
-    let errorNo;
-    const msgObj = typeof payload.msg === "object" && payload.msg !== null ? payload.msg : null;
-    if (msgObj) {
-      errorNo = msgObj.no ?? msgObj.errNo ?? msgObj.errorNo ?? msgObj.code ?? msgObj.errorCode;
-    }
-    if (typeof payload.msg === "string") {
-      messageText = payload.msg;
-    } else if (msgObj) {
-      const textFields = ["txt", "text", "errTxt", "errorTxt", "message", "msg", "description"];
-      for (const field of textFields) {
-        const value = msgObj[field];
-        if (typeof value === "string" && value.trim()) {
-          messageText = value;
-          break;
-        }
-      }
-      if (!messageText && msgObj.val && typeof msgObj.val === "object") {
-        const val = msgObj.val;
-        for (const field of textFields) {
-          const value = val[field];
-          if (typeof value === "string" && value.trim()) {
-            messageText = value;
-            break;
-          }
-        }
-        if (errorNo === void 0) {
-          errorNo = val.no ?? val.errNo ?? val.code;
-        }
-      }
-      if (!messageText) {
-        messageText = JSON.stringify(payload.msg);
-      }
-    }
-    if (!messageText) {
-      messageText = errorNo !== void 0 ? `Fehler ${errorNo}` : "Unbekannter Fehler";
-    }
-    ctx.log.info("Error message received", {
-      rawPayload: JSON.stringify(payload).slice(0, 500),
-      src: payload.src,
-      lvl: payload.lvl,
-      extractedMessage: messageText,
-      extractedErrorNo: errorNo,
-      msgType: typeof payload.msg,
-      msgKeys: msgObj ? Object.keys(msgObj) : []
-    });
+    ctx.log.info("Error message received", { src: payload.src, lvl: payload.lvl });
     const source = normalizeValveName(payload.src || "");
     const allNodes = pluginState.getAllNodes();
-    ctx.log.debug("Checking error against nodes", {
-      normalizedSource: source,
-      nodeCount: allNodes.length,
-      nodeNames: allNodes.map((n) => n.valveName)
-    });
     allNodes.forEach((nodeState) => {
       const expectedValveName = normalizeValveName(nodeState.valveName);
-      ctx.log.debug("Comparing valve names", {
-        source,
-        expectedValveName,
-        match: source === expectedValveName
-      });
       if (source === expectedValveName) {
-        const values = msgObj?.val;
         const errorEntry = {
           timestamp: payload.utc,
           level: payload.lvl,
           source: payload.src,
-          message: messageText,
-          errorNo,
-          values,
-          rawMsg: payload,
-          // Store complete payload, not just msg
+          rawPayload: payloadString,
           acknowledged: false
         };
         nodeState.errors.unshift(errorEntry);
-        if (nodeState.errors.length > 10) {
-          nodeState.errors = nodeState.errors.slice(0, 10);
+        if (nodeState.errors.length > 20) {
+          nodeState.errors = nodeState.errors.slice(0, 20);
         }
-        ctx.log.info("ErrorEntry created and stored", {
-          storedMessage: errorEntry.message,
-          storedValues: errorEntry.values,
-          errorCount: nodeState.errors.length
-        });
-        ctx.log.error(`Valve error: ${messageText}`, {
-          nodeId: nodeState.nodeId,
-          nodeName: nodeState.valveName,
-          level: payload.lvl,
-          values,
-          timestamp: new Date(payload.utc).toISOString()
+        ctx.log.info("Error stored", {
+          valveName: nodeState.valveName,
+          payloadLength: payloadString.length
         });
         if (payload.lvl === "ERR") {
           nodeState.genericState = 3 /* Error */;
           updateNodeVisuals(ctx, nodeState.nodeId, 3 /* Error */, nodeState.specificState);
-          ctx.ui.notify(
-            `Valve Error: ${nodeState.valveName} - ${messageText}`,
-            "error"
-          );
+          ctx.ui.notify(`Error: ${nodeState.valveName}`, "error");
         } else if (payload.lvl === "WARN") {
-          ctx.ui.notify(
-            `Valve Warning: ${nodeState.valveName} - ${messageText}`,
-            "warning"
-          );
+          ctx.ui.notify(`Warning: ${nodeState.valveName}`, "warning");
         }
       }
     });
@@ -1450,7 +1350,6 @@ function acknowledgeError(nodeId, errorIndex) {
     valveName: nodeState.valveName,
     errorIndex,
     level: error.level,
-    message: error.message,
     acknowledgedAt: (/* @__PURE__ */ new Date()).toISOString()
   });
   const hasUnacknowledgedErrors = nodeState.errors.some((e) => !e.acknowledged);

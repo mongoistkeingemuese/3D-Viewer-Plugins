@@ -114,10 +114,7 @@ export interface ErrorEntry {
   timestamp: number;
   level: string;
   source: string;
-  message: string;
-  errorNo?: number | string;
-  values?: Record<string, unknown>;
-  rawMsg?: unknown;
+  rawPayload: string;  // Complete raw MQTT payload as JSON string
   acknowledged: boolean;
 }
 

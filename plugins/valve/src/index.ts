@@ -397,7 +397,12 @@ function handleValveData(
  */
 function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
   try {
-    // Parse payload if it's a string
+    // Convert to string for storage
+    const payloadString = typeof rawPayload === 'string'
+      ? rawPayload
+      : JSON.stringify(rawPayload, null, 2);
+
+    // Parse for field extraction
     let payload: ErrorPayload;
     if (typeof rawPayload === 'string') {
       payload = JSON.parse(rawPayload);
@@ -405,150 +410,38 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
       payload = rawPayload as ErrorPayload;
     }
 
-    // Extract message text and error number safely (handle different payload formats)
-    // Known formats:
-    // 1. msg: "string"
-    // 2. msg: { txt: "string", val: {...} }
-    // 3. msg: { text: "string" }
-    // 4. msg: { val: { txt: "string" } }
-    // 5. msg: { no: 123, txt: "string" }
-    // 6. msg: { errNo: 123, errTxt: "string" }
-    // 7. msg: { code: 123, message: "string" }
-    let messageText = '';
-    let errorNo: number | string | undefined;
-    const msgObj = typeof payload.msg === 'object' && payload.msg !== null
-      ? payload.msg as Record<string, unknown>
-      : null;
-
-    // Extract error number (try multiple field names)
-    if (msgObj) {
-      errorNo = msgObj.no as number | string | undefined
-        ?? msgObj.errNo as number | string | undefined
-        ?? msgObj.errorNo as number | string | undefined
-        ?? msgObj.code as number | string | undefined
-        ?? msgObj.errorCode as number | string | undefined;
-    }
-
-    // Extract message text
-    if (typeof payload.msg === 'string') {
-      messageText = payload.msg;
-    } else if (msgObj) {
-      // Try direct text fields
-      const textFields = ['txt', 'text', 'errTxt', 'errorTxt', 'message', 'msg', 'description'];
-      for (const field of textFields) {
-        const value = msgObj[field];
-        if (typeof value === 'string' && value.trim()) {
-          messageText = value;
-          break;
-        }
-      }
-
-      // Try nested val object
-      if (!messageText && msgObj.val && typeof msgObj.val === 'object') {
-        const val = msgObj.val as Record<string, unknown>;
-        for (const field of textFields) {
-          const value = val[field];
-          if (typeof value === 'string' && value.trim()) {
-            messageText = value;
-            break;
-          }
-        }
-        // Also extract errorNo from val if not found yet
-        if (errorNo === undefined) {
-          errorNo = val.no as number | string | undefined
-            ?? val.errNo as number | string | undefined
-            ?? val.code as number | string | undefined;
-        }
-      }
-
-      // Ultimate fallback: serialize the entire msg object
-      if (!messageText) {
-        messageText = JSON.stringify(payload.msg);
-      }
-    }
-
-    // If still no message, use generic text
-    if (!messageText) {
-      messageText = errorNo !== undefined ? `Fehler ${errorNo}` : 'Unbekannter Fehler';
-    }
-
-    ctx.log.info('Error message received', {
-      rawPayload: JSON.stringify(payload).slice(0, 500),
-      src: payload.src,
-      lvl: payload.lvl,
-      extractedMessage: messageText,
-      extractedErrorNo: errorNo,
-      msgType: typeof payload.msg,
-      msgKeys: msgObj ? Object.keys(msgObj) : [],
-    });
+    ctx.log.info('Error message received', { src: payload.src, lvl: payload.lvl });
 
     const source = normalizeValveName(payload.src || '');
     const allNodes = pluginState.getAllNodes();
 
-    ctx.log.debug('Checking error against nodes', {
-      normalizedSource: source,
-      nodeCount: allNodes.length,
-      nodeNames: allNodes.map((n) => n.valveName),
-    });
-
     allNodes.forEach((nodeState) => {
       const expectedValveName = normalizeValveName(nodeState.valveName);
-      ctx.log.debug('Comparing valve names', {
-        source,
-        expectedValveName,
-        match: source === expectedValveName,
-      });
       if (source === expectedValveName) {
-        // Extract values from payload
-        const values = msgObj?.val as Record<string, unknown> | undefined;
-
         const errorEntry: ErrorEntry = {
           timestamp: payload.utc,
           level: payload.lvl,
           source: payload.src,
-          message: messageText,
-          errorNo: errorNo,
-          values: values,
-          rawMsg: payload,  // Store complete payload, not just msg
+          rawPayload: payloadString,
           acknowledged: false,
         };
 
-        // Add to errors list
         nodeState.errors.unshift(errorEntry);
-        if (nodeState.errors.length > 10) {
-          nodeState.errors = nodeState.errors.slice(0, 10);
+        if (nodeState.errors.length > 20) {
+          nodeState.errors = nodeState.errors.slice(0, 20);
         }
 
-        // Debug: Log what we stored
-        ctx.log.info('ErrorEntry created and stored', {
-          storedMessage: errorEntry.message,
-          storedValues: errorEntry.values,
-          errorCount: nodeState.errors.length,
+        ctx.log.info('Error stored', {
+          valveName: nodeState.valveName,
+          payloadLength: payloadString.length,
         });
 
-        // Log the error to Viewer Log
-        ctx.log.error(`Valve error: ${messageText}`, {
-          nodeId: nodeState.nodeId,
-          nodeName: nodeState.valveName,
-          level: payload.lvl,
-          values: values,
-          timestamp: new Date(payload.utc).toISOString(),
-        });
-
-        // Set node to error state visually
         if (payload.lvl === 'ERR') {
           nodeState.genericState = GenericState.Error;
           updateNodeVisuals(ctx, nodeState.nodeId, GenericState.Error, nodeState.specificState);
-
-          ctx.ui.notify(
-            `Valve Error: ${nodeState.valveName} - ${messageText}`,
-            'error'
-          );
+          ctx.ui.notify(`Error: ${nodeState.valveName}`, 'error');
         } else if (payload.lvl === 'WARN') {
-          ctx.ui.notify(
-            `Valve Warning: ${nodeState.valveName} - ${messageText}`,
-            'warning'
-          );
+          ctx.ui.notify(`Warning: ${nodeState.valveName}`, 'warning');
         }
       }
     });
@@ -771,7 +664,6 @@ export function acknowledgeError(nodeId: string, errorIndex: number): void {
     valveName: nodeState.valveName,
     errorIndex,
     level: error.level,
-    message: error.message,
     acknowledgedAt: new Date().toISOString(),
   });
 

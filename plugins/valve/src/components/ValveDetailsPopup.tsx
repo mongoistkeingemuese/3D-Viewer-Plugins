@@ -400,14 +400,15 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
             <div style={{
               marginBottom: '12px',
               padding: '8px',
-              backgroundColor: '#e7f3ff',
-              border: '1px solid #007bff',
+              backgroundColor: '#fff',
+              border: '2px solid #007bff',
               borderRadius: '4px',
               fontSize: '11px',
               fontFamily: 'monospace',
+              color: '#000',
             }}>
-              <strong>DEBUG - errors Array:</strong>
-              <pre style={{ margin: '4px 0 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+              <strong style={{ color: '#000' }}>DEBUG - errors Array:</strong>
+              <pre style={{ margin: '4px 0 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: '#000' }}>
                 {JSON.stringify(nodeState.errors, null, 2)}
               </pre>
             </div>
@@ -498,13 +499,14 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                         </span>
                         <span style={{
                           flex: 1,
-                          color: '#333',
+                          color: '#000',
                           fontSize: '13px',
+                          fontWeight: 500,
                         }}>
                           {messageText}
                         </span>
                         <span style={{
-                          color: '#666',
+                          color: '#000',
                           fontSize: '14px',
                           flexShrink: 0,
                         }}>

@@ -406,14 +406,15 @@ var ValveDetailsPopup = ({ data }) => {
         /* @__PURE__ */ jsxs("div", { style: {
           marginBottom: "12px",
           padding: "8px",
-          backgroundColor: "#e7f3ff",
-          border: "1px solid #007bff",
+          backgroundColor: "#fff",
+          border: "2px solid #007bff",
           borderRadius: "4px",
           fontSize: "11px",
-          fontFamily: "monospace"
+          fontFamily: "monospace",
+          color: "#000"
         }, children: [
-          /* @__PURE__ */ jsx("strong", { children: "DEBUG - errors Array:" }),
-          /* @__PURE__ */ jsx("pre", { style: { margin: "4px 0 0 0", whiteSpace: "pre-wrap", wordBreak: "break-all" }, children: JSON.stringify(nodeState.errors, null, 2) })
+          /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "DEBUG - errors Array:" }),
+          /* @__PURE__ */ jsx("pre", { style: { margin: "4px 0 0 0", whiteSpace: "pre-wrap", wordBreak: "break-all", color: "#000" }, children: JSON.stringify(nodeState.errors, null, 2) })
         ] }),
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("div", { style: { color: "#28a745", textAlign: "center", padding: "20px" }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsx("div", { style: { display: "flex", flexDirection: "column", gap: "8px" }, children: nodeState.errors.map((err, idx) => {
           const isExpanded = expandedErrors.has(idx);
@@ -482,11 +483,12 @@ var ValveDetailsPopup = ({ data }) => {
                       }, children: err.level || "INFO" }),
                       /* @__PURE__ */ jsx("span", { style: {
                         flex: 1,
-                        color: "#333",
-                        fontSize: "13px"
+                        color: "#000",
+                        fontSize: "13px",
+                        fontWeight: 500
                       }, children: messageText }),
                       /* @__PURE__ */ jsx("span", { style: {
-                        color: "#666",
+                        color: "#000",
                         fontSize: "14px",
                         flexShrink: 0
                       }, children: isExpanded ? "\u25B2" : "\u25BC" })

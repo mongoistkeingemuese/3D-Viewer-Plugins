@@ -10,6 +10,7 @@ import React, { useEffect, useState } from 'react';
 import {
   getNodeState,
   acknowledgeError,
+  acknowledgeAllErrors,
   sendStepCommand,
   sendSwitchOnCommand,
   sendHomingCommand,
@@ -17,7 +18,10 @@ import {
   setStepSize,
   isStepControlAvailable,
   getCurrentMqttFormat,
+  getUnacknowledgedErrorCount,
 } from '../index';
+import { MotionStateNames, type NodeState } from '../types';
+import { formatTime } from '../utils';
 
 /**
  * Props interface for AxisDetailsPopup component
@@ -35,20 +39,6 @@ interface AxisDetailsPopupProps {
 type TabType = 'control' | 'status' | 'errors';
 
 /**
- * MotionState names for display
- */
-const MotionStateNames: Record<number, string> = {
-  0: 'Error Stop',
-  1: 'Standstill',
-  2: 'Homing',
-  3: 'Stopping',
-  4: 'Disabled',
-  5: 'Discrete Motion',
-  6: 'Continuous Motion',
-  7: 'Synchronized Motion',
-};
-
-/**
  * Get color for motion state
  */
 function getMotionStateColor(state: number): string {
@@ -60,14 +50,6 @@ function getMotionStateColor(state: number): string {
     case 7: return '#00ff00';
     default: return '#888888';
   }
-}
-
-/**
- * Format timestamp to readable string
- */
-function formatTimestamp(timestamp: number): string {
-  const date = new Date(timestamp);
-  return date.toLocaleString();
 }
 
 /**
@@ -128,7 +110,7 @@ const STEP_SIZES = [0.1, 1, 10, 100];
  */
 export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
   const nodeId = data?.nodeId as string;
-  const [nodeState, setNodeState] = useState(() => getNodeState(nodeId));
+  const [nodeState, setNodeState] = useState<NodeState | undefined>(() => getNodeState(nodeId));
   const [updateCounter, setUpdateCounter] = useState(0);
   const [selectedStep, setSelectedStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -139,6 +121,9 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
   const [stepControlEnabled, setStepControlEnabled] = useState(() => isStepControlAvailable());
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
   const [activeTab, setActiveTab] = useState<TabType>('control');
+
+  // Selected error index for detail view
+  const [selectedErrorIdx, setSelectedErrorIdx] = useState<number | null>(null);
 
   // Poll for updates
   useEffect(() => {
@@ -201,6 +186,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
 
   const motionStateName = MotionStateNames[nodeState.currentState] || 'Unknown';
   const { activityBits, statusMask } = nodeState;
+  const unacknowledgedCount = getUnacknowledgedErrorCount(nodeId);
 
   return (
     <div style={styles.container}>
@@ -251,7 +237,10 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
             ...(activeTab === 'errors' ? styles.tabButtonActive : {}),
           }}
         >
-          Errors {nodeState.errors.length > 0 && `(${nodeState.errors.length})`}
+          Errors
+          {unacknowledgedCount > 0 && (
+            <span style={styles.errorBadge}>{unacknowledgedCount}</span>
+          )}
         </button>
       </div>
 
@@ -277,9 +266,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
                 </div>
                 <div style={styles.dataRow}>
                   <span style={styles.dataLabel}>Last Update:</span>
-                  <span style={styles.dataValue}>
-                    {nodeState.lastUpdate ? nodeState.lastUpdate.toLocaleTimeString() : 'Never'}
-                  </span>
+                  <span style={styles.dataValue}>{formatTime(nodeState.lastUpdate)}</span>
                 </div>
               </div>
             </div>
@@ -460,53 +447,139 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
           </>
         )}
 
+        {/* ERRORS TAB */}
         {activeTab === 'errors' && (
           <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Error Log (Last 5)</h3>
+            <h3 style={styles.sectionTitle}>
+              Fehlermeldungen ({nodeState.errors.length}) - {unacknowledgedCount} offen
+            </h3>
+
+            {/* Alle Quittieren Button */}
+            {unacknowledgedCount > 0 && (
+              <button
+                onClick={() => {
+                  acknowledgeAllErrors(nodeId);
+                  setSelectedErrorIdx(null);
+                  setUpdateCounter((c) => c + 1);
+                }}
+                style={{
+                  marginBottom: '12px',
+                  padding: '10px 20px',
+                  backgroundColor: '#28a745',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  width: '100%',
+                }}
+              >
+                Alle Quittieren ({unacknowledgedCount})
+              </button>
+            )}
+
             {nodeState.errors.length === 0 ? (
-              <div style={styles.noErrors}>
-                <span style={{ fontSize: '24px' }}>&#10003;</span>
-                <p>No errors recorded</p>
-              </div>
+              <pre style={{ color: '#28a745', padding: '20px', textAlign: 'center', margin: 0 }}>
+                Keine Fehlermeldungen
+              </pre>
             ) : (
-              <div style={styles.errorListFull}>
-                {nodeState.errors.map((error, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      ...styles.errorItem,
-                      backgroundColor: error.acknowledged ? '#f0f0f0' : '#ffffff',
-                      borderLeft: `4px solid ${getErrorLevelColor(error.level)}`,
-                    }}
-                  >
-                    <div style={styles.errorHeader}>
-                      <span
+              <>
+                {/* Error Summary List */}
+                <pre style={{
+                  margin: '0 0 8px 0',
+                  padding: '10px',
+                  backgroundColor: '#2d2d2d',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontFamily: 'Consolas, Monaco, monospace',
+                  borderRadius: '4px',
+                  border: '1px solid #555',
+                  whiteSpace: 'pre-wrap',
+                  maxHeight: '150px',
+                  overflow: 'auto',
+                }}>
+{nodeState.errors.map((err, idx) => {
+  try {
+    const p = JSON.parse(err.rawPayload || '{}');
+    const msg = p.msg?.txt || p.msg?.text || p.msg || 'No message';
+    const ack = err.acknowledged ? '✓' : '○';
+    const sel = selectedErrorIdx === idx ? '▶' : ' ';
+    return `${sel}[${idx}] ${ack} ${err.level}: ${msg}\n`;
+  } catch {
+    return ` [${idx}] ○ ${err.level}: Parse error\n`;
+  }
+}).join('')}
+                </pre>
+
+                {/* Error Selection Buttons */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
+                  {Array.from({ length: nodeState.errors.length }, (_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedErrorIdx(selectedErrorIdx === idx ? null : idx)}
+                      style={{
+                        padding: '4px 8px',
+                        backgroundColor: selectedErrorIdx === idx ? '#007bff' : '#6c757d',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '3px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                      }}
+                    >
+                      #{idx}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Selected Error Detail */}
+                {selectedErrorIdx !== null && nodeState.errors[selectedErrorIdx] && (
+                  <>
+                    <pre style={{
+                      margin: 0,
+                      padding: '10px',
+                      backgroundColor: '#1a1a1a',
+                      color: '#0f0',
+                      fontSize: '11px',
+                      fontFamily: 'Consolas, Monaco, monospace',
+                      borderRadius: '4px',
+                      border: `2px solid ${getErrorLevelColor(nodeState.errors[selectedErrorIdx].level)}`,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-all',
+                      maxHeight: '200px',
+                      overflow: 'auto',
+                    }}>
+{(() => {
+  const err = nodeState.errors[selectedErrorIdx];
+  try {
+    return JSON.stringify(JSON.parse(err.rawPayload || '{}'), null, 2);
+  } catch {
+    return err.rawPayload || 'No payload';
+  }
+})()}
+                    </pre>
+                    {/* Acknowledge single error button */}
+                    {!nodeState.errors[selectedErrorIdx].acknowledged && (
+                      <button
+                        onClick={() => handleAcknowledge(selectedErrorIdx)}
                         style={{
-                          ...styles.errorLevel,
-                          color: getErrorLevelColor(error.level),
+                          marginTop: '8px',
+                          padding: '6px 12px',
+                          backgroundColor: '#007bff',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
                         }}
                       >
-                        {error.level}
-                      </span>
-                      <span style={styles.errorTime}>{formatTimestamp(error.timestamp)}</span>
-                    </div>
-                    <div style={styles.errorMessage}>{error.message}</div>
-                    <div style={styles.errorFooter}>
-                      <span style={styles.errorSource}>Source: {error.source}</span>
-                      {!error.acknowledged ? (
-                        <button
-                          onClick={() => handleAcknowledge(index)}
-                          style={styles.ackButton}
-                        >
-                          Acknowledge
-                        </button>
-                      ) : (
-                        <span style={styles.acknowledgedBadge}>&#10003; Acknowledged</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                        Quittieren
+                      </button>
+                    )}
+                  </>
+                )}
+              </>
             )}
           </div>
         )}
@@ -517,6 +590,14 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
         <div style={styles.footerInfo}>
           <span style={styles.footerLabel}>Node ID:</span>
           <span style={styles.footerValue}>{nodeId}</span>
+        </div>
+        <div style={styles.footerInfo}>
+          <span style={styles.footerLabel}>AxisCmd:</span>
+          <span style={styles.footerValue}>{nodeState.axisCommandNo}</span>
+        </div>
+        <div style={styles.footerInfo}>
+          <span style={styles.footerLabel}>MoveCmd:</span>
+          <span style={styles.footerValue}>{nodeState.moveCommandNo}</span>
         </div>
         <div style={styles.footerInfo}>
           <span style={styles.footerLabel}>Updates:</span>
@@ -553,14 +634,6 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '12px',
   },
-  sfLabel: {
-    fontSize: '14px',
-    color: '#666',
-    fontFamily: 'monospace',
-    backgroundColor: '#e9ecef',
-    padding: '2px 8px',
-    borderRadius: '4px',
-  },
   formatLabel: {
     fontSize: '11px',
     color: '#fff',
@@ -588,6 +661,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s',
     marginBottom: '-2px',
     borderBottom: '2px solid transparent',
+    position: 'relative',
   },
   tabButtonActive: {
     backgroundColor: '#007bff',
@@ -600,6 +674,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
   tabContent: {
     minHeight: '200px',
+  },
+  errorBadge: {
+    backgroundColor: '#dc3545',
+    color: '#fff',
+    borderRadius: '10px',
+    padding: '2px 6px',
+    fontSize: '10px',
+    marginLeft: '6px',
+    fontWeight: 'bold',
   },
   release10Notice: {
     display: 'flex',
@@ -771,74 +854,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '12px',
     color: '#666',
     fontStyle: 'italic',
-  },
-  noErrors: {
-    textAlign: 'center',
-    padding: '20px',
-    color: '#28a745',
-  },
-  errorList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    maxHeight: '150px',
-    overflowY: 'auto',
-  },
-  errorListFull: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  errorItem: {
-    padding: '10px',
-    borderRadius: '4px',
-    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-  },
-  errorHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '6px',
-  },
-  errorLevel: {
-    fontSize: '11px',
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  errorTime: {
-    fontSize: '10px',
-    color: '#999',
-  },
-  errorMessage: {
-    fontSize: '12px',
-    color: '#333',
-    marginBottom: '6px',
-    lineHeight: '1.3',
-  },
-  errorFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: '6px',
-  },
-  errorSource: {
-    fontSize: '11px',
-    color: '#666',
-    fontStyle: 'italic',
-  },
-  ackButton: {
-    padding: '4px 10px',
-    backgroundColor: '#007bff',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '11px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-  },
-  acknowledgedBadge: {
-    fontSize: '11px',
-    color: '#28a745',
-    fontWeight: 'bold',
   },
   footer: {
     marginTop: '16px',

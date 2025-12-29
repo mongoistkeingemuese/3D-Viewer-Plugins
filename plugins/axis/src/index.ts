@@ -8,13 +8,14 @@
  * - HTTP API integration for axis movement commands
  * - SF number configuration per node
  * - Supports Release 10 and Release 11 MQTT formats
+ * - Error tracking with acknowledge functionality
  *
  * Purpose: Monitor and control industrial axes in real-time
  * Usage: Bind to 3D objects representing physical axes
  * Rationale: Provides comprehensive axis monitoring with visual feedback and control
  *
  * @module axis
- * @version 1.0.0
+ * @version 1.3.0
  */
 
 import type {
@@ -26,172 +27,29 @@ import type {
 } from '@3dviewer/plugin-sdk';
 
 import { AxisDetailsPopup } from './components/AxisDetailsPopup';
-
-/**
- * MotionState enum values
- *
- * Purpose: Define motion states for axis visualization
- */
-enum MotionState {
-  ErrorStop = 0,
-  Standstill = 1,
-  Homing = 2,
-  Stopping = 3,
-  Disabled = 4,
-  DiscreteMotion = 5,
-  ContinuousMotion = 6,
-  SynchronizedMotion = 7,
-}
-
-/**
- * MotionActivityStatusBits (mtAcMk)
- *
- * Purpose: Parse and store activity status bits
- */
-interface MotionActivityStatusBits {
-  motionIsActive: boolean;
-  jogNegativeIsActive: boolean;
-  jogPositiveIsActive: boolean;
-  homingIsActive: boolean;
-  resetControllerFaultIsActive: boolean;
-  velocityPositiveIsActive: boolean;
-  velocityNegativeIsActive: boolean;
-  stoppingIsActive: boolean;
-}
-
-/**
- * MotionStatusMaskBits (motMsk)
- *
- * Purpose: Parse and store motion status mask bits
- */
-interface MotionStatusMaskBits {
-  isReady: boolean;
-  isEnabled: boolean;
-  isSwitchedOn: boolean;
-  isHomed: boolean;
-  isCommutated: boolean;
-  internalLimitIsActive: boolean;
-  hasWarning: boolean;
-  hasError: boolean;
-  isInVelocity: boolean;
-  overrideEnabled: boolean;
-  hardwareLimitSwitchNegativeActivated: boolean;
-  hardwareLimitSwitchPositiveActivated: boolean;
-  hardwareHomeSwitchActivated: boolean;
-  hardwareEnableActivated: boolean;
-  emergencyDetectedDelayedEnabled: boolean;
-  softwareLimitSwitchNegativeActivated: boolean;
-  softwareLimitSwitchPositiveActivated: boolean;
-  softwareLimitSwitchNegativeReached: boolean;
-  softwareLimitSwitchPositiveReached: boolean;
-}
-
-/**
- * Axis data from Release 11 MQTT payload (direct hex values)
- */
-interface AxisDataRelease11 {
-  typ: string;
-  id: string;
-  name: string;
-  sS: string;       // MotionState as hex string (WORD)
-  mtAcMk: string;   // MotionActivityStatusBits as hex string (WORD)
-  motMsk: string;   // MotionStatusMask as hex string (DWORD)
-  posS0: string;    // World position as hex float
-  pos: string;      // Actual position as hex float
-  vel: string;      // Velocity as hex float
-}
-
-/**
- * Release 11 MQTT payload structure
- */
-interface AxisPayloadRelease11 {
-  t: string;
-  data: AxisDataRelease11[];
-}
-
-/**
- * Axis data from Release 10 MQTT payload (nested objects with typ/val)
- */
-interface AxisDataRelease10 {
-  id: string;
-  name: string;
-  sS: { typ: string; val: string };      // MotionState
-  posS0: { typ: string; val: string };   // World position
-  pos: { typ: string; val: string };     // Actual position
-  vel: { typ: string; val: string };     // Velocity
-}
-
-/**
- * Release 10 MQTT payload structure
- */
-interface AxisPayloadRelease10 {
-  pack: Array<{
-    t: string;
-    Axis: AxisDataRelease10;
-  }>;
-}
-
-/**
- * MQTT format type
- */
-type MqttFormat = 'release11' | 'release10';
-
-/**
- * Error message payload structure
- */
-interface ErrorPayload {
-  utc: number;
-  lvl: string;
-  src: string;
-  typ: string;
-  msg: {
-    txt: string;
-    val: Record<string, unknown>;
-  };
-}
-
-/**
- * Internal error storage structure
- */
-interface ErrorEntry {
-  timestamp: number;
-  level: string;
-  source: string;
-  message: string;
-  acknowledged: boolean;
-}
-
-/**
- * Node-specific state
- *
- * Purpose: Track state for each bound axis node
- */
-interface NodeState {
-  nodeId: string;
-  axisName: string;
-  axisCommandNo: number;
-  moveCommandNo: number;
-  subscriptions: Unsubscribe[];
-  currentState: MotionState;
-  activityBits: MotionActivityStatusBits;
-  statusMask: MotionStatusMaskBits;
-  position: number;
-  velocity: number;
-  worldPosition: number;
-  errors: ErrorEntry[];
-  lastUpdate: Date | null;
-  selectedStepSize: number;
-}
-
-/**
- * Normalize axis name by trimming whitespace
- */
-function normalizeAxisName(name: string): string {
-  return name.trim();
-}
+import {
+  MotionState,
+  type NodeState,
+  type ErrorPayload,
+  type ErrorEntry,
+  type MqttFormat,
+  type AxisPayloadRelease11,
+  type AxisPayloadRelease10,
+} from './types';
+import {
+  hexToInt,
+  hexToFloat,
+  parseActivityBits,
+  parseStatusMask,
+  createEmptyActivityBits,
+  createEmptyStatusMask,
+  normalizeAxisName,
+} from './utils';
 
 /**
  * Plugin state manager
+ *
+ * Purpose: Centralized state management for all axis nodes
  */
 class PluginState {
   private nodes: Map<string, NodeState> = new Map();
@@ -211,6 +69,10 @@ class PluginState {
 
   setErrorSubscription(unsub: Unsubscribe): void {
     this.errorSubscription = unsub;
+  }
+
+  hasErrorSubscription(): boolean {
+    return this.errorSubscription !== null;
   }
 
   getContext(): PluginContext {
@@ -270,123 +132,31 @@ class PluginState {
 const pluginState = new PluginState();
 
 /**
- * Create empty activity bits object
+ * Get configured MQTT format
  */
-function createEmptyActivityBits(): MotionActivityStatusBits {
-  return {
-    motionIsActive: false,
-    jogNegativeIsActive: false,
-    jogPositiveIsActive: false,
-    homingIsActive: false,
-    resetControllerFaultIsActive: false,
-    velocityPositiveIsActive: false,
-    velocityNegativeIsActive: false,
-    stoppingIsActive: false,
-  };
+function getMqttFormat(ctx: PluginContext): MqttFormat {
+  const globalConfig = ctx.config.global.getAll();
+  return (globalConfig.mqttFormat as MqttFormat) || 'release11';
 }
 
 /**
- * Create empty status mask object
+ * Get MQTT API with configured source
  */
-function createEmptyStatusMask(): MotionStatusMaskBits {
-  return {
-    isReady: false,
-    isEnabled: false,
-    isSwitchedOn: false,
-    isHomed: false,
-    isCommutated: false,
-    internalLimitIsActive: false,
-    hasWarning: false,
-    hasError: false,
-    isInVelocity: false,
-    overrideEnabled: false,
-    hardwareLimitSwitchNegativeActivated: false,
-    hardwareLimitSwitchPositiveActivated: false,
-    hardwareHomeSwitchActivated: false,
-    hardwareEnableActivated: false,
-    emergencyDetectedDelayedEnabled: false,
-    softwareLimitSwitchNegativeActivated: false,
-    softwareLimitSwitchPositiveActivated: false,
-    softwareLimitSwitchNegativeReached: false,
-    softwareLimitSwitchPositiveReached: false,
-  };
-}
+function getMqttApi(ctx: PluginContext): typeof ctx.mqtt {
+  const globalConfig = ctx.config.global.getAll();
+  const mqttSource = globalConfig.mqttSource as string;
 
-/**
- * Convert IEEE 754 hex string to float
- */
-function hexToFloat(hexString: string): number {
-  if (!hexString || hexString.length !== 8) {
-    return 0;
+  if (mqttSource) {
+    const availableSources = pluginState.getMqttSources();
+    if (!availableSources.includes(mqttSource)) {
+      ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
+        available: availableSources,
+      });
+      ctx.ui.notify(`MQTT Broker "${mqttSource}" nicht gefunden`, 'warning');
+    }
+    return ctx.mqtt.withSource(mqttSource);
   }
-
-  try {
-    const int32 = parseInt(hexString, 16);
-    const buffer = new ArrayBuffer(4);
-    const intView = new Uint32Array(buffer);
-    const floatView = new Float32Array(buffer);
-    intView[0] = int32;
-    return floatView[0];
-  } catch {
-    return 0;
-  }
-}
-
-/**
- * Parse hex-encoded integer
- */
-function hexToInt(hexString: string): number {
-  if (!hexString) return 0;
-  try {
-    return parseInt(hexString, 16);
-  } catch {
-    return 0;
-  }
-}
-
-/**
- * Parse MotionActivityStatusBits from hex WORD
- */
-function parseActivityBits(hexWord: string): MotionActivityStatusBits {
-  const value = hexToInt(hexWord);
-  return {
-    motionIsActive: !!(value & (1 << 0)),
-    jogNegativeIsActive: !!(value & (1 << 1)),
-    jogPositiveIsActive: !!(value & (1 << 2)),
-    homingIsActive: !!(value & (1 << 3)),
-    resetControllerFaultIsActive: !!(value & (1 << 4)),
-    velocityPositiveIsActive: !!(value & (1 << 5)),
-    velocityNegativeIsActive: !!(value & (1 << 6)),
-    stoppingIsActive: !!(value & (1 << 7)),
-  };
-}
-
-/**
- * Parse MotionStatusMask from hex DWORD
- */
-function parseStatusMask(hexDword: string): MotionStatusMaskBits {
-  const value = hexToInt(hexDword);
-  return {
-    isReady: !!(value & (1 << 0)),
-    isEnabled: !!(value & (1 << 1)),
-    isSwitchedOn: !!(value & (1 << 2)),
-    isHomed: !!(value & (1 << 3)),
-    isCommutated: !!(value & (1 << 4)),
-    internalLimitIsActive: !!(value & (1 << 5)),
-    hasWarning: !!(value & (1 << 6)),
-    hasError: !!(value & (1 << 7)),
-    isInVelocity: !!(value & (1 << 8)),
-    overrideEnabled: !!(value & (1 << 16)),
-    hardwareLimitSwitchNegativeActivated: !!(value & (1 << 19)),
-    hardwareLimitSwitchPositiveActivated: !!(value & (1 << 20)),
-    hardwareHomeSwitchActivated: !!(value & (1 << 21)),
-    hardwareEnableActivated: !!(value & (1 << 22)),
-    emergencyDetectedDelayedEnabled: !!(value & (1 << 23)),
-    softwareLimitSwitchNegativeActivated: !!(value & (1 << 24)),
-    softwareLimitSwitchPositiveActivated: !!(value & (1 << 25)),
-    softwareLimitSwitchNegativeReached: !!(value & (1 << 26)),
-    softwareLimitSwitchPositiveReached: !!(value & (1 << 27)),
-  };
+  return ctx.mqtt;
 }
 
 /**
@@ -395,7 +165,8 @@ function parseStatusMask(hexDword: string): MotionStatusMaskBits {
 function updateNodeVisuals(
   ctx: PluginContext,
   nodeId: string,
-  motionState: MotionState
+  motionState: MotionState,
+  hasError: boolean = false
 ): void {
   const node = ctx.nodes.get(nodeId);
   if (!node) return;
@@ -409,12 +180,14 @@ function updateNodeVisuals(
   node.emissive = '#000000';
   node.emissiveIntensity = 0;
 
-  switch (motionState) {
-    case MotionState.ErrorStop:
-      node.emissive = errorColor;
-      node.emissiveIntensity = intensity;
-      break;
+  // Error state has priority
+  if (hasError || motionState === MotionState.ErrorStop) {
+    node.emissive = errorColor;
+    node.emissiveIntensity = intensity;
+    return;
+  }
 
+  switch (motionState) {
     case MotionState.Homing:
       node.emissive = homingColor;
       node.emissiveIntensity = intensity;
@@ -478,14 +251,6 @@ function updateNodePosition(
 }
 
 /**
- * Get configured MQTT format
- */
-function getMqttFormat(ctx: PluginContext): MqttFormat {
-  const globalConfig = ctx.config.global.getAll();
-  return (globalConfig.mqttFormat as MqttFormat) || 'release11';
-}
-
-/**
  * Handle incoming axis data from MQTT - Release 11 format
  */
 function handleAxisDataRelease11(
@@ -523,8 +288,11 @@ function handleAxisDataRelease11(
     nodeState.worldPosition = worldPosition;
     nodeState.lastUpdate = new Date();
 
+    // Check for unacknowledged errors
+    const hasUnacknowledgedErrors = nodeState.errors.some(e => !e.acknowledged);
+
     // Update visuals
-    updateNodeVisuals(ctx, nodeId, motionState);
+    updateNodeVisuals(ctx, nodeId, motionState, hasUnacknowledgedErrors);
     updateNodePosition(ctx, nodeId, worldPosition);
 
     ctx.log.debug('Axis data updated (Release 11)', {
@@ -580,8 +348,11 @@ function handleAxisDataRelease10(
     nodeState.worldPosition = worldPosition;
     nodeState.lastUpdate = new Date();
 
+    // Check for unacknowledged errors
+    const hasUnacknowledgedErrors = nodeState.errors.some(e => !e.acknowledged);
+
     // Update visuals
-    updateNodeVisuals(ctx, nodeId, motionState);
+    updateNodeVisuals(ctx, nodeId, motionState, hasUnacknowledgedErrors);
     updateNodePosition(ctx, nodeId, worldPosition);
 
     ctx.log.debug('Axis data updated (Release 10)', {
@@ -669,62 +440,81 @@ function handleAxisData(
 /**
  * Handle incoming error messages from MQTT
  */
-function handleErrorMessage(
-  ctx: PluginContext,
-  payload: ErrorPayload
-): void {
+function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
   try {
-    const source = normalizeAxisName(payload.src);
+    // Convert to string for storage
+    const payloadString = typeof rawPayload === 'string'
+      ? rawPayload
+      : JSON.stringify(rawPayload, null, 2);
 
-    pluginState.getAllNodes().forEach((nodeState) => {
-      if (source === nodeState.axisName) {
+    // Parse for field extraction
+    let payload: ErrorPayload;
+    if (typeof rawPayload === 'string') {
+      payload = JSON.parse(rawPayload);
+    } else {
+      payload = rawPayload as ErrorPayload;
+    }
+
+    ctx.log.info('Error message received', { src: payload.src, lvl: payload.lvl });
+
+    const source = normalizeAxisName(payload.src || '');
+    const allNodes = pluginState.getAllNodes();
+
+    allNodes.forEach((nodeState) => {
+      const expectedAxisName = normalizeAxisName(nodeState.axisName);
+      if (source === expectedAxisName) {
         const errorEntry: ErrorEntry = {
           timestamp: payload.utc,
           level: payload.lvl,
           source: payload.src,
-          message: payload.msg.txt,
+          rawPayload: payloadString,
           acknowledged: false,
         };
 
         nodeState.errors.unshift(errorEntry);
-        if (nodeState.errors.length > 5) {
-          nodeState.errors = nodeState.errors.slice(0, 5);
+        if (nodeState.errors.length > 20) {
+          nodeState.errors = nodeState.errors.slice(0, 20);
         }
 
-        ctx.log.warn('Axis error received', {
-          nodeId: nodeState.nodeId,
-          axisName: nodeState.axisName,
-          error: errorEntry,
-        });
+        // Extract message text for logging
+        let msgText = 'Unknown error';
+        if (typeof payload.msg === 'string') {
+          msgText = payload.msg;
+        } else if (payload.msg?.txt) {
+          msgText = payload.msg.txt;
+        } else if (payload.msg?.text) {
+          msgText = payload.msg.text;
+        }
 
+        // Log to 3D Viewer log based on level - include nodeId for acknowledgment
         if (payload.lvl === 'ERR') {
-          ctx.ui.notify(`Axis Error: ${nodeState.axisName} - ${payload.msg.txt}`, 'error');
+          ctx.log.error(`[${nodeState.axisName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.axisName,
+            payload: payload,
+          });
+          // Update visuals to show error state
+          updateNodeVisuals(ctx, nodeState.nodeId, nodeState.currentState, true);
+          ctx.ui.notify(`Error: ${nodeState.axisName} - ${msgText}`, 'error');
+        } else if (payload.lvl === 'WARN') {
+          ctx.log.warn(`[${nodeState.axisName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.axisName,
+            payload: payload,
+          });
+          ctx.ui.notify(`Warning: ${nodeState.axisName} - ${msgText}`, 'warning');
+        } else {
+          ctx.log.info(`[${nodeState.axisName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.axisName,
+            payload: payload,
+          });
         }
       }
     });
   } catch (error) {
     ctx.log.error('Failed to process error message', { error });
   }
-}
-
-/**
- * Get MQTT API with configured source
- */
-function getMqttApi(ctx: PluginContext): typeof ctx.mqtt {
-  const globalConfig = ctx.config.global.getAll();
-  const mqttSource = globalConfig.mqttSource as string;
-
-  if (mqttSource) {
-    const availableSources = pluginState.getMqttSources();
-    if (!availableSources.includes(mqttSource)) {
-      ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
-        available: availableSources,
-      });
-      ctx.ui.notify(`MQTT Broker "${mqttSource}" nicht gefunden`, 'warning');
-    }
-    return ctx.mqtt.withSource(mqttSource);
-  }
-  return ctx.mqtt;
 }
 
 /**
@@ -745,39 +535,30 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
     return;
   }
 
+  const errorTopic = (globalConfig.errorTopic as string) || 'machine/errors';
+
+  // SUBSCRIPTION 1: Axis topic
+  ctx.log.info('SUB 1: axis topic', { mainTopic });
   const axisUnsub = mqtt.subscribe(mainTopic, (msg: MqttMessage) => {
+    ctx.log.debug('CALLBACK 1 (axis) fired!', { topic: mainTopic });
     handleAxisData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(axisUnsub);
 
-  ctx.log.info('Axis subscription setup', {
-    nodeId,
-    axisName: nodeState.axisName,
-    mainTopic,
-  });
-}
-
-/**
- * Setup shared error subscription
- */
-function setupErrorSubscription(ctx: PluginContext): void {
-  const globalConfig = ctx.config.global.getAll();
-  const errorTopic = globalConfig.errorTopic as string || 'machine/errors';
-  const mqtt = getMqttApi(ctx);
-
-  const availableSources = ctx.mqtt.getSources();
-  if (availableSources.length === 0) {
-    ctx.log.warn('No MQTT sources available for error subscription');
-    return;
-  }
-
+  // SUBSCRIPTION 2: Error topic
+  ctx.log.info('SUB 2: error topic', { errorTopic });
   const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
-    handleErrorMessage(ctx, msg.payload as ErrorPayload);
+    ctx.log.debug('CALLBACK 2 (error) fired!', { topic: errorTopic, payload: msg.payload });
+    handleErrorMessage(ctx, msg.payload);
   });
-  pluginState.setErrorSubscription(errorUnsub);
+  nodeState.subscriptions.push(errorUnsub);
 
-  ctx.log.info('Error subscription setup', { errorTopic });
+  ctx.log.info('Both subscriptions created', { mainTopic, errorTopic });
 }
+
+// ============================================================================
+// HTTP COMMAND FUNCTIONS
+// ============================================================================
 
 /**
  * Send step command via HTTP API
@@ -1061,6 +842,10 @@ export async function sendMoveToPositionCommand(
   }
 }
 
+// ============================================================================
+// EXPORTED FUNCTIONS FOR UI COMPONENTS
+// ============================================================================
+
 /**
  * Set step size for a node
  */
@@ -1072,7 +857,7 @@ export function setStepSize(nodeId: string, stepSize: number): void {
 }
 
 /**
- * Acknowledge an error
+ * Acknowledge an error and reset node visual state
  */
 export function acknowledgeError(nodeId: string, errorIndex: number): void {
   const ctx = pluginState.getContext();
@@ -1082,8 +867,71 @@ export function acknowledgeError(nodeId: string, errorIndex: number): void {
     return;
   }
 
-  nodeState.errors[errorIndex].acknowledged = true;
-  ctx.log.info('Error acknowledged', { nodeId, errorIndex });
+  const error = nodeState.errors[errorIndex];
+  error.acknowledged = true;
+
+  // Log the acknowledgement
+  ctx.log.info('Error acknowledged', {
+    nodeId,
+    axisName: nodeState.axisName,
+    errorIndex,
+    level: error.level,
+    acknowledgedAt: new Date().toISOString(),
+  });
+
+  // Check if all errors are acknowledged
+  const hasUnacknowledgedErrors = nodeState.errors.some(e => !e.acknowledged);
+
+  // Reset node visual state if no more unacknowledged errors
+  if (!hasUnacknowledgedErrors) {
+    updateNodeVisuals(ctx, nodeId, nodeState.currentState, false);
+
+    ctx.log.info('Node error state reset after acknowledgement', {
+      nodeId,
+      axisName: nodeState.axisName,
+    });
+
+    ctx.ui.notify(`${nodeState.axisName}: Fehler quittiert`, 'success');
+  }
+}
+
+/**
+ * Acknowledge all errors for a node
+ */
+export function acknowledgeAllErrors(nodeId: string): void {
+  const ctx = pluginState.getContext();
+  const nodeState = pluginState.getNode(nodeId);
+
+  if (!nodeState) {
+    return;
+  }
+
+  const errorCount = nodeState.errors.length;
+  if (errorCount === 0) {
+    return;
+  }
+
+  // Log the acknowledgement
+  ctx.log.info('All errors acknowledged and cleared', {
+    nodeId,
+    axisName: nodeState.axisName,
+    count: errorCount,
+    acknowledgedAt: new Date().toISOString(),
+  });
+
+  // Clear all errors
+  nodeState.errors = [];
+
+  // Reset node visual state
+  updateNodeVisuals(ctx, nodeId, nodeState.currentState, false);
+
+  ctx.log.info('Node state reset after acknowledgement', {
+    nodeId,
+    axisName: nodeState.axisName,
+    newState: 'Normal',
+  });
+
+  ctx.ui.notify(`${nodeState.axisName}: ${errorCount} Fehler quittiert`, 'success');
 }
 
 /**
@@ -1128,6 +976,15 @@ export function getCurrentMqttFormat(): MqttFormat {
   return getMqttFormat(ctx);
 }
 
+/**
+ * Get unacknowledged error count
+ */
+export function getUnacknowledgedErrorCount(nodeId: string): number {
+  const nodeState = pluginState.getNode(nodeId);
+  if (!nodeState) return 0;
+  return nodeState.errors.filter((e) => !e.acknowledged).length;
+}
+
 // ============================================================================
 // PLUGIN DEFINITION
 // ============================================================================
@@ -1144,8 +1001,6 @@ const plugin: Plugin = {
       pluginId: ctx.pluginId,
     });
 
-    setupErrorSubscription(ctx);
-
     ctx.events.on('context-menu-action', (data: unknown) => {
       const event = data as { action: string; nodeId: string };
       if (event.action === 'show-axis-details') {
@@ -1154,6 +1009,34 @@ const plugin: Plugin = {
           data: { nodeId: event.nodeId },
         });
       }
+    });
+
+    // Listen for log acknowledgments from Viewer Log
+    ctx.events.onLogAcknowledged((entries) => {
+      entries.forEach((entry) => {
+        if (entry.nodeId) {
+          const nodeState = pluginState.getNode(entry.nodeId);
+          if (nodeState) {
+            // Mark all errors as acknowledged for this node
+            let hasUnacknowledged = false;
+            nodeState.errors.forEach((err) => {
+              if (!err.acknowledged) {
+                err.acknowledged = true;
+                hasUnacknowledged = true;
+              }
+            });
+
+            // Reset node visual state if errors were acknowledged
+            if (hasUnacknowledged) {
+              updateNodeVisuals(ctx, entry.nodeId, nodeState.currentState, false);
+              ctx.log.info('Node error state reset via Viewer Log acknowledgement', {
+                nodeId: entry.nodeId,
+                axisName: nodeState.axisName,
+              });
+            }
+          }
+        }
+      });
     });
   },
 
@@ -1215,7 +1098,8 @@ const plugin: Plugin = {
 
     if (type === 'global' && (key === 'errorColor' || key === 'homingColor' || key === 'motionColor')) {
       pluginState.getAllNodes().forEach((nodeState) => {
-        updateNodeVisuals(ctx, nodeState.nodeId, nodeState.currentState);
+        const hasUnacknowledgedErrors = nodeState.errors.some(e => !e.acknowledged);
+        updateNodeVisuals(ctx, nodeState.nodeId, nodeState.currentState, hasUnacknowledgedErrors);
       });
     }
   },

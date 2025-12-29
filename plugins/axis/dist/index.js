@@ -18,6 +18,129 @@ var {
   Suspense
 } = React;
 
+// src/types.ts
+var MotionStateNames = {
+  [0]: "Error Stop",
+  [1]: "Standstill",
+  [2]: "Homing",
+  [3]: "Stopping",
+  [4]: "Disabled",
+  [5]: "Discrete Motion",
+  [6]: "Continuous Motion",
+  [7]: "Synchronized Motion"
+};
+
+// src/utils.ts
+function hexToInt(hexString) {
+  if (!hexString)
+    return 0;
+  try {
+    return parseInt(hexString, 16);
+  } catch {
+    return 0;
+  }
+}
+function hexToFloat(hexString) {
+  if (!hexString || hexString.length !== 8) {
+    return 0;
+  }
+  try {
+    const int32 = parseInt(hexString, 16);
+    const buffer = new ArrayBuffer(4);
+    const intView = new Uint32Array(buffer);
+    const floatView = new Float32Array(buffer);
+    intView[0] = int32;
+    return floatView[0];
+  } catch {
+    return 0;
+  }
+}
+function parseActivityBits(hexWord) {
+  const value = hexToInt(hexWord);
+  return {
+    motionIsActive: !!(value & 1 << 0),
+    jogNegativeIsActive: !!(value & 1 << 1),
+    jogPositiveIsActive: !!(value & 1 << 2),
+    homingIsActive: !!(value & 1 << 3),
+    resetControllerFaultIsActive: !!(value & 1 << 4),
+    velocityPositiveIsActive: !!(value & 1 << 5),
+    velocityNegativeIsActive: !!(value & 1 << 6),
+    stoppingIsActive: !!(value & 1 << 7)
+  };
+}
+function parseStatusMask(hexDword) {
+  const value = hexToInt(hexDword);
+  return {
+    isReady: !!(value & 1 << 0),
+    isEnabled: !!(value & 1 << 1),
+    isSwitchedOn: !!(value & 1 << 2),
+    isHomed: !!(value & 1 << 3),
+    isCommutated: !!(value & 1 << 4),
+    internalLimitIsActive: !!(value & 1 << 5),
+    hasWarning: !!(value & 1 << 6),
+    hasError: !!(value & 1 << 7),
+    isInVelocity: !!(value & 1 << 8),
+    overrideEnabled: !!(value & 1 << 16),
+    hardwareLimitSwitchNegativeActivated: !!(value & 1 << 19),
+    hardwareLimitSwitchPositiveActivated: !!(value & 1 << 20),
+    hardwareHomeSwitchActivated: !!(value & 1 << 21),
+    hardwareEnableActivated: !!(value & 1 << 22),
+    emergencyDetectedDelayedEnabled: !!(value & 1 << 23),
+    softwareLimitSwitchNegativeActivated: !!(value & 1 << 24),
+    softwareLimitSwitchPositiveActivated: !!(value & 1 << 25),
+    softwareLimitSwitchNegativeReached: !!(value & 1 << 26),
+    softwareLimitSwitchPositiveReached: !!(value & 1 << 27)
+  };
+}
+function createEmptyActivityBits() {
+  return {
+    motionIsActive: false,
+    jogNegativeIsActive: false,
+    jogPositiveIsActive: false,
+    homingIsActive: false,
+    resetControllerFaultIsActive: false,
+    velocityPositiveIsActive: false,
+    velocityNegativeIsActive: false,
+    stoppingIsActive: false
+  };
+}
+function createEmptyStatusMask() {
+  return {
+    isReady: false,
+    isEnabled: false,
+    isSwitchedOn: false,
+    isHomed: false,
+    isCommutated: false,
+    internalLimitIsActive: false,
+    hasWarning: false,
+    hasError: false,
+    isInVelocity: false,
+    overrideEnabled: false,
+    hardwareLimitSwitchNegativeActivated: false,
+    hardwareLimitSwitchPositiveActivated: false,
+    hardwareHomeSwitchActivated: false,
+    hardwareEnableActivated: false,
+    emergencyDetectedDelayedEnabled: false,
+    softwareLimitSwitchNegativeActivated: false,
+    softwareLimitSwitchPositiveActivated: false,
+    softwareLimitSwitchNegativeReached: false,
+    softwareLimitSwitchPositiveReached: false
+  };
+}
+function normalizeAxisName(name) {
+  return name.trim();
+}
+function formatTime(date) {
+  if (!date) {
+    return "\u2014";
+  }
+  return date.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+}
+
 // react-global:react/jsx-runtime
 var React2 = window.React;
 var jsx = React2.createElement;
@@ -25,16 +148,6 @@ var jsxs = React2.createElement;
 var Fragment2 = React2.Fragment;
 
 // src/components/AxisDetailsPopup.tsx
-var MotionStateNames = {
-  0: "Error Stop",
-  1: "Standstill",
-  2: "Homing",
-  3: "Stopping",
-  4: "Disabled",
-  5: "Discrete Motion",
-  6: "Continuous Motion",
-  7: "Synchronized Motion"
-};
 function getMotionStateColor(state) {
   switch (state) {
     case 0:
@@ -48,10 +161,6 @@ function getMotionStateColor(state) {
     default:
       return "#888888";
   }
-}
-function formatTimestamp(timestamp) {
-  const date = new Date(timestamp);
-  return date.toLocaleString();
 }
 function getErrorLevelColor(level) {
   switch (level) {
@@ -112,6 +221,7 @@ var AxisDetailsPopup = ({ data }) => {
   const [stepControlEnabled, setStepControlEnabled] = useState(() => isStepControlAvailable());
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
   const [activeTab, setActiveTab] = useState("control");
+  const [selectedErrorIdx, setSelectedErrorIdx] = useState(null);
   useEffect(() => {
     const interval = setInterval(() => {
       const newState = getNodeState(nodeId);
@@ -159,6 +269,7 @@ var AxisDetailsPopup = ({ data }) => {
   };
   const motionStateName = MotionStateNames[nodeState.currentState] || "Unknown";
   const { activityBits, statusMask } = nodeState;
+  const unacknowledgedCount = getUnacknowledgedErrorCount(nodeId);
   return /* @__PURE__ */ jsxs("div", { style: styles.container, children: [
     /* @__PURE__ */ jsxs("div", { style: styles.header, children: [
       /* @__PURE__ */ jsxs("h2", { style: styles.title, children: [
@@ -213,8 +324,8 @@ var AxisDetailsPopup = ({ data }) => {
             ...activeTab === "errors" ? styles.tabButtonActive : {}
           },
           children: [
-            "Errors ",
-            nodeState.errors.length > 0 && `(${nodeState.errors.length})`
+            "Errors",
+            unacknowledgedCount > 0 && /* @__PURE__ */ jsx("span", { style: styles.errorBadge, children: unacknowledgedCount })
           ]
         }
       )
@@ -247,7 +358,7 @@ var AxisDetailsPopup = ({ data }) => {
             ] }),
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
               /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Last Update:" }),
-              /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: nodeState.lastUpdate ? nodeState.lastUpdate.toLocaleTimeString() : "Never" })
+              /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: formatTime(nodeState.lastUpdate) })
             ] })
           ] })
         ] }),
@@ -423,57 +534,141 @@ var AxisDetailsPopup = ({ data }) => {
         ] })
       ] }),
       activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-        /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Error Log (Last 5)" }),
-        nodeState.errors.length === 0 ? /* @__PURE__ */ jsxs("div", { style: styles.noErrors, children: [
-          /* @__PURE__ */ jsx("span", { style: { fontSize: "24px" }, children: "\u2713" }),
-          /* @__PURE__ */ jsx("p", { children: "No errors recorded" })
-        ] }) : /* @__PURE__ */ jsx("div", { style: styles.errorListFull, children: nodeState.errors.map((error, index) => /* @__PURE__ */ jsxs(
-          "div",
+        /* @__PURE__ */ jsxs("h3", { style: styles.sectionTitle, children: [
+          "Fehlermeldungen (",
+          nodeState.errors.length,
+          ") - ",
+          unacknowledgedCount,
+          " offen"
+        ] }),
+        unacknowledgedCount > 0 && /* @__PURE__ */ jsxs(
+          "button",
           {
+            onClick: () => {
+              acknowledgeAllErrors(nodeId);
+              setSelectedErrorIdx(null);
+              setUpdateCounter((c) => c + 1);
+            },
             style: {
-              ...styles.errorItem,
-              backgroundColor: error.acknowledged ? "#f0f0f0" : "#ffffff",
-              borderLeft: `4px solid ${getErrorLevelColor(error.level)}`
+              marginBottom: "12px",
+              padding: "10px 20px",
+              backgroundColor: "#28a745",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              fontSize: "14px",
+              width: "100%"
             },
             children: [
-              /* @__PURE__ */ jsxs("div", { style: styles.errorHeader, children: [
-                /* @__PURE__ */ jsx(
-                  "span",
-                  {
-                    style: {
-                      ...styles.errorLevel,
-                      color: getErrorLevelColor(error.level)
-                    },
-                    children: error.level
-                  }
-                ),
-                /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(error.timestamp) })
-              ] }),
-              /* @__PURE__ */ jsx("div", { style: styles.errorMessage, children: error.message }),
-              /* @__PURE__ */ jsxs("div", { style: styles.errorFooter, children: [
-                /* @__PURE__ */ jsxs("span", { style: styles.errorSource, children: [
-                  "Source: ",
-                  error.source
-                ] }),
-                !error.acknowledged ? /* @__PURE__ */ jsx(
-                  "button",
-                  {
-                    onClick: () => handleAcknowledge(index),
-                    style: styles.ackButton,
-                    children: "Acknowledge"
-                  }
-                ) : /* @__PURE__ */ jsx("span", { style: styles.acknowledgedBadge, children: "\u2713 Acknowledged" })
-              ] })
+              "Alle Quittieren (",
+              unacknowledgedCount,
+              ")"
             ]
-          },
-          index
-        )) })
+          }
+        ),
+        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("pre", { style: { color: "#28a745", padding: "20px", textAlign: "center", margin: 0 }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsxs(Fragment2, { children: [
+          /* @__PURE__ */ jsx("pre", { style: {
+            margin: "0 0 8px 0",
+            padding: "10px",
+            backgroundColor: "#2d2d2d",
+            color: "#fff",
+            fontSize: "12px",
+            fontFamily: "Consolas, Monaco, monospace",
+            borderRadius: "4px",
+            border: "1px solid #555",
+            whiteSpace: "pre-wrap",
+            maxHeight: "150px",
+            overflow: "auto"
+          }, children: nodeState.errors.map((err, idx) => {
+            try {
+              const p = JSON.parse(err.rawPayload || "{}");
+              const msg = p.msg?.txt || p.msg?.text || p.msg || "No message";
+              const ack = err.acknowledged ? "\u2713" : "\u25CB";
+              const sel = selectedErrorIdx === idx ? "\u25B6" : " ";
+              return `${sel}[${idx}] ${ack} ${err.level}: ${msg}
+`;
+            } catch {
+              return ` [${idx}] \u25CB ${err.level}: Parse error
+`;
+            }
+          }).join("") }),
+          /* @__PURE__ */ jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "8px" }, children: Array.from({ length: nodeState.errors.length }, (_, idx) => /* @__PURE__ */ jsxs(
+            "button",
+            {
+              onClick: () => setSelectedErrorIdx(selectedErrorIdx === idx ? null : idx),
+              style: {
+                padding: "4px 8px",
+                backgroundColor: selectedErrorIdx === idx ? "#007bff" : "#6c757d",
+                color: "#fff",
+                border: "none",
+                borderRadius: "3px",
+                cursor: "pointer",
+                fontSize: "11px"
+              },
+              children: [
+                "#",
+                idx
+              ]
+            },
+            idx
+          )) }),
+          selectedErrorIdx !== null && nodeState.errors[selectedErrorIdx] && /* @__PURE__ */ jsxs(Fragment2, { children: [
+            /* @__PURE__ */ jsx("pre", { style: {
+              margin: 0,
+              padding: "10px",
+              backgroundColor: "#1a1a1a",
+              color: "#0f0",
+              fontSize: "11px",
+              fontFamily: "Consolas, Monaco, monospace",
+              borderRadius: "4px",
+              border: `2px solid ${getErrorLevelColor(nodeState.errors[selectedErrorIdx].level)}`,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-all",
+              maxHeight: "200px",
+              overflow: "auto"
+            }, children: (() => {
+              const err = nodeState.errors[selectedErrorIdx];
+              try {
+                return JSON.stringify(JSON.parse(err.rawPayload || "{}"), null, 2);
+              } catch {
+                return err.rawPayload || "No payload";
+              }
+            })() }),
+            !nodeState.errors[selectedErrorIdx].acknowledged && /* @__PURE__ */ jsx(
+              "button",
+              {
+                onClick: () => handleAcknowledge(selectedErrorIdx),
+                style: {
+                  marginTop: "8px",
+                  padding: "6px 12px",
+                  backgroundColor: "#007bff",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "12px"
+                },
+                children: "Quittieren"
+              }
+            )
+          ] })
+        ] })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.footer, children: [
       /* @__PURE__ */ jsxs("div", { style: styles.footerInfo, children: [
         /* @__PURE__ */ jsx("span", { style: styles.footerLabel, children: "Node ID:" }),
         /* @__PURE__ */ jsx("span", { style: styles.footerValue, children: nodeId })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { style: styles.footerInfo, children: [
+        /* @__PURE__ */ jsx("span", { style: styles.footerLabel, children: "AxisCmd:" }),
+        /* @__PURE__ */ jsx("span", { style: styles.footerValue, children: nodeState.axisCommandNo })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { style: styles.footerInfo, children: [
+        /* @__PURE__ */ jsx("span", { style: styles.footerLabel, children: "MoveCmd:" }),
+        /* @__PURE__ */ jsx("span", { style: styles.footerValue, children: nodeState.moveCommandNo })
       ] }),
       /* @__PURE__ */ jsxs("div", { style: styles.footerInfo, children: [
         /* @__PURE__ */ jsx("span", { style: styles.footerLabel, children: "Updates:" }),
@@ -505,14 +700,6 @@ var styles = {
     alignItems: "center",
     gap: "12px"
   },
-  sfLabel: {
-    fontSize: "14px",
-    color: "#666",
-    fontFamily: "monospace",
-    backgroundColor: "#e9ecef",
-    padding: "2px 8px",
-    borderRadius: "4px"
-  },
   formatLabel: {
     fontSize: "11px",
     color: "#fff",
@@ -539,7 +726,8 @@ var styles = {
     cursor: "pointer",
     transition: "all 0.2s",
     marginBottom: "-2px",
-    borderBottom: "2px solid transparent"
+    borderBottom: "2px solid transparent",
+    position: "relative"
   },
   tabButtonActive: {
     backgroundColor: "#007bff",
@@ -552,6 +740,15 @@ var styles = {
   },
   tabContent: {
     minHeight: "200px"
+  },
+  errorBadge: {
+    backgroundColor: "#dc3545",
+    color: "#fff",
+    borderRadius: "10px",
+    padding: "2px 6px",
+    fontSize: "10px",
+    marginLeft: "6px",
+    fontWeight: "bold"
   },
   release10Notice: {
     display: "flex",
@@ -724,74 +921,6 @@ var styles = {
     color: "#666",
     fontStyle: "italic"
   },
-  noErrors: {
-    textAlign: "center",
-    padding: "20px",
-    color: "#28a745"
-  },
-  errorList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    maxHeight: "150px",
-    overflowY: "auto"
-  },
-  errorListFull: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px"
-  },
-  errorItem: {
-    padding: "10px",
-    borderRadius: "4px",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.1)"
-  },
-  errorHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginBottom: "6px"
-  },
-  errorLevel: {
-    fontSize: "11px",
-    fontWeight: "bold",
-    textTransform: "uppercase"
-  },
-  errorTime: {
-    fontSize: "10px",
-    color: "#999"
-  },
-  errorMessage: {
-    fontSize: "12px",
-    color: "#333",
-    marginBottom: "6px",
-    lineHeight: "1.3"
-  },
-  errorFooter: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: "6px"
-  },
-  errorSource: {
-    fontSize: "11px",
-    color: "#666",
-    fontStyle: "italic"
-  },
-  ackButton: {
-    padding: "4px 10px",
-    backgroundColor: "#007bff",
-    color: "#ffffff",
-    border: "none",
-    borderRadius: "4px",
-    fontSize: "11px",
-    cursor: "pointer",
-    fontWeight: "bold"
-  },
-  acknowledgedBadge: {
-    fontSize: "11px",
-    color: "#28a745",
-    fontWeight: "bold"
-  },
   footer: {
     marginTop: "16px",
     paddingTop: "12px",
@@ -819,9 +948,6 @@ var styles = {
 };
 
 // src/index.ts
-function normalizeAxisName(name) {
-  return name.trim();
-}
 var PluginState = class {
   constructor() {
     this.nodes = /* @__PURE__ */ new Map();
@@ -839,6 +965,9 @@ var PluginState = class {
   }
   setErrorSubscription(unsub) {
     this.errorSubscription = unsub;
+  }
+  hasErrorSubscription() {
+    return this.errorSubscription !== null;
   }
   getContext() {
     if (!this.ctx)
@@ -890,103 +1019,26 @@ var PluginState = class {
   }
 };
 var pluginState = new PluginState();
-function createEmptyActivityBits() {
-  return {
-    motionIsActive: false,
-    jogNegativeIsActive: false,
-    jogPositiveIsActive: false,
-    homingIsActive: false,
-    resetControllerFaultIsActive: false,
-    velocityPositiveIsActive: false,
-    velocityNegativeIsActive: false,
-    stoppingIsActive: false
-  };
+function getMqttFormat(ctx) {
+  const globalConfig = ctx.config.global.getAll();
+  return globalConfig.mqttFormat || "release11";
 }
-function createEmptyStatusMask() {
-  return {
-    isReady: false,
-    isEnabled: false,
-    isSwitchedOn: false,
-    isHomed: false,
-    isCommutated: false,
-    internalLimitIsActive: false,
-    hasWarning: false,
-    hasError: false,
-    isInVelocity: false,
-    overrideEnabled: false,
-    hardwareLimitSwitchNegativeActivated: false,
-    hardwareLimitSwitchPositiveActivated: false,
-    hardwareHomeSwitchActivated: false,
-    hardwareEnableActivated: false,
-    emergencyDetectedDelayedEnabled: false,
-    softwareLimitSwitchNegativeActivated: false,
-    softwareLimitSwitchPositiveActivated: false,
-    softwareLimitSwitchNegativeReached: false,
-    softwareLimitSwitchPositiveReached: false
-  };
-}
-function hexToFloat(hexString) {
-  if (!hexString || hexString.length !== 8) {
-    return 0;
+function getMqttApi(ctx) {
+  const globalConfig = ctx.config.global.getAll();
+  const mqttSource = globalConfig.mqttSource;
+  if (mqttSource) {
+    const availableSources = pluginState.getMqttSources();
+    if (!availableSources.includes(mqttSource)) {
+      ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
+        available: availableSources
+      });
+      ctx.ui.notify(`MQTT Broker "${mqttSource}" nicht gefunden`, "warning");
+    }
+    return ctx.mqtt.withSource(mqttSource);
   }
-  try {
-    const int32 = parseInt(hexString, 16);
-    const buffer = new ArrayBuffer(4);
-    const intView = new Uint32Array(buffer);
-    const floatView = new Float32Array(buffer);
-    intView[0] = int32;
-    return floatView[0];
-  } catch {
-    return 0;
-  }
+  return ctx.mqtt;
 }
-function hexToInt(hexString) {
-  if (!hexString)
-    return 0;
-  try {
-    return parseInt(hexString, 16);
-  } catch {
-    return 0;
-  }
-}
-function parseActivityBits(hexWord) {
-  const value = hexToInt(hexWord);
-  return {
-    motionIsActive: !!(value & 1 << 0),
-    jogNegativeIsActive: !!(value & 1 << 1),
-    jogPositiveIsActive: !!(value & 1 << 2),
-    homingIsActive: !!(value & 1 << 3),
-    resetControllerFaultIsActive: !!(value & 1 << 4),
-    velocityPositiveIsActive: !!(value & 1 << 5),
-    velocityNegativeIsActive: !!(value & 1 << 6),
-    stoppingIsActive: !!(value & 1 << 7)
-  };
-}
-function parseStatusMask(hexDword) {
-  const value = hexToInt(hexDword);
-  return {
-    isReady: !!(value & 1 << 0),
-    isEnabled: !!(value & 1 << 1),
-    isSwitchedOn: !!(value & 1 << 2),
-    isHomed: !!(value & 1 << 3),
-    isCommutated: !!(value & 1 << 4),
-    internalLimitIsActive: !!(value & 1 << 5),
-    hasWarning: !!(value & 1 << 6),
-    hasError: !!(value & 1 << 7),
-    isInVelocity: !!(value & 1 << 8),
-    overrideEnabled: !!(value & 1 << 16),
-    hardwareLimitSwitchNegativeActivated: !!(value & 1 << 19),
-    hardwareLimitSwitchPositiveActivated: !!(value & 1 << 20),
-    hardwareHomeSwitchActivated: !!(value & 1 << 21),
-    hardwareEnableActivated: !!(value & 1 << 22),
-    emergencyDetectedDelayedEnabled: !!(value & 1 << 23),
-    softwareLimitSwitchNegativeActivated: !!(value & 1 << 24),
-    softwareLimitSwitchPositiveActivated: !!(value & 1 << 25),
-    softwareLimitSwitchNegativeReached: !!(value & 1 << 26),
-    softwareLimitSwitchPositiveReached: !!(value & 1 << 27)
-  };
-}
-function updateNodeVisuals(ctx, nodeId, motionState) {
+function updateNodeVisuals(ctx, nodeId, motionState, hasError = false) {
   const node = ctx.nodes.get(nodeId);
   if (!node)
     return;
@@ -997,11 +1049,12 @@ function updateNodeVisuals(ctx, nodeId, motionState) {
   const intensity = globalConfig.emissiveIntensity || 0.6;
   node.emissive = "#000000";
   node.emissiveIntensity = 0;
+  if (hasError || motionState === 0 /* ErrorStop */) {
+    node.emissive = errorColor;
+    node.emissiveIntensity = intensity;
+    return;
+  }
   switch (motionState) {
-    case 0 /* ErrorStop */:
-      node.emissive = errorColor;
-      node.emissiveIntensity = intensity;
-      break;
     case 2 /* Homing */:
       node.emissive = homingColor;
       node.emissiveIntensity = intensity;
@@ -1050,10 +1103,6 @@ function updateNodePosition(ctx, nodeId, worldPosition) {
   }
   node.duration = 100;
 }
-function getMqttFormat(ctx) {
-  const globalConfig = ctx.config.global.getAll();
-  return globalConfig.mqttFormat || "release11";
-}
 function handleAxisDataRelease11(ctx, nodeId, payload) {
   const nodeState = pluginState.getNode(nodeId);
   if (!nodeState)
@@ -1080,7 +1129,8 @@ function handleAxisDataRelease11(ctx, nodeId, payload) {
     nodeState.velocity = velocity;
     nodeState.worldPosition = worldPosition;
     nodeState.lastUpdate = /* @__PURE__ */ new Date();
-    updateNodeVisuals(ctx, nodeId, motionState);
+    const hasUnacknowledgedErrors = nodeState.errors.some((e) => !e.acknowledged);
+    updateNodeVisuals(ctx, nodeId, motionState, hasUnacknowledgedErrors);
     updateNodePosition(ctx, nodeId, worldPosition);
     ctx.log.debug("Axis data updated (Release 11)", {
       nodeId,
@@ -1118,7 +1168,8 @@ function handleAxisDataRelease10(ctx, nodeId, payload) {
     nodeState.velocity = velocity;
     nodeState.worldPosition = worldPosition;
     nodeState.lastUpdate = /* @__PURE__ */ new Date();
-    updateNodeVisuals(ctx, nodeId, motionState);
+    const hasUnacknowledgedErrors = nodeState.errors.some((e) => !e.acknowledged);
+    updateNodeVisuals(ctx, nodeId, motionState, hasUnacknowledgedErrors);
     updateNodePosition(ctx, nodeId, worldPosition);
     ctx.log.debug("Axis data updated (Release 10)", {
       nodeId,
@@ -1184,50 +1235,67 @@ function handleAxisData(ctx, nodeId, rawPayload) {
     ctx.log.error("Failed to process axis data", { nodeId, error });
   }
 }
-function handleErrorMessage(ctx, payload) {
+function handleErrorMessage(ctx, rawPayload) {
   try {
-    const source = normalizeAxisName(payload.src);
-    pluginState.getAllNodes().forEach((nodeState) => {
-      if (source === nodeState.axisName) {
+    const payloadString = typeof rawPayload === "string" ? rawPayload : JSON.stringify(rawPayload, null, 2);
+    let payload;
+    if (typeof rawPayload === "string") {
+      payload = JSON.parse(rawPayload);
+    } else {
+      payload = rawPayload;
+    }
+    ctx.log.info("Error message received", { src: payload.src, lvl: payload.lvl });
+    const source = normalizeAxisName(payload.src || "");
+    const allNodes = pluginState.getAllNodes();
+    allNodes.forEach((nodeState) => {
+      const expectedAxisName = normalizeAxisName(nodeState.axisName);
+      if (source === expectedAxisName) {
         const errorEntry = {
           timestamp: payload.utc,
           level: payload.lvl,
           source: payload.src,
-          message: payload.msg.txt,
+          rawPayload: payloadString,
           acknowledged: false
         };
         nodeState.errors.unshift(errorEntry);
-        if (nodeState.errors.length > 5) {
-          nodeState.errors = nodeState.errors.slice(0, 5);
+        if (nodeState.errors.length > 20) {
+          nodeState.errors = nodeState.errors.slice(0, 20);
         }
-        ctx.log.warn("Axis error received", {
-          nodeId: nodeState.nodeId,
-          axisName: nodeState.axisName,
-          error: errorEntry
-        });
+        let msgText = "Unknown error";
+        if (typeof payload.msg === "string") {
+          msgText = payload.msg;
+        } else if (payload.msg?.txt) {
+          msgText = payload.msg.txt;
+        } else if (payload.msg?.text) {
+          msgText = payload.msg.text;
+        }
         if (payload.lvl === "ERR") {
-          ctx.ui.notify(`Axis Error: ${nodeState.axisName} - ${payload.msg.txt}`, "error");
+          ctx.log.error(`[${nodeState.axisName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.axisName,
+            payload
+          });
+          updateNodeVisuals(ctx, nodeState.nodeId, nodeState.currentState, true);
+          ctx.ui.notify(`Error: ${nodeState.axisName} - ${msgText}`, "error");
+        } else if (payload.lvl === "WARN") {
+          ctx.log.warn(`[${nodeState.axisName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.axisName,
+            payload
+          });
+          ctx.ui.notify(`Warning: ${nodeState.axisName} - ${msgText}`, "warning");
+        } else {
+          ctx.log.info(`[${nodeState.axisName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.axisName,
+            payload
+          });
         }
       }
     });
   } catch (error) {
     ctx.log.error("Failed to process error message", { error });
   }
-}
-function getMqttApi(ctx) {
-  const globalConfig = ctx.config.global.getAll();
-  const mqttSource = globalConfig.mqttSource;
-  if (mqttSource) {
-    const availableSources = pluginState.getMqttSources();
-    if (!availableSources.includes(mqttSource)) {
-      ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
-        available: availableSources
-      });
-      ctx.ui.notify(`MQTT Broker "${mqttSource}" nicht gefunden`, "warning");
-    }
-    return ctx.mqtt.withSource(mqttSource);
-  }
-  return ctx.mqtt;
 }
 function setupSubscriptions(ctx, nodeId) {
   const nodeState = pluginState.getNode(nodeId);
@@ -1242,30 +1310,20 @@ function setupSubscriptions(ctx, nodeId) {
     ctx.ui.notify("Keine MQTT-Broker konfiguriert", "error");
     return;
   }
+  const errorTopic = globalConfig.errorTopic || "machine/errors";
+  ctx.log.info("SUB 1: axis topic", { mainTopic });
   const axisUnsub = mqtt.subscribe(mainTopic, (msg) => {
+    ctx.log.debug("CALLBACK 1 (axis) fired!", { topic: mainTopic });
     handleAxisData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(axisUnsub);
-  ctx.log.info("Axis subscription setup", {
-    nodeId,
-    axisName: nodeState.axisName,
-    mainTopic
-  });
-}
-function setupErrorSubscription(ctx) {
-  const globalConfig = ctx.config.global.getAll();
-  const errorTopic = globalConfig.errorTopic || "machine/errors";
-  const mqtt = getMqttApi(ctx);
-  const availableSources = ctx.mqtt.getSources();
-  if (availableSources.length === 0) {
-    ctx.log.warn("No MQTT sources available for error subscription");
-    return;
-  }
+  ctx.log.info("SUB 2: error topic", { errorTopic });
   const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
+    ctx.log.debug("CALLBACK 2 (error) fired!", { topic: errorTopic, payload: msg.payload });
     handleErrorMessage(ctx, msg.payload);
   });
-  pluginState.setErrorSubscription(errorUnsub);
-  ctx.log.info("Error subscription setup", { errorTopic });
+  nodeState.subscriptions.push(errorUnsub);
+  ctx.log.info("Both subscriptions created", { mainTopic, errorTopic });
 }
 async function sendStepCommand(nodeId, stepValue) {
   const ctx = pluginState.getContext();
@@ -1503,8 +1561,49 @@ function acknowledgeError(nodeId, errorIndex) {
   if (!nodeState || errorIndex < 0 || errorIndex >= nodeState.errors.length) {
     return;
   }
-  nodeState.errors[errorIndex].acknowledged = true;
-  ctx.log.info("Error acknowledged", { nodeId, errorIndex });
+  const error = nodeState.errors[errorIndex];
+  error.acknowledged = true;
+  ctx.log.info("Error acknowledged", {
+    nodeId,
+    axisName: nodeState.axisName,
+    errorIndex,
+    level: error.level,
+    acknowledgedAt: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  const hasUnacknowledgedErrors = nodeState.errors.some((e) => !e.acknowledged);
+  if (!hasUnacknowledgedErrors) {
+    updateNodeVisuals(ctx, nodeId, nodeState.currentState, false);
+    ctx.log.info("Node error state reset after acknowledgement", {
+      nodeId,
+      axisName: nodeState.axisName
+    });
+    ctx.ui.notify(`${nodeState.axisName}: Fehler quittiert`, "success");
+  }
+}
+function acknowledgeAllErrors(nodeId) {
+  const ctx = pluginState.getContext();
+  const nodeState = pluginState.getNode(nodeId);
+  if (!nodeState) {
+    return;
+  }
+  const errorCount = nodeState.errors.length;
+  if (errorCount === 0) {
+    return;
+  }
+  ctx.log.info("All errors acknowledged and cleared", {
+    nodeId,
+    axisName: nodeState.axisName,
+    count: errorCount,
+    acknowledgedAt: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  nodeState.errors = [];
+  updateNodeVisuals(ctx, nodeId, nodeState.currentState, false);
+  ctx.log.info("Node state reset after acknowledgement", {
+    nodeId,
+    axisName: nodeState.axisName,
+    newState: "Normal"
+  });
+  ctx.ui.notify(`${nodeState.axisName}: ${errorCount} Fehler quittiert`, "success");
 }
 function getNodeState(nodeId) {
   return pluginState.getNode(nodeId);
@@ -1526,6 +1625,12 @@ function getCurrentMqttFormat() {
   const ctx = pluginState.getContext();
   return getMqttFormat(ctx);
 }
+function getUnacknowledgedErrorCount(nodeId) {
+  const nodeState = pluginState.getNode(nodeId);
+  if (!nodeState)
+    return 0;
+  return nodeState.errors.filter((e) => !e.acknowledged).length;
+}
 var plugin = {
   components: {
     AxisDetailsPopup
@@ -1535,7 +1640,6 @@ var plugin = {
     ctx.log.info("Axis Plugin loaded", {
       pluginId: ctx.pluginId
     });
-    setupErrorSubscription(ctx);
     ctx.events.on("context-menu-action", (data) => {
       const event = data;
       if (event.action === "show-axis-details") {
@@ -1544,6 +1648,29 @@ var plugin = {
           data: { nodeId: event.nodeId }
         });
       }
+    });
+    ctx.events.onLogAcknowledged((entries) => {
+      entries.forEach((entry) => {
+        if (entry.nodeId) {
+          const nodeState = pluginState.getNode(entry.nodeId);
+          if (nodeState) {
+            let hasUnacknowledged = false;
+            nodeState.errors.forEach((err) => {
+              if (!err.acknowledged) {
+                err.acknowledged = true;
+                hasUnacknowledged = true;
+              }
+            });
+            if (hasUnacknowledged) {
+              updateNodeVisuals(ctx, entry.nodeId, nodeState.currentState, false);
+              ctx.log.info("Node error state reset via Viewer Log acknowledgement", {
+                nodeId: entry.nodeId,
+                axisName: nodeState.axisName
+              });
+            }
+          }
+        }
+      });
     });
   },
   onNodeBound(ctx, node) {
@@ -1588,7 +1715,8 @@ var plugin = {
     }
     if (type === "global" && (key === "errorColor" || key === "homingColor" || key === "motionColor")) {
       pluginState.getAllNodes().forEach((nodeState) => {
-        updateNodeVisuals(ctx, nodeState.nodeId, nodeState.currentState);
+        const hasUnacknowledgedErrors = nodeState.errors.some((e) => !e.acknowledged);
+        updateNodeVisuals(ctx, nodeState.nodeId, nodeState.currentState, hasUnacknowledgedErrors);
       });
     }
   },
@@ -1600,12 +1728,14 @@ var plugin = {
 };
 var src_default = plugin;
 export {
+  acknowledgeAllErrors,
   acknowledgeError,
   src_default as default,
   getCurrentMqttFormat,
   getCurrentMqttSource,
   getMqttSources,
   getNodeState,
+  getUnacknowledgedErrorCount,
   isStepControlAvailable,
   sendHomingCommand,
   sendMoveToPositionCommand,

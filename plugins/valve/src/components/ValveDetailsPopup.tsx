@@ -447,24 +447,34 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                       borderLeft: `4px solid ${getErrorLevelColor(err.level)}`,
                     }}
                   >
-                    {/* Error Header: Level + Timestamp */}
+                    {/* Error Header: Level + Error Number + Timestamp */}
                     <div style={styles.errorHeader}>
-                      <span
-                        style={{
-                          ...styles.errorLevel,
-                          color: getErrorLevelColor(err.level),
-                        }}
-                      >
-                        {err.level}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span
+                          style={{
+                            ...styles.errorLevel,
+                            backgroundColor: getErrorLevelColor(err.level),
+                            color: '#fff',
+                            padding: '2px 6px',
+                            borderRadius: '3px',
+                          }}
+                        >
+                          {err.level}
+                        </span>
+                        {err.errorNo !== undefined && (
+                          <span style={styles.errorNumber}>
+                            #{err.errorNo}
+                          </span>
+                        )}
+                      </div>
                       <span style={styles.errorTime}>
                         {formatTimestamp(err.timestamp)}
                       </span>
                     </div>
 
-                    {/* Error Message */}
+                    {/* Error Message - prominent display */}
                     <div style={styles.errorMessage}>
-                      {err.message || 'Keine Nachricht'}
+                      {err.message}
                     </div>
 
                     {/* Error Values (if present) */}
@@ -735,15 +745,26 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
   },
   errorTime: {
-    fontSize: '10px',
-    color: '#999',
+    fontSize: '11px',
+    color: '#666',
+  },
+  errorNumber: {
+    fontSize: '13px',
+    fontWeight: 'bold',
+    color: '#333',
+    fontFamily: 'monospace',
   },
   errorMessage: {
-    fontSize: '12px',
-    color: '#333',
-    marginBottom: '6px',
-    lineHeight: '1.3',
-    fontWeight: 'bold',
+    fontSize: '14px',
+    color: '#212529',
+    marginBottom: '8px',
+    marginTop: '8px',
+    lineHeight: '1.4',
+    fontWeight: 'normal',
+    padding: '8px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '4px',
+    wordBreak: 'break-word',
   },
   errorValues: {
     display: 'flex',

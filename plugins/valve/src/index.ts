@@ -405,28 +405,71 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
       payload = rawPayload as ErrorPayload;
     }
 
-    // Extract message text safely (handle different payload formats)
-    // Possible formats:
+    // Extract message text and error number safely (handle different payload formats)
+    // Known formats:
     // 1. msg: "string"
     // 2. msg: { txt: "string", val: {...} }
-    // 3. msg: { val: { txt: "string" } }
-    // 4. msg: { text: "string" }
-    let messageText = 'Unknown error';
+    // 3. msg: { text: "string" }
+    // 4. msg: { val: { txt: "string" } }
+    // 5. msg: { no: 123, txt: "string" }
+    // 6. msg: { errNo: 123, errTxt: "string" }
+    // 7. msg: { code: 123, message: "string" }
+    let messageText = '';
+    let errorNo: number | string | undefined;
+    const msgObj = typeof payload.msg === 'object' && payload.msg !== null
+      ? payload.msg as Record<string, unknown>
+      : null;
+
+    // Extract error number (try multiple field names)
+    if (msgObj) {
+      errorNo = msgObj.no as number | string | undefined
+        ?? msgObj.errNo as number | string | undefined
+        ?? msgObj.errorNo as number | string | undefined
+        ?? msgObj.code as number | string | undefined
+        ?? msgObj.errorCode as number | string | undefined;
+    }
+
+    // Extract message text
     if (typeof payload.msg === 'string') {
       messageText = payload.msg;
-    } else if (payload.msg) {
-      if (typeof payload.msg.txt === 'string' && payload.msg.txt) {
-        messageText = payload.msg.txt;
-      } else if (typeof payload.msg.text === 'string' && payload.msg.text) {
-        messageText = (payload.msg as { text: string }).text;
-      } else if (payload.msg.val && typeof payload.msg.val === 'object') {
-        const val = payload.msg.val as Record<string, unknown>;
-        if (typeof val.txt === 'string' && val.txt) {
-          messageText = val.txt;
-        } else if (typeof val.text === 'string' && val.text) {
-          messageText = val.text as string;
+    } else if (msgObj) {
+      // Try direct text fields
+      const textFields = ['txt', 'text', 'errTxt', 'errorTxt', 'message', 'msg', 'description'];
+      for (const field of textFields) {
+        const value = msgObj[field];
+        if (typeof value === 'string' && value.trim()) {
+          messageText = value;
+          break;
         }
       }
+
+      // Try nested val object
+      if (!messageText && msgObj.val && typeof msgObj.val === 'object') {
+        const val = msgObj.val as Record<string, unknown>;
+        for (const field of textFields) {
+          const value = val[field];
+          if (typeof value === 'string' && value.trim()) {
+            messageText = value;
+            break;
+          }
+        }
+        // Also extract errorNo from val if not found yet
+        if (errorNo === undefined) {
+          errorNo = val.no as number | string | undefined
+            ?? val.errNo as number | string | undefined
+            ?? val.code as number | string | undefined;
+        }
+      }
+
+      // Ultimate fallback: serialize the entire msg object
+      if (!messageText) {
+        messageText = JSON.stringify(payload.msg);
+      }
+    }
+
+    // If still no message, use generic text
+    if (!messageText) {
+      messageText = errorNo !== undefined ? `Fehler ${errorNo}` : 'Unbekannter Fehler';
     }
 
     ctx.log.info('Error message received', {
@@ -434,12 +477,9 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
       src: payload.src,
       lvl: payload.lvl,
       extractedMessage: messageText,
+      extractedErrorNo: errorNo,
       msgType: typeof payload.msg,
-      msgIsObject: typeof payload.msg === 'object',
-      msgKeys: payload.msg && typeof payload.msg === 'object' ? Object.keys(payload.msg) : [],
-      msgTxt: payload.msg && typeof payload.msg === 'object' ? (payload.msg as Record<string, unknown>).txt : undefined,
-      msgText: payload.msg && typeof payload.msg === 'object' ? (payload.msg as Record<string, unknown>).text : undefined,
-      msgVal: payload.msg && typeof payload.msg === 'object' ? (payload.msg as Record<string, unknown>).val : undefined,
+      msgKeys: msgObj ? Object.keys(msgObj) : [],
     });
 
     const source = normalizeValveName(payload.src || '');
@@ -460,7 +500,6 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
       });
       if (source === expectedValveName) {
         // Extract values from payload
-        const msgObj = typeof payload.msg === 'object' ? payload.msg : null;
         const values = msgObj?.val as Record<string, unknown> | undefined;
 
         const errorEntry: ErrorEntry = {
@@ -468,7 +507,9 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           level: payload.lvl,
           source: payload.src,
           message: messageText,
+          errorNo: errorNo,
           values: values,
+          rawMsg: payload.msg,
           acknowledged: false,
         };
 

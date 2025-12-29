@@ -455,19 +455,28 @@ var ValveDetailsPopup = ({ data }) => {
             },
             children: [
               /* @__PURE__ */ jsxs("div", { style: styles.errorHeader, children: [
-                /* @__PURE__ */ jsx(
-                  "span",
-                  {
-                    style: {
-                      ...styles.errorLevel,
-                      color: getErrorLevelColor(err.level)
-                    },
-                    children: err.level
-                  }
-                ),
+                /* @__PURE__ */ jsxs("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
+                  /* @__PURE__ */ jsx(
+                    "span",
+                    {
+                      style: {
+                        ...styles.errorLevel,
+                        backgroundColor: getErrorLevelColor(err.level),
+                        color: "#fff",
+                        padding: "2px 6px",
+                        borderRadius: "3px"
+                      },
+                      children: err.level
+                    }
+                  ),
+                  err.errorNo !== void 0 && /* @__PURE__ */ jsxs("span", { style: styles.errorNumber, children: [
+                    "#",
+                    err.errorNo
+                  ] })
+                ] }),
                 /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(err.timestamp) })
               ] }),
-              /* @__PURE__ */ jsx("div", { style: styles.errorMessage, children: err.message || "Keine Nachricht" }),
+              /* @__PURE__ */ jsx("div", { style: styles.errorMessage, children: err.message }),
               err.values && Object.keys(err.values).length > 0 && /* @__PURE__ */ jsx("div", { style: styles.errorValues, children: Object.entries(err.values).map(([key, value]) => /* @__PURE__ */ jsxs("span", { style: styles.errorValueItem, children: [
                 key,
                 ": ",
@@ -718,15 +727,26 @@ var styles = {
     textTransform: "uppercase"
   },
   errorTime: {
-    fontSize: "10px",
-    color: "#999"
+    fontSize: "11px",
+    color: "#666"
+  },
+  errorNumber: {
+    fontSize: "13px",
+    fontWeight: "bold",
+    color: "#333",
+    fontFamily: "monospace"
   },
   errorMessage: {
-    fontSize: "12px",
-    color: "#333",
-    marginBottom: "6px",
-    lineHeight: "1.3",
-    fontWeight: "bold"
+    fontSize: "14px",
+    color: "#212529",
+    marginBottom: "8px",
+    marginTop: "8px",
+    lineHeight: "1.4",
+    fontWeight: "normal",
+    padding: "8px",
+    backgroundColor: "#f8f9fa",
+    borderRadius: "4px",
+    wordBreak: "break-word"
   },
   errorValues: {
     display: "flex",
@@ -1055,34 +1075,51 @@ function handleErrorMessage(ctx, rawPayload) {
     } else {
       payload = rawPayload;
     }
-    let messageText = "Unknown error";
+    let messageText = "";
+    let errorNo;
+    const msgObj = typeof payload.msg === "object" && payload.msg !== null ? payload.msg : null;
+    if (msgObj) {
+      errorNo = msgObj.no ?? msgObj.errNo ?? msgObj.errorNo ?? msgObj.code ?? msgObj.errorCode;
+    }
     if (typeof payload.msg === "string") {
       messageText = payload.msg;
-    } else if (payload.msg) {
-      if (typeof payload.msg.txt === "string" && payload.msg.txt) {
-        messageText = payload.msg.txt;
-      } else if (typeof payload.msg.text === "string" && payload.msg.text) {
-        messageText = payload.msg.text;
-      } else if (payload.msg.val && typeof payload.msg.val === "object") {
-        const val = payload.msg.val;
-        if (typeof val.txt === "string" && val.txt) {
-          messageText = val.txt;
-        } else if (typeof val.text === "string" && val.text) {
-          messageText = val.text;
+    } else if (msgObj) {
+      const textFields = ["txt", "text", "errTxt", "errorTxt", "message", "msg", "description"];
+      for (const field of textFields) {
+        const value = msgObj[field];
+        if (typeof value === "string" && value.trim()) {
+          messageText = value;
+          break;
         }
       }
+      if (!messageText && msgObj.val && typeof msgObj.val === "object") {
+        const val = msgObj.val;
+        for (const field of textFields) {
+          const value = val[field];
+          if (typeof value === "string" && value.trim()) {
+            messageText = value;
+            break;
+          }
+        }
+        if (errorNo === void 0) {
+          errorNo = val.no ?? val.errNo ?? val.code;
+        }
+      }
+      if (!messageText) {
+        messageText = JSON.stringify(payload.msg);
+      }
+    }
+    if (!messageText) {
+      messageText = errorNo !== void 0 ? `Fehler ${errorNo}` : "Unbekannter Fehler";
     }
     ctx.log.info("Error message received", {
       rawPayload: JSON.stringify(payload).slice(0, 500),
       src: payload.src,
       lvl: payload.lvl,
       extractedMessage: messageText,
+      extractedErrorNo: errorNo,
       msgType: typeof payload.msg,
-      msgIsObject: typeof payload.msg === "object",
-      msgKeys: payload.msg && typeof payload.msg === "object" ? Object.keys(payload.msg) : [],
-      msgTxt: payload.msg && typeof payload.msg === "object" ? payload.msg.txt : void 0,
-      msgText: payload.msg && typeof payload.msg === "object" ? payload.msg.text : void 0,
-      msgVal: payload.msg && typeof payload.msg === "object" ? payload.msg.val : void 0
+      msgKeys: msgObj ? Object.keys(msgObj) : []
     });
     const source = normalizeValveName(payload.src || "");
     const allNodes = pluginState.getAllNodes();
@@ -1099,14 +1136,15 @@ function handleErrorMessage(ctx, rawPayload) {
         match: source === expectedValveName
       });
       if (source === expectedValveName) {
-        const msgObj = typeof payload.msg === "object" ? payload.msg : null;
         const values = msgObj?.val;
         const errorEntry = {
           timestamp: payload.utc,
           level: payload.lvl,
           source: payload.src,
           message: messageText,
+          errorNo,
           values,
+          rawMsg: payload.msg,
           acknowledged: false
         };
         nodeState.errors.unshift(errorEntry);

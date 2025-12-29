@@ -160,8 +160,6 @@ var ValveDetailsPopup = ({ data }) => {
   const [isLoadingAst, setIsLoadingAst] = useState(false);
   const [isLoadingPressureFree, setIsLoadingPressureFree] = useState(false);
   const [isLoadingMode, setIsLoadingMode] = useState(null);
-  const [expandedErrors, setExpandedErrors] = useState(/* @__PURE__ */ new Set());
-  const [hoveredError, setHoveredError] = useState(null);
   useEffect(() => {
     const interval = setInterval(() => {
       const newState = getNodeState(nodeId);
@@ -180,17 +178,6 @@ var ValveDetailsPopup = ({ data }) => {
   const handleAcknowledge = (errorIndex) => {
     acknowledgeError(nodeId, errorIndex);
     setUpdateCounter((c) => c + 1);
-  };
-  const toggleErrorExpanded = (errorIndex) => {
-    setExpandedErrors((prev) => {
-      const next = new Set(prev);
-      if (next.has(errorIndex)) {
-        next.delete(errorIndex);
-      } else {
-        next.add(errorIndex);
-      }
-      return next;
-    });
   };
   const handleAcknowledgeAll = () => {
     acknowledgeAllErrors(nodeId);
@@ -440,58 +427,6 @@ var ValveDetailsPopup = ({ data }) => {
         ] })
       ] }),
       activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-        /* @__PURE__ */ jsxs("div", { style: {
-          fontSize: "12px",
-          backgroundColor: "#fffbcc",
-          padding: "12px",
-          marginBottom: "12px",
-          borderRadius: "4px",
-          border: "2px solid #ffc107"
-        }, children: [
-          /* @__PURE__ */ jsxs("div", { style: { fontWeight: "bold", marginBottom: "8px" }, children: [
-            "DEBUG: ",
-            nodeState.errors.length,
-            " Error(s)"
-          ] }),
-          nodeState.errors.map((err, i) => /* @__PURE__ */ jsxs("div", { style: {
-            backgroundColor: "#fff",
-            padding: "10px",
-            marginBottom: "8px",
-            border: "1px solid #ccc",
-            borderLeft: "4px solid red"
-          }, children: [
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("strong", { children: "Level:" }),
-              " ",
-              err.level
-            ] }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("strong", { children: "Message:" }),
-              " ",
-              err.message
-            ] }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("strong", { children: "Source:" }),
-              " ",
-              err.source
-            ] }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("strong", { children: "ErrorNo:" }),
-              " ",
-              String(err.errorNo)
-            ] }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("strong", { children: "Timestamp:" }),
-              " ",
-              err.timestamp
-            ] }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("strong", { children: "Raw:" }),
-              " ",
-              /* @__PURE__ */ jsx("pre", { style: { fontSize: "10px", margin: 0, whiteSpace: "pre-wrap" }, children: JSON.stringify(err.rawMsg, null, 2) })
-            ] })
-          ] }, i))
-        ] }),
         /* @__PURE__ */ jsxs("div", { style: styles.errorSectionHeader, children: [
           /* @__PURE__ */ jsxs("h3", { style: { ...styles.sectionTitle, marginBottom: 0 }, children: [
             "Errors (",
@@ -510,128 +445,70 @@ var ValveDetailsPopup = ({ data }) => {
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsxs("div", { style: styles.noErrors, children: [
           /* @__PURE__ */ jsx("span", { style: { fontSize: "24px" }, children: "\u2713" }),
           /* @__PURE__ */ jsx("p", { children: "Keine Errors aufgezeichnet" })
-        ] }) : /* @__PURE__ */ jsx("div", { style: { display: "flex", flexDirection: "column", gap: "8px" }, children: nodeState.errors.map((err, idx) => {
-          const isExpanded = expandedErrors.has(idx);
-          return /* @__PURE__ */ jsxs(
-            "div",
-            {
-              style: {
-                backgroundColor: err.acknowledged ? "#f0f0f0" : "#fff",
-                border: "1px solid #ccc",
-                borderLeft: `4px solid ${getErrorLevelColor(err.level)}`,
-                borderRadius: "4px",
-                overflow: "hidden"
-              },
-              children: [
-                /* @__PURE__ */ jsxs(
-                  "div",
-                  {
-                    style: {
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "12px",
-                      backgroundColor: hoveredError === idx ? "#e9ecef" : isExpanded ? "#f8f9fa" : "transparent",
-                      cursor: "pointer"
-                    },
-                    onClick: () => toggleErrorExpanded(idx),
-                    onMouseEnter: () => setHoveredError(idx),
-                    onMouseLeave: () => setHoveredError(null),
-                    children: [
-                      /* @__PURE__ */ jsxs("div", { style: { display: "flex", alignItems: "center", gap: "10px", flex: 1 }, children: [
-                        /* @__PURE__ */ jsx("span", { style: { fontSize: "12px", color: "#333" }, children: isExpanded ? "\u25BC" : "\u25B6" }),
-                        /* @__PURE__ */ jsx(
-                          "span",
-                          {
-                            style: {
-                              backgroundColor: getErrorLevelColor(err.level),
-                              color: "#fff",
-                              padding: "2px 8px",
-                              borderRadius: "3px",
-                              fontSize: "11px",
-                              fontWeight: "bold"
-                            },
-                            children: err.level
-                          }
-                        ),
-                        err.errorNo !== void 0 && /* @__PURE__ */ jsxs("span", { style: { fontFamily: "monospace", fontWeight: "bold" }, children: [
-                          "#",
-                          err.errorNo
-                        ] }),
-                        /* @__PURE__ */ jsx("span", { style: { fontSize: "13px", color: "#333" }, children: err.message })
-                      ] }),
-                      /* @__PURE__ */ jsxs("div", { style: { display: "flex", alignItems: "center", gap: "10px" }, children: [
-                        /* @__PURE__ */ jsx("span", { style: { fontSize: "11px", color: "#666" }, children: formatTimestamp(err.timestamp) }),
-                        !err.acknowledged && /* @__PURE__ */ jsx(
-                          "button",
-                          {
-                            onClick: (e) => {
-                              e.stopPropagation();
-                              handleAcknowledge(idx);
-                            },
-                            style: {
-                              padding: "4px 8px",
-                              backgroundColor: "#007bff",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: "3px",
-                              cursor: "pointer",
-                              fontSize: "12px"
-                            },
-                            children: "\u2713"
-                          }
-                        )
-                      ] })
-                    ]
-                  }
-                ),
-                isExpanded && /* @__PURE__ */ jsxs("div", { style: { padding: "12px", backgroundColor: "#f8f9fa", borderTop: "1px solid #ddd" }, children: [
-                  /* @__PURE__ */ jsxs("div", { style: { marginBottom: "12px" }, children: [
-                    /* @__PURE__ */ jsx("div", { style: { fontSize: "11px", fontWeight: "bold", color: "#666", marginBottom: "4px" }, children: "MESSAGE:" }),
-                    /* @__PURE__ */ jsx("div", { style: { fontSize: "14px", color: "#212529" }, children: err.message })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { style: { marginBottom: "12px" }, children: [
-                    /* @__PURE__ */ jsx("div", { style: { fontSize: "11px", fontWeight: "bold", color: "#666", marginBottom: "4px" }, children: "QUELLE:" }),
-                    /* @__PURE__ */ jsx("div", { style: { fontSize: "13px", color: "#212529" }, children: err.source })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { style: { marginBottom: "12px" }, children: [
-                    /* @__PURE__ */ jsx("div", { style: { fontSize: "11px", fontWeight: "bold", color: "#666", marginBottom: "4px" }, children: "RAW PAYLOAD:" }),
-                    /* @__PURE__ */ jsx("pre", { style: {
-                      fontSize: "11px",
-                      fontFamily: "monospace",
-                      backgroundColor: "#1e1e1e",
-                      color: "#d4d4d4",
-                      padding: "12px",
-                      borderRadius: "4px",
-                      overflow: "auto",
-                      maxHeight: "200px",
-                      margin: 0,
-                      whiteSpace: "pre-wrap"
-                    }, children: JSON.stringify(err.rawMsg, null, 2) })
-                  ] }),
-                  !err.acknowledged && /* @__PURE__ */ jsx(
-                    "button",
+        ] }) : /* @__PURE__ */ jsx("div", { style: { display: "flex", flexDirection: "column", gap: "8px" }, children: nodeState.errors.map((err, idx) => /* @__PURE__ */ jsxs(
+          "div",
+          {
+            style: {
+              backgroundColor: err.acknowledged ? "#f0f0f0" : "#fff",
+              border: "1px solid #ccc",
+              borderLeft: `4px solid ${getErrorLevelColor(err.level)}`,
+              borderRadius: "4px",
+              padding: "12px"
+            },
+            children: [
+              /* @__PURE__ */ jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
+                /* @__PURE__ */ jsxs("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
+                  /* @__PURE__ */ jsx(
+                    "span",
                     {
-                      onClick: () => handleAcknowledge(idx),
                       style: {
-                        padding: "8px 16px",
-                        backgroundColor: "#28a745",
+                        backgroundColor: getErrorLevelColor(err.level),
                         color: "#fff",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "13px",
+                        padding: "2px 8px",
+                        borderRadius: "3px",
+                        fontSize: "11px",
                         fontWeight: "bold"
                       },
-                      children: "Fehler Quittieren"
+                      children: err.level
                     }
-                  )
-                ] })
-              ]
-            },
-            idx
-          );
-        }) })
+                  ),
+                  /* @__PURE__ */ jsx("span", { style: { fontSize: "12px", color: "#666" }, children: formatTimestamp(err.timestamp) }),
+                  /* @__PURE__ */ jsx("span", { style: { fontSize: "12px", color: "#999" }, children: err.source })
+                ] }),
+                !err.acknowledged ? /* @__PURE__ */ jsx(
+                  "button",
+                  {
+                    onClick: () => handleAcknowledge(idx),
+                    style: {
+                      padding: "4px 12px",
+                      backgroundColor: "#007bff",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      fontSize: "12px"
+                    },
+                    children: "Quittieren"
+                  }
+                ) : /* @__PURE__ */ jsx("span", { style: { fontSize: "11px", color: "#28a745", fontWeight: "bold" }, children: "\u2713 Quittiert" })
+              ] }),
+              /* @__PURE__ */ jsx("pre", { style: {
+                fontSize: "12px",
+                fontFamily: "monospace",
+                backgroundColor: "#1e1e1e",
+                color: "#d4d4d4",
+                padding: "10px",
+                borderRadius: "4px",
+                overflow: "auto",
+                maxHeight: "150px",
+                margin: 0,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word"
+              }, children: JSON.stringify(err.rawMsg, null, 2) })
+            ]
+          },
+          idx
+        )) })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.footer, children: [

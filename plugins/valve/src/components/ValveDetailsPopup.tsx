@@ -18,6 +18,8 @@ import {
   sendModeBistableMiddle,
   getCurrentMqttFormat,
   getUnacknowledgedErrorCount,
+  acknowledgeError,
+  acknowledgeAllErrors,
 } from '../index';
 import {
   GenericState,
@@ -393,23 +395,30 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
         {/* ERRORS TAB */}
         {activeTab === 'errors' && (
           <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Fehlermeldungen ({nodeState.errors.length})</h3>
-
-            {/* Debug: Show raw error data */}
-            <div style={{
-              marginBottom: '12px',
-              padding: '8px',
-              backgroundColor: '#fff',
-              border: '2px solid #007bff',
-              borderRadius: '4px',
-              fontSize: '11px',
-              fontFamily: 'monospace',
-              color: '#000',
-            }}>
-              <strong style={{ color: '#000' }}>DEBUG - errors Array:</strong>
-              <pre style={{ margin: '4px 0 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: '#000' }}>
-                {JSON.stringify(nodeState.errors, null, 2)}
-              </pre>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h3 style={{ ...styles.sectionTitle, margin: 0, border: 'none', paddingBottom: 0 }}>
+                Fehlermeldungen ({nodeState.errors.length})
+              </h3>
+              {unacknowledgedCount > 0 && (
+                <button
+                  onClick={() => {
+                    acknowledgeAllErrors(nodeId);
+                    setUpdateCounter((c) => c + 1);
+                  }}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#28a745',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                  }}
+                >
+                  Alle Quittieren ({unacknowledgedCount})
+                </button>
+              )}
             </div>
 
             {nodeState.errors.length === 0 ? (
@@ -417,30 +426,97 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                 Keine Fehlermeldungen
               </div>
             ) : (
-              <pre style={{
-                margin: 0,
-                padding: '12px',
-                backgroundColor: '#1a1a1a',
-                color: '#0f0',
-                fontSize: '12px',
-                fontFamily: 'Consolas, Monaco, monospace',
-                borderRadius: '6px',
-                border: '3px solid #dc3545',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-all',
-                maxHeight: '400px',
-                overflow: 'auto',
-              }}>
+              <>
+                {/* Error List using native details/summary */}
                 {nodeState.errors.map((err, idx) => {
+                  let msg = 'Keine Nachricht';
+                  let formattedPayload = err.rawPayload || '';
                   try {
                     const payload = JSON.parse(err.rawPayload || '{}');
-                    const msg = payload.msg?.txt || payload.msg?.text || payload.msg || 'No message';
-                    return `[${idx}] ${err.level}: ${msg}\n`;
+                    msg = payload.msg?.txt || payload.msg?.text || (typeof payload.msg === 'string' ? payload.msg : 'Keine Nachricht');
+                    formattedPayload = JSON.stringify(payload, null, 2);
                   } catch {
-                    return `[${idx}] ${err.level}: Parse error\n`;
+                    // Keep defaults
                   }
-                }).join('')}
-              </pre>
+
+                  const borderColor = err.level === 'ERR' ? '#dc3545' : err.level === 'WARN' ? '#ffc107' : '#17a2b8';
+                  const bgColor = err.acknowledged ? '#f5f5f5' : '#fff';
+
+                  return (
+                    <details
+                      key={idx}
+                      style={{
+                        marginBottom: '8px',
+                        border: `2px solid ${borderColor}`,
+                        borderRadius: '6px',
+                        backgroundColor: bgColor,
+                      }}
+                    >
+                      <summary
+                        style={{
+                          padding: '10px 12px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          color: '#000',
+                          listStyle: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                        }}
+                      >
+                        <span style={{
+                          backgroundColor: borderColor,
+                          color: '#fff',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                        }}>
+                          {err.level}
+                        </span>
+                        <span style={{ flex: 1, color: '#000' }}>{msg}</span>
+                        {err.acknowledged && <span style={{ color: '#28a745' }}>✓</span>}
+                      </summary>
+                      <div style={{ padding: '12px', borderTop: `1px solid ${borderColor}` }}>
+                        <pre style={{
+                          margin: '0 0 10px 0',
+                          padding: '10px',
+                          backgroundColor: '#1a1a1a',
+                          color: '#0f0',
+                          fontSize: '11px',
+                          fontFamily: 'Consolas, Monaco, monospace',
+                          borderRadius: '4px',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-all',
+                          maxHeight: '200px',
+                          overflow: 'auto',
+                        }}>
+                          {formattedPayload}
+                        </pre>
+                        {!err.acknowledged && (
+                          <button
+                            onClick={() => {
+                              acknowledgeError(nodeId, idx);
+                              setUpdateCounter((c) => c + 1);
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#007bff',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                            }}
+                          >
+                            Quittieren
+                          </button>
+                        )}
+                      </div>
+                    </details>
+                  );
+                })}
+              </>
             )}
           </div>
         )}

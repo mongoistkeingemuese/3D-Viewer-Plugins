@@ -431,17 +431,36 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           nodeState.errors = nodeState.errors.slice(0, 20);
         }
 
-        ctx.log.info('Error stored', {
-          valveName: nodeState.valveName,
-          payloadLength: payloadString.length,
-        });
+        // Extract message text for logging
+        let msgText = 'Unknown error';
+        if (typeof payload.msg === 'string') {
+          msgText = payload.msg;
+        } else if (payload.msg?.txt) {
+          msgText = payload.msg.txt;
+        } else if (payload.msg?.text) {
+          msgText = payload.msg.text;
+        }
 
+        // Log to 3D Viewer log based on level
         if (payload.lvl === 'ERR') {
+          ctx.log.error(`[${nodeState.valveName}] ${msgText}`, {
+            source: payload.src,
+            type: payload.typ,
+          });
           nodeState.genericState = GenericState.Error;
           updateNodeVisuals(ctx, nodeState.nodeId, GenericState.Error, nodeState.specificState);
-          ctx.ui.notify(`Error: ${nodeState.valveName}`, 'error');
+          ctx.ui.notify(`Error: ${nodeState.valveName} - ${msgText}`, 'error');
         } else if (payload.lvl === 'WARN') {
-          ctx.ui.notify(`Warning: ${nodeState.valveName}`, 'warning');
+          ctx.log.warn(`[${nodeState.valveName}] ${msgText}`, {
+            source: payload.src,
+            type: payload.typ,
+          });
+          ctx.ui.notify(`Warning: ${nodeState.valveName} - ${msgText}`, 'warning');
+        } else {
+          ctx.log.info(`[${nodeState.valveName}] ${msgText}`, {
+            level: payload.lvl,
+            source: payload.src,
+          });
         }
       }
     });

@@ -390,10 +390,12 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
 
         {/* ERRORS TAB */}
         {activeTab === 'errors' && (
-          <div style={{ padding: '8px' }}>
-            {/* TODO: Error-Tabelle neu aufbauen */}
-            <p>Error-Tab wird neu aufgebaut...</p>
-            <p>Anzahl Errors: {nodeState.errors.length}</p>
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>Fehlermeldungen</h3>
+            <div style={{ color: '#333', fontSize: '14px' }}>
+              <p style={{ margin: '0 0 8px 0' }}>Anzahl Errors: <strong>{nodeState.errors.length}</strong></p>
+              <p style={{ margin: 0, color: '#666', fontStyle: 'italic' }}>Error-Anzeige wird neu aufgebaut...</p>
+            </div>
           </div>
         )}
       </div>

@@ -396,11 +396,14 @@ var ValveDetailsPopup = ({ data }) => {
           /* @__PURE__ */ jsx("p", { style: styles.modeHint, children: "Hinweis: Modi werden ohne Feedback vom PLC gesendet" })
         ] })
       ] }),
-      activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: { padding: "8px" }, children: [
-        /* @__PURE__ */ jsx("p", { children: "Error-Tab wird neu aufgebaut..." }),
-        /* @__PURE__ */ jsxs("p", { children: [
-          "Anzahl Errors: ",
-          nodeState.errors.length
+      activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
+        /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Fehlermeldungen" }),
+        /* @__PURE__ */ jsxs("div", { style: { color: "#333", fontSize: "14px" }, children: [
+          /* @__PURE__ */ jsxs("p", { style: { margin: "0 0 8px 0" }, children: [
+            "Anzahl Errors: ",
+            /* @__PURE__ */ jsx("strong", { children: nodeState.errors.length })
+          ] }),
+          /* @__PURE__ */ jsx("p", { style: { margin: 0, color: "#666", fontStyle: "italic" }, children: "Error-Anzeige wird neu aufgebaut..." })
         ] })
       ] })
     ] }),

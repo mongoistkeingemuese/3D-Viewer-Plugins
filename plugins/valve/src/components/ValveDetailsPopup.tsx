@@ -460,11 +460,8 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                         {formatTimestamp(error.timestamp)}
                       </span>
                     </div>
-                    <div style={styles.errorMessage}>
-                      {error.message || '(kein Text)'}
-                    </div>
-                    <div style={{ fontSize: '9px', color: '#666', backgroundColor: '#f5f5f5', padding: '4px', borderRadius: '3px', marginBottom: '4px', wordBreak: 'break-all' }}>
-                      DEBUG: {JSON.stringify(error)}
+                    <div style={{ ...styles.errorMessage, backgroundColor: '#e0ffe0', padding: '8px', border: '2px solid green' }}>
+                      MESSAGE: {error.message}
                     </div>
                     {error.values && Object.keys(error.values).length > 0 && (
                       <div style={styles.errorValues}>

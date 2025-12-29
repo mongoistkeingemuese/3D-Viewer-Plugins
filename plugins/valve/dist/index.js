@@ -134,6 +134,7 @@ var ValveDetailsPopup = ({ data }) => {
   const [updateCounter, setUpdateCounter] = useState(0);
   const [activeTab, setActiveTab] = useState("status");
   const [mqttFormat, setMqttFormat] = useState(() => getCurrentMqttFormat());
+  const [selectedErrorIdx, setSelectedErrorIdx] = useState(null);
   const [isLoadingGst, setIsLoadingGst] = useState(false);
   const [isLoadingAst, setIsLoadingAst] = useState(false);
   const [isLoadingPressureFree, setIsLoadingPressureFree] = useState(false);
@@ -409,6 +410,7 @@ var ValveDetailsPopup = ({ data }) => {
           {
             onClick: () => {
               acknowledgeAllErrors(nodeId);
+              setSelectedErrorIdx(null);
               setUpdateCounter((c) => c + 1);
             },
             style: {
@@ -432,58 +434,97 @@ var ValveDetailsPopup = ({ data }) => {
         ),
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("pre", { style: { color: "#28a745", padding: "20px", textAlign: "center", margin: 0 }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsxs(Fragment2, { children: [
           /* @__PURE__ */ jsx("pre", { style: {
-            margin: "0 0 12px 0",
-            padding: "12px",
-            backgroundColor: "#1a1a1a",
-            color: "#0f0",
+            margin: "0 0 8px 0",
+            padding: "10px",
+            backgroundColor: "#2d2d2d",
+            color: "#fff",
             fontSize: "12px",
             fontFamily: "Consolas, Monaco, monospace",
-            borderRadius: "6px",
-            border: "2px solid #dc3545",
+            borderRadius: "4px",
+            border: "1px solid #555",
             whiteSpace: "pre-wrap",
-            wordBreak: "break-all",
-            maxHeight: "300px",
+            maxHeight: "150px",
             overflow: "auto"
           }, children: nodeState.errors.map((err, idx) => {
             try {
               const p = JSON.parse(err.rawPayload || "{}");
               const msg = p.msg?.txt || p.msg?.text || p.msg || "No message";
-              const ack = err.acknowledged ? " [QUITTIERT]" : "";
-              return `[${idx}] ${err.level}${ack}: ${msg}
-${"\u2500".repeat(50)}
-${JSON.stringify(p, null, 2)}
-
+              const ack = err.acknowledged ? "\u2713" : "\u25CB";
+              const sel = selectedErrorIdx === idx ? "\u25B6" : " ";
+              return `${sel}[${idx}] ${ack} ${err.level}: ${msg}
 `;
             } catch {
-              return `[${idx}] ${err.level}: Parse error
-
+              return ` [${idx}] \u25CB ${err.level}: Parse error
 `;
             }
           }).join("") }),
-          /* @__PURE__ */ jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: "8px" }, children: nodeState.errors.map((err, idx) => !err.acknowledged && /* @__PURE__ */ jsxs(
+          /* @__PURE__ */ jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "8px" }, children: Array.from({ length: nodeState.errors.length }, (_, idx) => /* @__PURE__ */ jsxs(
             "button",
             {
-              onClick: () => {
-                acknowledgeError(nodeId, idx);
-                setUpdateCounter((c) => c + 1);
-              },
+              onClick: () => setSelectedErrorIdx(selectedErrorIdx === idx ? null : idx),
               style: {
-                padding: "8px 12px",
-                backgroundColor: "#007bff",
+                padding: "4px 8px",
+                backgroundColor: selectedErrorIdx === idx ? "#007bff" : "#6c757d",
                 color: "#fff",
                 border: "none",
-                borderRadius: "4px",
+                borderRadius: "3px",
                 cursor: "pointer",
-                fontSize: "12px"
+                fontSize: "11px"
               },
               children: [
                 "#",
-                idx,
-                " Quittieren"
+                idx
               ]
             },
             idx
-          )) })
+          )) }),
+          selectedErrorIdx !== null && nodeState.errors[selectedErrorIdx] && /* @__PURE__ */ jsxs(Fragment2, { children: [
+            /* @__PURE__ */ jsx("pre", { style: {
+              margin: "0 0 8px 0",
+              padding: "10px",
+              backgroundColor: "#1a1a1a",
+              color: "#0f0",
+              fontSize: "11px",
+              fontFamily: "Consolas, Monaco, monospace",
+              borderRadius: "4px",
+              border: "2px solid #dc3545",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-all",
+              maxHeight: "200px",
+              overflow: "auto"
+            }, children: (() => {
+              const err = nodeState.errors[selectedErrorIdx];
+              try {
+                return JSON.stringify(JSON.parse(err.rawPayload || "{}"), null, 2);
+              } catch {
+                return err.rawPayload || "No payload";
+              }
+            })() }),
+            !nodeState.errors[selectedErrorIdx].acknowledged && /* @__PURE__ */ jsxs(
+              "button",
+              {
+                onClick: () => {
+                  acknowledgeError(nodeId, selectedErrorIdx);
+                  setUpdateCounter((c) => c + 1);
+                },
+                style: {
+                  padding: "8px 16px",
+                  backgroundColor: "#007bff",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: "bold"
+                },
+                children: [
+                  "#",
+                  selectedErrorIdx,
+                  " Quittieren"
+                ]
+              }
+            )
+          ] })
         ] })
       ] })
     ] }),

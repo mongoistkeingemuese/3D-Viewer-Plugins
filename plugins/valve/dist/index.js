@@ -441,25 +441,56 @@ var ValveDetailsPopup = ({ data }) => {
       ] }),
       activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
         /* @__PURE__ */ jsxs("div", { style: {
-          fontSize: "10px",
-          color: "#666",
+          fontSize: "12px",
           backgroundColor: "#fffbcc",
-          padding: "8px",
+          padding: "12px",
           marginBottom: "12px",
           borderRadius: "4px",
-          fontFamily: "monospace"
+          border: "2px solid #ffc107"
         }, children: [
-          "DEBUG: errors.length = ",
-          nodeState.errors.length,
-          ", unack = ",
-          unacknowledgedCount,
-          ", errors = ",
-          JSON.stringify(nodeState.errors.map((e) => ({
-            msg: e.message?.substring(0, 30),
-            no: e.errorNo,
-            lvl: e.level,
-            raw: e.rawMsg ? "yes" : "no"
-          })))
+          /* @__PURE__ */ jsxs("div", { style: { fontWeight: "bold", marginBottom: "8px" }, children: [
+            "DEBUG: ",
+            nodeState.errors.length,
+            " Error(s)"
+          ] }),
+          nodeState.errors.map((err, i) => /* @__PURE__ */ jsxs("div", { style: {
+            backgroundColor: "#fff",
+            padding: "10px",
+            marginBottom: "8px",
+            border: "1px solid #ccc",
+            borderLeft: "4px solid red"
+          }, children: [
+            /* @__PURE__ */ jsxs("div", { children: [
+              /* @__PURE__ */ jsx("strong", { children: "Level:" }),
+              " ",
+              err.level
+            ] }),
+            /* @__PURE__ */ jsxs("div", { children: [
+              /* @__PURE__ */ jsx("strong", { children: "Message:" }),
+              " ",
+              err.message
+            ] }),
+            /* @__PURE__ */ jsxs("div", { children: [
+              /* @__PURE__ */ jsx("strong", { children: "Source:" }),
+              " ",
+              err.source
+            ] }),
+            /* @__PURE__ */ jsxs("div", { children: [
+              /* @__PURE__ */ jsx("strong", { children: "ErrorNo:" }),
+              " ",
+              String(err.errorNo)
+            ] }),
+            /* @__PURE__ */ jsxs("div", { children: [
+              /* @__PURE__ */ jsx("strong", { children: "Timestamp:" }),
+              " ",
+              err.timestamp
+            ] }),
+            /* @__PURE__ */ jsxs("div", { children: [
+              /* @__PURE__ */ jsx("strong", { children: "Raw:" }),
+              " ",
+              /* @__PURE__ */ jsx("pre", { style: { fontSize: "10px", margin: 0, whiteSpace: "pre-wrap" }, children: JSON.stringify(err.rawMsg, null, 2) })
+            ] })
+          ] }, i))
         ] }),
         /* @__PURE__ */ jsxs("div", { style: styles.errorSectionHeader, children: [
           /* @__PURE__ */ jsxs("h3", { style: { ...styles.sectionTitle, marginBottom: 0 }, children: [

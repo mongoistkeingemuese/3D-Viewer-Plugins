@@ -436,24 +436,34 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
         {/* ERRORS TAB */}
         {activeTab === 'errors' && (
           <div style={styles.section}>
-            {/* Debug Info */}
+            {/* Debug: Direct error rendering test */}
             <div style={{
-              fontSize: '10px',
-              color: '#666',
+              fontSize: '12px',
               backgroundColor: '#fffbcc',
-              padding: '8px',
+              padding: '12px',
               marginBottom: '12px',
               borderRadius: '4px',
-              fontFamily: 'monospace',
+              border: '2px solid #ffc107',
             }}>
-              DEBUG: errors.length = {nodeState.errors.length},
-              unack = {unacknowledgedCount},
-              errors = {JSON.stringify(nodeState.errors.map(e => ({
-                msg: e.message?.substring(0, 30),
-                no: e.errorNo,
-                lvl: e.level,
-                raw: e.rawMsg ? 'yes' : 'no'
-              })))}
+              <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+                DEBUG: {nodeState.errors.length} Error(s)
+              </div>
+              {nodeState.errors.map((err, i) => (
+                <div key={i} style={{
+                  backgroundColor: '#fff',
+                  padding: '10px',
+                  marginBottom: '8px',
+                  border: '1px solid #ccc',
+                  borderLeft: '4px solid red',
+                }}>
+                  <div><strong>Level:</strong> {err.level}</div>
+                  <div><strong>Message:</strong> {err.message}</div>
+                  <div><strong>Source:</strong> {err.source}</div>
+                  <div><strong>ErrorNo:</strong> {String(err.errorNo)}</div>
+                  <div><strong>Timestamp:</strong> {err.timestamp}</div>
+                  <div><strong>Raw:</strong> <pre style={{ fontSize: '10px', margin: 0, whiteSpace: 'pre-wrap' }}>{JSON.stringify(err.rawMsg, null, 2)}</pre></div>
+                </div>
+              ))}
             </div>
 
             <div style={styles.errorSectionHeader}>

@@ -9,8 +9,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   getNodeState,
-  acknowledgeError,
-  acknowledgeAllErrors,
   sendMoveToBase,
   sendMoveToWork,
   sendPressureFree,
@@ -27,7 +25,7 @@ import {
   GenericStateNames,
   ValvePositionNames,
 } from '../types';
-import { formatDuration, formatTime, formatTimestamp } from '../utils';
+import { formatDuration, formatTime } from '../utils';
 
 /**
  * Props interface for ValveDetailsPopup component
@@ -127,16 +125,6 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
       </div>
     );
   }
-
-  const handleAcknowledge = (errorIndex: number): void => {
-    acknowledgeError(nodeId, errorIndex);
-    setUpdateCounter((c) => c + 1);
-  };
-
-  const handleAcknowledgeAll = (): void => {
-    acknowledgeAllErrors(nodeId);
-    setUpdateCounter((c) => c + 1);
-  };
 
   const handleMoveToGst = async (): Promise<void> => {
     setIsLoadingGst(true);
@@ -403,88 +391,9 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
         {/* ERRORS TAB */}
         {activeTab === 'errors' && (
           <div style={{ padding: '8px' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontWeight: 'bold' }}>
-                {nodeState.errors.length} Meldungen ({unacknowledgedCount} offen)
-              </span>
-              {unacknowledgedCount > 0 && (
-                <button
-                  onClick={handleAcknowledgeAll}
-                  style={{ padding: '6px 12px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  Alle Quittieren
-                </button>
-              )}
-            </div>
-
-            {/* Error List */}
-            {nodeState.errors.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#28a745' }}>
-                Keine Meldungen
-              </div>
-            ) : (
-              nodeState.errors.map((err, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    marginBottom: '10px',
-                    padding: '10px',
-                    backgroundColor: err.acknowledged ? '#f5f5f5' : '#fff',
-                    border: `2px solid ${err.level === 'ERR' ? '#dc3545' : err.level === 'WARN' ? '#ffc107' : '#17a2b8'}`,
-                    borderRadius: '4px',
-                  }}
-                >
-                  {/* Row 1: Level + Time + Button */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '2px 8px',
-                        marginRight: '8px',
-                        backgroundColor: err.level === 'ERR' ? '#dc3545' : err.level === 'WARN' ? '#ffc107' : '#17a2b8',
-                        color: '#fff',
-                        fontWeight: 'bold',
-                        fontSize: '11px',
-                        borderRadius: '3px',
-                      }}>
-                        {err.level}
-                      </span>
-                      <span style={{ fontSize: '12px', color: '#666' }}>
-                        {formatTimestamp(err.timestamp)}
-                      </span>
-                    </div>
-                    {!err.acknowledged ? (
-                      <button
-                        onClick={() => handleAcknowledge(idx)}
-                        style={{ padding: '4px 10px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
-                      >
-                        Quittieren
-                      </button>
-                    ) : (
-                      <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12px' }}>✓</span>
-                    )}
-                  </div>
-
-                  {/* Row 2: Raw Payload */}
-                  <pre style={{
-                    margin: 0,
-                    padding: '8px',
-                    backgroundColor: '#222',
-                    color: '#0f0',
-                    fontSize: '11px',
-                    fontFamily: 'Consolas, Monaco, monospace',
-                    borderRadius: '3px',
-                    overflow: 'auto',
-                    maxHeight: '200px',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-all',
-                  }}>
-                    {err.rawPayload}
-                  </pre>
-                </div>
-              ))
-            )}
+            {/* TODO: Error-Tabelle neu aufbauen */}
+            <p>Error-Tab wird neu aufgebaut...</p>
+            <p>Anzahl Errors: {nodeState.errors.length}</p>
           </div>
         )}
       </div>

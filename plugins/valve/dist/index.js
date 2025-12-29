@@ -84,16 +84,6 @@ function formatTime(date) {
     second: "2-digit"
   });
 }
-function formatTimestamp(timestamp) {
-  const date = new Date(timestamp);
-  return date.toLocaleString("de-DE", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    day: "2-digit",
-    month: "2-digit"
-  });
-}
 
 // react-global:react/jsx-runtime
 var React2 = window.React;
@@ -163,14 +153,6 @@ var ValveDetailsPopup = ({ data }) => {
       /* @__PURE__ */ jsx("p", { children: "Node state not found. Please ensure the valve is properly configured." })
     ] }) });
   }
-  const handleAcknowledge = (errorIndex) => {
-    acknowledgeError(nodeId, errorIndex);
-    setUpdateCounter((c) => c + 1);
-  };
-  const handleAcknowledgeAll = () => {
-    acknowledgeAllErrors(nodeId);
-    setUpdateCounter((c) => c + 1);
-  };
   const handleMoveToGst = async () => {
     setIsLoadingGst(true);
     await sendMoveToBase(nodeId);
@@ -415,73 +397,11 @@ var ValveDetailsPopup = ({ data }) => {
         ] })
       ] }),
       activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: { padding: "8px" }, children: [
-        /* @__PURE__ */ jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }, children: [
-          /* @__PURE__ */ jsxs("span", { style: { fontWeight: "bold" }, children: [
-            nodeState.errors.length,
-            " Meldungen (",
-            unacknowledgedCount,
-            " offen)"
-          ] }),
-          unacknowledgedCount > 0 && /* @__PURE__ */ jsx(
-            "button",
-            {
-              onClick: handleAcknowledgeAll,
-              style: { padding: "6px 12px", backgroundColor: "#28a745", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" },
-              children: "Alle Quittieren"
-            }
-          )
-        ] }),
-        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("div", { style: { textAlign: "center", padding: "20px", color: "#28a745" }, children: "Keine Meldungen" }) : nodeState.errors.map((err, idx) => /* @__PURE__ */ jsxs(
-          "div",
-          {
-            style: {
-              marginBottom: "10px",
-              padding: "10px",
-              backgroundColor: err.acknowledged ? "#f5f5f5" : "#fff",
-              border: `2px solid ${err.level === "ERR" ? "#dc3545" : err.level === "WARN" ? "#ffc107" : "#17a2b8"}`,
-              borderRadius: "4px"
-            },
-            children: [
-              /* @__PURE__ */ jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
-                /* @__PURE__ */ jsxs("div", { children: [
-                  /* @__PURE__ */ jsx("span", { style: {
-                    display: "inline-block",
-                    padding: "2px 8px",
-                    marginRight: "8px",
-                    backgroundColor: err.level === "ERR" ? "#dc3545" : err.level === "WARN" ? "#ffc107" : "#17a2b8",
-                    color: "#fff",
-                    fontWeight: "bold",
-                    fontSize: "11px",
-                    borderRadius: "3px"
-                  }, children: err.level }),
-                  /* @__PURE__ */ jsx("span", { style: { fontSize: "12px", color: "#666" }, children: formatTimestamp(err.timestamp) })
-                ] }),
-                !err.acknowledged ? /* @__PURE__ */ jsx(
-                  "button",
-                  {
-                    onClick: () => handleAcknowledge(idx),
-                    style: { padding: "4px 10px", backgroundColor: "#007bff", color: "#fff", border: "none", borderRadius: "3px", cursor: "pointer", fontSize: "12px" },
-                    children: "Quittieren"
-                  }
-                ) : /* @__PURE__ */ jsx("span", { style: { color: "#28a745", fontWeight: "bold", fontSize: "12px" }, children: "\u2713" })
-              ] }),
-              /* @__PURE__ */ jsx("pre", { style: {
-                margin: 0,
-                padding: "8px",
-                backgroundColor: "#222",
-                color: "#0f0",
-                fontSize: "11px",
-                fontFamily: "Consolas, Monaco, monospace",
-                borderRadius: "3px",
-                overflow: "auto",
-                maxHeight: "200px",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-all"
-              }, children: err.rawPayload })
-            ]
-          },
-          idx
-        ))
+        /* @__PURE__ */ jsx("p", { children: "Error-Tab wird neu aufgebaut..." }),
+        /* @__PURE__ */ jsxs("p", { children: [
+          "Anzahl Errors: ",
+          nodeState.errors.length
+        ] })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.footer, children: [

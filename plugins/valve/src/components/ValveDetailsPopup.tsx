@@ -438,53 +438,34 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
               </div>
             ) : (
               <div style={styles.errorList}>
-                {nodeState.errors.map((error, index) => (
+                {nodeState.errors.map((err, idx) => (
                   <div
-                    key={index}
+                    key={idx}
                     style={{
-                      ...styles.errorItem,
-                      backgroundColor: error.acknowledged ? '#f0f0f0' : '#ffffff',
-                      borderLeft: `4px solid ${getErrorLevelColor(error.level)}`,
+                      padding: '12px',
+                      marginBottom: '8px',
+                      backgroundColor: err.acknowledged ? '#f0f0f0' : '#fff',
+                      border: '1px solid #ccc',
+                      borderRadius: '4px',
                     }}
                   >
-                    <div style={styles.errorHeader}>
-                      <span
-                        style={{
-                          ...styles.errorLevel,
-                          color: getErrorLevelColor(error.level),
-                        }}
+                    <div style={{ fontWeight: 'bold', color: err.level === 'ERR' ? 'red' : 'orange' }}>
+                      [{err.level}] {formatTimestamp(err.timestamp)}
+                    </div>
+                    <div style={{ fontSize: '14px', margin: '8px 0', padding: '8px', backgroundColor: '#ffffcc', border: '2px solid #ffc107' }}>
+                      <strong>Message:</strong> {err.message}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#666' }}>
+                      Source: {err.source}
+                    </div>
+                    {!err.acknowledged && (
+                      <button
+                        onClick={() => handleAcknowledge(idx)}
+                        style={{ marginTop: '8px', padding: '4px 12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                       >
-                        {error.level}
-                      </span>
-                      <span style={styles.errorTime}>
-                        {formatTimestamp(error.timestamp)}
-                      </span>
-                    </div>
-                    <div style={{ ...styles.errorMessage, backgroundColor: '#e0ffe0', padding: '8px', border: '2px solid green' }}>
-                      MESSAGE: {error.message}
-                    </div>
-                    {error.values && Object.keys(error.values).length > 0 && (
-                      <div style={styles.errorValues}>
-                        {Object.entries(error.values).map(([key, value]) => (
-                          <span key={key} style={styles.errorValueItem}>
-                            {key}: {String(value)}
-                          </span>
-                        ))}
-                      </div>
+                        Quittieren
+                      </button>
                     )}
-                    <div style={styles.errorFooter}>
-                      <span style={styles.errorSource}>Source: {error.source}</span>
-                      {!error.acknowledged ? (
-                        <button
-                          onClick={() => handleAcknowledge(index)}
-                          style={styles.ackButton}
-                        >
-                          Acknowledge
-                        </button>
-                      ) : (
-                        <span style={styles.acknowledgedBadge}>&#10003; Acknowledged</span>
-                      )}
-                    </div>
                   </div>
                 ))}
               </div>

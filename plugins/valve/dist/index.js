@@ -138,18 +138,6 @@ function getGenericStateColor(state) {
       return "#6c757d";
   }
 }
-function getErrorLevelColor(level) {
-  switch (level) {
-    case "ERR":
-      return "#dc3545";
-    case "WARN":
-      return "#ffc107";
-    case "INFO":
-      return "#007bff";
-    default:
-      return "#6c757d";
-  }
-}
 var ValveDetailsPopup = ({ data }) => {
   const nodeId = data?.nodeId;
   const [nodeState, setNodeState] = useState(() => getNodeState(nodeId));
@@ -445,54 +433,43 @@ var ValveDetailsPopup = ({ data }) => {
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsxs("div", { style: styles.noErrors, children: [
           /* @__PURE__ */ jsx("span", { style: { fontSize: "24px" }, children: "\u2713" }),
           /* @__PURE__ */ jsx("p", { children: "Keine Errors aufgezeichnet" })
-        ] }) : /* @__PURE__ */ jsx("div", { style: styles.errorList, children: nodeState.errors.map((error, index) => /* @__PURE__ */ jsxs(
+        ] }) : /* @__PURE__ */ jsx("div", { style: styles.errorList, children: nodeState.errors.map((err, idx) => /* @__PURE__ */ jsxs(
           "div",
           {
             style: {
-              ...styles.errorItem,
-              backgroundColor: error.acknowledged ? "#f0f0f0" : "#ffffff",
-              borderLeft: `4px solid ${getErrorLevelColor(error.level)}`
+              padding: "12px",
+              marginBottom: "8px",
+              backgroundColor: err.acknowledged ? "#f0f0f0" : "#fff",
+              border: "1px solid #ccc",
+              borderRadius: "4px"
             },
             children: [
-              /* @__PURE__ */ jsxs("div", { style: styles.errorHeader, children: [
-                /* @__PURE__ */ jsx(
-                  "span",
-                  {
-                    style: {
-                      ...styles.errorLevel,
-                      color: getErrorLevelColor(error.level)
-                    },
-                    children: error.level
-                  }
-                ),
-                /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(error.timestamp) })
+              /* @__PURE__ */ jsxs("div", { style: { fontWeight: "bold", color: err.level === "ERR" ? "red" : "orange" }, children: [
+                "[",
+                err.level,
+                "] ",
+                formatTimestamp(err.timestamp)
               ] }),
-              /* @__PURE__ */ jsxs("div", { style: { ...styles.errorMessage, backgroundColor: "#e0ffe0", padding: "8px", border: "2px solid green" }, children: [
-                "MESSAGE: ",
-                error.message
+              /* @__PURE__ */ jsxs("div", { style: { fontSize: "14px", margin: "8px 0", padding: "8px", backgroundColor: "#ffffcc", border: "2px solid #ffc107" }, children: [
+                /* @__PURE__ */ jsx("strong", { children: "Message:" }),
+                " ",
+                err.message
               ] }),
-              error.values && Object.keys(error.values).length > 0 && /* @__PURE__ */ jsx("div", { style: styles.errorValues, children: Object.entries(error.values).map(([key, value]) => /* @__PURE__ */ jsxs("span", { style: styles.errorValueItem, children: [
-                key,
-                ": ",
-                String(value)
-              ] }, key)) }),
-              /* @__PURE__ */ jsxs("div", { style: styles.errorFooter, children: [
-                /* @__PURE__ */ jsxs("span", { style: styles.errorSource, children: [
-                  "Source: ",
-                  error.source
-                ] }),
-                !error.acknowledged ? /* @__PURE__ */ jsx(
-                  "button",
-                  {
-                    onClick: () => handleAcknowledge(index),
-                    style: styles.ackButton,
-                    children: "Acknowledge"
-                  }
-                ) : /* @__PURE__ */ jsx("span", { style: styles.acknowledgedBadge, children: "\u2713 Acknowledged" })
-              ] })
+              /* @__PURE__ */ jsxs("div", { style: { fontSize: "11px", color: "#666" }, children: [
+                "Source: ",
+                err.source
+              ] }),
+              !err.acknowledged && /* @__PURE__ */ jsx(
+                "button",
+                {
+                  onClick: () => handleAcknowledge(idx),
+                  style: { marginTop: "8px", padding: "4px 12px", backgroundColor: "#007bff", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" },
+                  children: "Quittieren"
+                }
+              )
             ]
           },
-          index
+          idx
         )) })
       ] })
     ] }),

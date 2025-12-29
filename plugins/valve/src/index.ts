@@ -441,9 +441,11 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           msgText = payload.msg.text;
         }
 
-        // Log to 3D Viewer log based on level - include full payload
+        // Log to 3D Viewer log based on level - include nodeId for acknowledgment
         if (payload.lvl === 'ERR') {
           ctx.log.error(`[${nodeState.valveName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.valveName,
             payload: payload,
           });
           nodeState.genericState = GenericState.Error;
@@ -451,11 +453,15 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           ctx.ui.notify(`Error: ${nodeState.valveName} - ${msgText}`, 'error');
         } else if (payload.lvl === 'WARN') {
           ctx.log.warn(`[${nodeState.valveName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.valveName,
             payload: payload,
           });
           ctx.ui.notify(`Warning: ${nodeState.valveName} - ${msgText}`, 'warning');
         } else {
           ctx.log.info(`[${nodeState.valveName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.valveName,
             payload: payload,
           });
         }

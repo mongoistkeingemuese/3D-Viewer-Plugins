@@ -1212,6 +1212,8 @@ function handleErrorMessage(ctx, rawPayload) {
         }
         if (payload.lvl === "ERR") {
           ctx.log.error(`[${nodeState.valveName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.valveName,
             payload
           });
           nodeState.genericState = 3 /* Error */;
@@ -1219,11 +1221,15 @@ function handleErrorMessage(ctx, rawPayload) {
           ctx.ui.notify(`Error: ${nodeState.valveName} - ${msgText}`, "error");
         } else if (payload.lvl === "WARN") {
           ctx.log.warn(`[${nodeState.valveName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.valveName,
             payload
           });
           ctx.ui.notify(`Warning: ${nodeState.valveName} - ${msgText}`, "warning");
         } else {
           ctx.log.info(`[${nodeState.valveName}] ${msgText}`, {
+            nodeId: nodeState.nodeId,
+            nodeName: nodeState.valveName,
             payload
           });
         }

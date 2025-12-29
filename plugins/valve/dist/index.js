@@ -444,11 +444,49 @@ var ValveDetailsPopup = ({ data }) => {
             {
               style: {
                 backgroundColor: "#fff",
-                border: `2px solid ${levelColor}`,
+                border: `3px solid ${levelColor}`,
                 borderRadius: "6px",
-                overflow: "hidden"
+                overflow: "hidden",
+                marginBottom: "8px"
               },
               children: [
+                /* @__PURE__ */ jsxs("div", { style: {
+                  padding: "6px",
+                  backgroundColor: "#ffffcc",
+                  borderBottom: "1px solid #ccc",
+                  fontSize: "10px",
+                  fontFamily: "monospace",
+                  color: "#000"
+                }, children: [
+                  /* @__PURE__ */ jsxs("div", { style: { color: "#000" }, children: [
+                    /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "idx:" }),
+                    " ",
+                    idx
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { style: { color: "#000" }, children: [
+                    /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "err.level:" }),
+                    ' "',
+                    err.level,
+                    '"'
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { style: { color: "#000" }, children: [
+                    /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "err.source:" }),
+                    ' "',
+                    err.source,
+                    '"'
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { style: { color: "#000" }, children: [
+                    /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "messageText:" }),
+                    ' "',
+                    messageText,
+                    '"'
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { style: { color: "#000" }, children: [
+                    /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "hasRawPayload:" }),
+                    " ",
+                    err.rawPayload ? "YES" : "NO"
+                  ] })
+                ] }),
                 /* @__PURE__ */ jsxs(
                   "div",
                   {
@@ -468,38 +506,39 @@ var ValveDetailsPopup = ({ data }) => {
                       display: "flex",
                       alignItems: "center",
                       gap: "10px",
-                      backgroundColor: isExpanded ? "#f8f9fa" : "#fff",
+                      backgroundColor: isExpanded ? "#e0e0e0" : "#fff",
                       cursor: "pointer"
                     },
                     children: [
                       /* @__PURE__ */ jsx("span", { style: {
                         backgroundColor: levelColor,
                         color: "#fff",
-                        padding: "2px 8px",
+                        padding: "4px 10px",
                         borderRadius: "4px",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         fontWeight: "bold",
                         flexShrink: 0
                       }, children: err.level || "INFO" }),
                       /* @__PURE__ */ jsx("span", { style: {
                         flex: 1,
                         color: "#000",
-                        fontSize: "13px",
-                        fontWeight: 500
+                        fontSize: "14px",
+                        fontWeight: "bold"
                       }, children: messageText }),
                       /* @__PURE__ */ jsx("span", { style: {
                         color: "#000",
-                        fontSize: "14px",
+                        fontSize: "16px",
+                        fontWeight: "bold",
                         flexShrink: 0
                       }, children: isExpanded ? "\u25B2" : "\u25BC" })
                     ]
                   }
                 ),
-                isExpanded && /* @__PURE__ */ jsx("div", { style: { borderTop: "1px solid #ddd" }, children: /* @__PURE__ */ jsx("pre", { style: {
+                isExpanded && /* @__PURE__ */ jsx("div", { style: { borderTop: "2px solid #000" }, children: /* @__PURE__ */ jsx("pre", { style: {
                   margin: 0,
                   padding: "12px",
                   backgroundColor: "#1e1e1e",
-                  color: "#d4d4d4",
+                  color: "#0f0",
                   fontSize: "11px",
                   fontFamily: "Consolas, Monaco, monospace",
                   overflow: "auto",

@@ -459,12 +459,29 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                       key={idx}
                       style={{
                         backgroundColor: '#fff',
-                        border: `2px solid ${levelColor}`,
+                        border: `3px solid ${levelColor}`,
                         borderRadius: '6px',
                         overflow: 'hidden',
+                        marginBottom: '8px',
                       }}
                     >
-                      {/* Header - always visible */}
+                      {/* Debug info for this card */}
+                      <div style={{
+                        padding: '6px',
+                        backgroundColor: '#ffffcc',
+                        borderBottom: '1px solid #ccc',
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        color: '#000',
+                      }}>
+                        <div style={{ color: '#000' }}><strong style={{ color: '#000' }}>idx:</strong> {idx}</div>
+                        <div style={{ color: '#000' }}><strong style={{ color: '#000' }}>err.level:</strong> "{err.level}"</div>
+                        <div style={{ color: '#000' }}><strong style={{ color: '#000' }}>err.source:</strong> "{err.source}"</div>
+                        <div style={{ color: '#000' }}><strong style={{ color: '#000' }}>messageText:</strong> "{messageText}"</div>
+                        <div style={{ color: '#000' }}><strong style={{ color: '#000' }}>hasRawPayload:</strong> {err.rawPayload ? 'YES' : 'NO'}</div>
+                      </div>
+
+                      {/* Header - clickable */}
                       <div
                         onClick={() => {
                           setExpandedErrors(prev => {
@@ -482,16 +499,16 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                           display: 'flex',
                           alignItems: 'center',
                           gap: '10px',
-                          backgroundColor: isExpanded ? '#f8f9fa' : '#fff',
+                          backgroundColor: isExpanded ? '#e0e0e0' : '#fff',
                           cursor: 'pointer',
                         }}
                       >
                         <span style={{
                           backgroundColor: levelColor,
                           color: '#fff',
-                          padding: '2px 8px',
+                          padding: '4px 10px',
                           borderRadius: '4px',
-                          fontSize: '11px',
+                          fontSize: '12px',
                           fontWeight: 'bold',
                           flexShrink: 0,
                         }}>
@@ -500,14 +517,15 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                         <span style={{
                           flex: 1,
                           color: '#000',
-                          fontSize: '13px',
-                          fontWeight: 500,
+                          fontSize: '14px',
+                          fontWeight: 'bold',
                         }}>
                           {messageText}
                         </span>
                         <span style={{
                           color: '#000',
-                          fontSize: '14px',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
                           flexShrink: 0,
                         }}>
                           {isExpanded ? '▲' : '▼'}
@@ -516,12 +534,12 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
 
                       {/* Expanded content - JSON payload */}
                       {isExpanded && (
-                        <div style={{ borderTop: '1px solid #ddd' }}>
+                        <div style={{ borderTop: '2px solid #000' }}>
                           <pre style={{
                             margin: 0,
                             padding: '12px',
                             backgroundColor: '#1e1e1e',
-                            color: '#d4d4d4',
+                            color: '#0f0',
                             fontSize: '11px',
                             fontFamily: 'Consolas, Monaco, monospace',
                             overflow: 'auto',

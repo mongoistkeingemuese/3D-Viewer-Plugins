@@ -1,7 +1,7 @@
 {
   "id": "com.rexat.valve",
   "name": "Valve",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "author": "RexAt",
   "description": "Valve monitoring and control plugin with status display, position animation, and HTTP command integration for Release 8-11",
   "license": "MIT",

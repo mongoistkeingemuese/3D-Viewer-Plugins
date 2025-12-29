@@ -452,15 +452,23 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                         border: '5px solid #000',
                         borderRadius: '6px',
                         marginBottom: '8px',
-                        padding: '20px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
+                        padding: '10px',
                       }}
                     >
-                      <span style={{ color: '#fff' }}>Level: {err.level} | </span>
-                      <span style={{ color: '#fff' }}>Message: {messageText} | </span>
-                      <span style={{ color: '#ff0' }}>▼ Klick zum Öffnen</span>
+                      <select
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          fontSize: '14px',
+                          backgroundColor: '#fff',
+                          color: '#000',
+                          border: '2px solid #000',
+                        }}
+                        defaultValue="header"
+                      >
+                        <option value="header">[{err.level}] {messageText}</option>
+                        <option value="payload">{err.rawPayload}</option>
+                      </select>
                     </div>
                   );
                 })}

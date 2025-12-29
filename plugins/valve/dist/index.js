@@ -433,7 +433,7 @@ var ValveDetailsPopup = ({ data }) => {
           if (!messageText) {
             messageText = err.source ? `Source: ${err.source}` : "Keine Nachricht";
           }
-          return /* @__PURE__ */ jsxs(
+          return /* @__PURE__ */ jsx(
             "div",
             {
               style: {
@@ -441,24 +441,31 @@ var ValveDetailsPopup = ({ data }) => {
                 border: "5px solid #000",
                 borderRadius: "6px",
                 marginBottom: "8px",
-                padding: "20px",
-                color: "#fff",
-                fontSize: "14px",
-                fontWeight: "bold"
+                padding: "10px"
               },
-              children: [
-                /* @__PURE__ */ jsxs("span", { style: { color: "#fff" }, children: [
-                  "Level: ",
-                  err.level,
-                  " | "
-                ] }),
-                /* @__PURE__ */ jsxs("span", { style: { color: "#fff" }, children: [
-                  "Message: ",
-                  messageText,
-                  " | "
-                ] }),
-                /* @__PURE__ */ jsx("span", { style: { color: "#ff0" }, children: "\u25BC Klick zum \xD6ffnen" })
-              ]
+              children: /* @__PURE__ */ jsxs(
+                "select",
+                {
+                  style: {
+                    width: "100%",
+                    padding: "10px",
+                    fontSize: "14px",
+                    backgroundColor: "#fff",
+                    color: "#000",
+                    border: "2px solid #000"
+                  },
+                  defaultValue: "header",
+                  children: [
+                    /* @__PURE__ */ jsxs("option", { value: "header", children: [
+                      "[",
+                      err.level,
+                      "] ",
+                      messageText
+                    ] }),
+                    /* @__PURE__ */ jsx("option", { value: "payload", children: err.rawPayload })
+                  ]
+                }
+              )
             },
             idx
           );

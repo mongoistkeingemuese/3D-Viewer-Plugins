@@ -53,6 +53,18 @@ Use this format for learned patterns:
 - Temporary workarounds for external issues
 - Changes that contradict explicit user instructions
 
+## Context7 for Research
+
+When learning about new patterns or verifying best practices, use Context7:
+
+```
+What's the current best practice for X in React? use context7
+Is this TypeScript pattern still recommended? use context7
+```
+
+Document helpful Context7 queries in learned patterns for future reference.
+See `.claude/rules/context7.md` for full Context7 documentation.
+
 ## Learning Categories
 
 ### Error Patterns

@@ -189,3 +189,27 @@ This agent MUST be called by the `deploy` agent before any deployment proceeds. 
 1. Call `quality-check` first
 2. Only proceed if all gates pass
 3. Include quality check results in commit message
+
+---
+
+## Context7 Integration
+
+When encountering unfamiliar errors or needing to verify current best practices, use Context7:
+
+```
+# For TypeScript errors
+What does TypeScript error TS2322 mean and how to fix it? use context7
+
+# For ESLint configuration
+What are the current recommended ESLint rules for React? use context7
+
+# For testing patterns
+What's the correct way to test async functions in Vitest? use context7
+```
+
+**Use Context7 when:**
+- Encountering TypeScript errors you're unsure about
+- Verifying that suggested fixes follow current best practices
+- Checking if a pattern is deprecated in newer library versions
+
+See `.claude/rules/context7.md` for full documentation.

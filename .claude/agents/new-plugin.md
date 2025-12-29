@@ -304,6 +304,30 @@ Before completing plugin generation:
 4. **Implement cleanup** - onNodeUnbound and onUnload
 5. **Minimal permissions** - Only request what's actually needed
 6. **Documentation** - Comments in generated code (Purpose, Usage, Rationale)
+7. **Use Context7** - For current React/TypeScript patterns (see below)
+
+## Context7 Integration
+
+When generating code that uses external libraries, use Context7 for up-to-date documentation:
+
+```
+# For React component patterns
+How do I create a React component with proper TypeScript props? use context7
+
+# For hooks and state management
+What's the correct useEffect cleanup pattern in React 19? use context7
+
+# For TypeScript patterns
+How do I type a generic Map in TypeScript strict mode? use context7
+```
+
+**When to use Context7:**
+- Generating React UI components (Panel, Popup, Overlay)
+- Writing TypeScript generics or complex types
+- Implementing hooks (useEffect, useState, useCallback)
+- Any pattern that may have changed in recent library versions
+
+See `.claude/rules/context7.md` for full documentation.
 
 ---
 

@@ -12,6 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │   ├── plugin-sdk/          # @3dviewer/plugin-sdk - Types, APIs, Testing Mocks
 │   └── plugin-devtools/     # Dev-Server (port 3100) & CLI
 ├── plugins/
+│   ├── valve/               # Production valve control plugin
+│   ├── axis-release-10/     # Reference MQTT plugin
 │   ├── blueprint-sandbox/   # Sandbox plugin example
 │   └── blueprint-iframe/    # IFrame plugin example
 ├── docs/
@@ -122,6 +124,44 @@ export default plugin;
 | `ctx.log` | Logging (debug/info/warn/error) |
 
 Full API reference: `docs/llm-context/PLUGIN_API_REFERENCE.md`
+
+## Error Handling & Acknowledgment
+
+### Plugin Error State Architecture
+
+Plugins manage their own error states independently. Error acknowledgment works per-plugin-instance:
+
+| Source | Scope | Effect |
+|--------|-------|--------|
+| Plugin UI | Per-node | Clears errors for that node only |
+| Viewer Log | Per-entry | Only affects entries with matching `nodeId` |
+| Global Viewer | **No effect** | Plugins must implement their own global reset |
+
+**Known Limitation:** Global error acknowledgment in the 3D Viewer does NOT automatically reset plugin error states. Each plugin must implement its own error reset logic via the plugin instance UI.
+
+### Implementing Error Handling
+
+```typescript
+// 1. Log errors with nodeId for Viewer Log integration
+ctx.log.error('Error message', {
+  nodeId: node.id,
+  nodeName: node.name,
+  payload: errorData,
+});
+
+// 2. Listen for per-entry acknowledgment from Viewer Log
+ctx.events.onLogAcknowledged((entries) => {
+  entries.forEach((entry) => {
+    if (entry.nodeId) {
+      // Reset this specific node's error state
+      resetNodeErrorState(entry.nodeId);
+    }
+  });
+});
+
+// 3. Provide plugin UI for error acknowledgment
+// (See valve plugin for example implementation)
+```
 
 ## Node Manipulation Examples
 
@@ -296,9 +336,19 @@ See `.claude/rules/versioning.md` for details.
 
 ## Plugin Templates
 
+### Production Reference: `valve`
+
+**BEST EXAMPLE** for complex production plugins:
+- Complete MQTT integration with source selection
+- Error tracking with acknowledgment UI
+- HTTP command integration
+- Position animation with runtime measurement
+- PluginState class pattern with proper cleanup
+- React popup component for details/control
+
 ### Production Reference: `axis-release-10`
 
-**USE THIS** for new MQTT/OPC-UA plugins:
+**USE THIS** for simpler MQTT/OPC-UA plugins:
 - Source selection from 3D Viewer server list (`x-source-type: "mqtt"`)
 - `ctx.mqtt.getSources()` + `ctx.mqtt.withSource()`
 - PluginState class pattern
@@ -312,6 +362,22 @@ See `.claude/rules/versioning.md` for details.
 
 **Do NOT copy** the config patterns from blueprints for new plugins.
 
+## Context7 - Up-to-Date Documentation
+
+Use **"use context7"** in prompts to get current library documentation:
+
+```
+How do I use React 19's use() hook? use context7
+What's the Vite library mode config? use context7
+```
+
+**When to use:**
+- Current API docs (React 19, TypeScript 5.x, Vite)
+- Version-specific features
+- Library patterns that may have changed
+
+See `.claude/rules/context7.md` for full documentation.
+
 ## Rules
 
 Rules in `.claude/rules/` apply to all interactions:
@@ -321,6 +387,7 @@ Rules in `.claude/rules/` apply to all interactions:
 - `parallelization.md` - Agent dependencies and safe parallel execution
 - `self-learning.md` - How agents improve over time
 - `common-errors.md` - Known issues and fixes
+- `context7.md` - Up-to-date library documentation via Context7
 
 ## VS Code
 

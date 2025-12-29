@@ -77,4 +77,9 @@ This file documents recurring errors and their solutions. Auto-updated by agents
 
 <!-- This section is auto-updated by agents -->
 
-(none yet - agents will add discovered patterns here)
+### Global Error Acknowledgment Has No Effect on Plugin
+**Date:** 2024-12-29
+**Context:** Valve plugin error state not reset by 3D Viewer global acknowledgment
+**Cause:** Global error acknowledgment in the 3D Viewer does NOT trigger `ctx.events.onLogAcknowledged()`. The event only fires for per-entry acknowledgments with matching `nodeId`.
+**Fix:** Plugins must provide their own UI for error acknowledgment (e.g., "Acknowledge All" button in plugin popup). The valve plugin implements this via `acknowledgeAllErrors()` function.
+**Prevention:** Always implement plugin-level error acknowledgment UI. Do not rely on global Viewer acknowledgment for plugin error states.

@@ -415,61 +415,30 @@ var ValveDetailsPopup = ({ data }) => {
           /* @__PURE__ */ jsx("strong", { style: { color: "#000" }, children: "DEBUG - errors Array:" }),
           /* @__PURE__ */ jsx("pre", { style: { margin: "4px 0 0 0", whiteSpace: "pre-wrap", wordBreak: "break-all", color: "#000" }, children: JSON.stringify(nodeState.errors, null, 2) })
         ] }),
-        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("div", { style: { color: "#28a745", textAlign: "center", padding: "20px" }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsx("div", { style: { display: "flex", flexDirection: "column", gap: "8px" }, children: nodeState.errors.map((err, idx) => {
-          let messageText = "";
-          if (err.rawPayload) {
-            try {
-              const payload = JSON.parse(err.rawPayload);
-              if (typeof payload.msg === "string") {
-                messageText = payload.msg;
-              } else if (payload.msg?.txt) {
-                messageText = payload.msg.txt;
-              } else if (payload.msg?.text) {
-                messageText = payload.msg.text;
-              }
-            } catch {
-            }
+        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("div", { style: { color: "#28a745", textAlign: "center", padding: "20px" }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsx("pre", { style: {
+          margin: 0,
+          padding: "12px",
+          backgroundColor: "#1a1a1a",
+          color: "#0f0",
+          fontSize: "12px",
+          fontFamily: "Consolas, Monaco, monospace",
+          borderRadius: "6px",
+          border: "3px solid #dc3545",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-all",
+          maxHeight: "400px",
+          overflow: "auto"
+        }, children: nodeState.errors.map((err, idx) => {
+          try {
+            const payload = JSON.parse(err.rawPayload || "{}");
+            const msg = payload.msg?.txt || payload.msg?.text || payload.msg || "No message";
+            return `[${idx}] ${err.level}: ${msg}
+`;
+          } catch {
+            return `[${idx}] ${err.level}: Parse error
+`;
           }
-          if (!messageText) {
-            messageText = err.source ? `Source: ${err.source}` : "Keine Nachricht";
-          }
-          return /* @__PURE__ */ jsx(
-            "div",
-            {
-              style: {
-                backgroundColor: "#ff0000",
-                border: "5px solid #000",
-                borderRadius: "6px",
-                marginBottom: "8px",
-                padding: "10px"
-              },
-              children: /* @__PURE__ */ jsxs(
-                "select",
-                {
-                  style: {
-                    width: "100%",
-                    padding: "10px",
-                    fontSize: "14px",
-                    backgroundColor: "#fff",
-                    color: "#000",
-                    border: "2px solid #000"
-                  },
-                  defaultValue: "header",
-                  children: [
-                    /* @__PURE__ */ jsxs("option", { value: "header", children: [
-                      "[",
-                      err.level,
-                      "] ",
-                      messageText
-                    ] }),
-                    /* @__PURE__ */ jsx("option", { value: "payload", children: err.rawPayload })
-                  ]
-                }
-              )
-            },
-            idx
-          );
-        }) })
+        }).join("") })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.footer, children: [

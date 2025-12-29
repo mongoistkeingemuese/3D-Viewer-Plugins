@@ -417,62 +417,30 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                 Keine Fehlermeldungen
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <pre style={{
+                margin: 0,
+                padding: '12px',
+                backgroundColor: '#1a1a1a',
+                color: '#0f0',
+                fontSize: '12px',
+                fontFamily: 'Consolas, Monaco, monospace',
+                borderRadius: '6px',
+                border: '3px solid #dc3545',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all',
+                maxHeight: '400px',
+                overflow: 'auto',
+              }}>
                 {nodeState.errors.map((err, idx) => {
-                  // Extract message from rawPayload
-                  let messageText = '';
-
-                  if (err.rawPayload) {
-                    try {
-                      const payload = JSON.parse(err.rawPayload);
-
-                      // Try different message formats
-                      if (typeof payload.msg === 'string') {
-                        messageText = payload.msg;
-                      } else if (payload.msg?.txt) {
-                        messageText = payload.msg.txt;
-                      } else if (payload.msg?.text) {
-                        messageText = payload.msg.text;
-                      }
-                    } catch {
-                      // Ignore parse errors
-                    }
+                  try {
+                    const payload = JSON.parse(err.rawPayload || '{}');
+                    const msg = payload.msg?.txt || payload.msg?.text || payload.msg || 'No message';
+                    return `[${idx}] ${err.level}: ${msg}\n`;
+                  } catch {
+                    return `[${idx}] ${err.level}: Parse error\n`;
                   }
-
-                  // Fallback if no message found
-                  if (!messageText) {
-                    messageText = err.source ? `Source: ${err.source}` : 'Keine Nachricht';
-                  }
-
-                  return (
-                    <div
-                      key={idx}
-                      style={{
-                        backgroundColor: '#ff0000',
-                        border: '5px solid #000',
-                        borderRadius: '6px',
-                        marginBottom: '8px',
-                        padding: '10px',
-                      }}
-                    >
-                      <select
-                        style={{
-                          width: '100%',
-                          padding: '10px',
-                          fontSize: '14px',
-                          backgroundColor: '#fff',
-                          color: '#000',
-                          border: '2px solid #000',
-                        }}
-                        defaultValue="header"
-                      >
-                        <option value="header">[{err.level}] {messageText}</option>
-                        <option value="payload">{err.rawPayload}</option>
-                      </select>
-                    </div>
-                  );
-                })}
-              </div>
+                }).join('')}
+              </pre>
             )}
           </div>
         )}

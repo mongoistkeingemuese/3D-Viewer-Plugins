@@ -441,25 +441,22 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           msgText = payload.msg.text;
         }
 
-        // Log to 3D Viewer log based on level
+        // Log to 3D Viewer log based on level - include full payload
         if (payload.lvl === 'ERR') {
           ctx.log.error(`[${nodeState.valveName}] ${msgText}`, {
-            source: payload.src,
-            type: payload.typ,
+            payload: payload,
           });
           nodeState.genericState = GenericState.Error;
           updateNodeVisuals(ctx, nodeState.nodeId, GenericState.Error, nodeState.specificState);
           ctx.ui.notify(`Error: ${nodeState.valveName} - ${msgText}`, 'error');
         } else if (payload.lvl === 'WARN') {
           ctx.log.warn(`[${nodeState.valveName}] ${msgText}`, {
-            source: payload.src,
-            type: payload.typ,
+            payload: payload,
           });
           ctx.ui.notify(`Warning: ${nodeState.valveName} - ${msgText}`, 'warning');
         } else {
           ctx.log.info(`[${nodeState.valveName}] ${msgText}`, {
-            level: payload.lvl,
-            source: payload.src,
+            payload: payload,
           });
         }
       }
@@ -715,36 +712,33 @@ export function acknowledgeAllErrors(nodeId: string): void {
     return;
   }
 
-  const unacknowledgedCount = nodeState.errors.filter(e => !e.acknowledged).length;
-  if (unacknowledgedCount === 0) {
+  const errorCount = nodeState.errors.length;
+  if (errorCount === 0) {
     return;
   }
 
-  // Mark all as acknowledged
-  nodeState.errors.forEach(e => {
-    e.acknowledged = true;
-  });
-
   // Log the acknowledgement
-  ctx.log.info('All errors acknowledged', {
+  ctx.log.info('All errors acknowledged and cleared', {
     nodeId,
     valveName: nodeState.valveName,
-    count: unacknowledgedCount,
+    count: errorCount,
     acknowledgedAt: new Date().toISOString(),
   });
 
-  // Reset node visual state
-  if (nodeState.genericState === GenericState.Error) {
-    nodeState.genericState = GenericState.Idle;
-    updateNodeVisuals(ctx, nodeId, GenericState.Idle, nodeState.specificState);
+  // Clear all errors
+  nodeState.errors = [];
 
-    ctx.log.info('Node error state reset after bulk acknowledgement', {
-      nodeId,
-      valveName: nodeState.valveName,
-    });
-  }
+  // Reset node visual state to Idle
+  nodeState.genericState = GenericState.Idle;
+  updateNodeVisuals(ctx, nodeId, GenericState.Idle, nodeState.specificState);
 
-  ctx.ui.notify(`${nodeState.valveName}: ${unacknowledgedCount} Fehler quittiert`, 'success');
+  ctx.log.info('Node state reset after acknowledgement', {
+    nodeId,
+    valveName: nodeState.valveName,
+    newState: 'Idle',
+  });
+
+  ctx.ui.notify(`${nodeState.valveName}: ${errorCount} Fehler quittiert`, 'success');
 }
 
 /**

@@ -478,53 +478,27 @@ var ValveDetailsPopup = ({ data }) => {
             },
             idx
           )) }),
-          selectedErrorIdx !== null && nodeState.errors[selectedErrorIdx] && /* @__PURE__ */ jsxs(Fragment2, { children: [
-            /* @__PURE__ */ jsx("pre", { style: {
-              margin: "0 0 8px 0",
-              padding: "10px",
-              backgroundColor: "#1a1a1a",
-              color: "#0f0",
-              fontSize: "11px",
-              fontFamily: "Consolas, Monaco, monospace",
-              borderRadius: "4px",
-              border: "2px solid #dc3545",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-all",
-              maxHeight: "200px",
-              overflow: "auto"
-            }, children: (() => {
-              const err = nodeState.errors[selectedErrorIdx];
-              try {
-                return JSON.stringify(JSON.parse(err.rawPayload || "{}"), null, 2);
-              } catch {
-                return err.rawPayload || "No payload";
-              }
-            })() }),
-            !nodeState.errors[selectedErrorIdx].acknowledged && /* @__PURE__ */ jsxs(
-              "button",
-              {
-                onClick: () => {
-                  acknowledgeError(nodeId, selectedErrorIdx);
-                  setUpdateCounter((c) => c + 1);
-                },
-                style: {
-                  padding: "8px 16px",
-                  backgroundColor: "#007bff",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  fontWeight: "bold"
-                },
-                children: [
-                  "#",
-                  selectedErrorIdx,
-                  " Quittieren"
-                ]
-              }
-            )
-          ] })
+          selectedErrorIdx !== null && nodeState.errors[selectedErrorIdx] && /* @__PURE__ */ jsx("pre", { style: {
+            margin: 0,
+            padding: "10px",
+            backgroundColor: "#1a1a1a",
+            color: "#0f0",
+            fontSize: "11px",
+            fontFamily: "Consolas, Monaco, monospace",
+            borderRadius: "4px",
+            border: "2px solid #dc3545",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-all",
+            maxHeight: "200px",
+            overflow: "auto"
+          }, children: (() => {
+            const err = nodeState.errors[selectedErrorIdx];
+            try {
+              return JSON.stringify(JSON.parse(err.rawPayload || "{}"), null, 2);
+            } catch {
+              return err.rawPayload || "No payload";
+            }
+          })() })
         ] })
       ] })
     ] }),
@@ -1238,22 +1212,19 @@ function handleErrorMessage(ctx, rawPayload) {
         }
         if (payload.lvl === "ERR") {
           ctx.log.error(`[${nodeState.valveName}] ${msgText}`, {
-            source: payload.src,
-            type: payload.typ
+            payload
           });
           nodeState.genericState = 3 /* Error */;
           updateNodeVisuals(ctx, nodeState.nodeId, 3 /* Error */, nodeState.specificState);
           ctx.ui.notify(`Error: ${nodeState.valveName} - ${msgText}`, "error");
         } else if (payload.lvl === "WARN") {
           ctx.log.warn(`[${nodeState.valveName}] ${msgText}`, {
-            source: payload.src,
-            type: payload.typ
+            payload
           });
           ctx.ui.notify(`Warning: ${nodeState.valveName} - ${msgText}`, "warning");
         } else {
           ctx.log.info(`[${nodeState.valveName}] ${msgText}`, {
-            level: payload.lvl,
-            source: payload.src
+            payload
           });
         }
       }
@@ -1430,28 +1401,25 @@ function acknowledgeAllErrors(nodeId) {
   if (!nodeState) {
     return;
   }
-  const unacknowledgedCount = nodeState.errors.filter((e) => !e.acknowledged).length;
-  if (unacknowledgedCount === 0) {
+  const errorCount = nodeState.errors.length;
+  if (errorCount === 0) {
     return;
   }
-  nodeState.errors.forEach((e) => {
-    e.acknowledged = true;
-  });
-  ctx.log.info("All errors acknowledged", {
+  ctx.log.info("All errors acknowledged and cleared", {
     nodeId,
     valveName: nodeState.valveName,
-    count: unacknowledgedCount,
+    count: errorCount,
     acknowledgedAt: (/* @__PURE__ */ new Date()).toISOString()
   });
-  if (nodeState.genericState === 3 /* Error */) {
-    nodeState.genericState = 0 /* Idle */;
-    updateNodeVisuals(ctx, nodeId, 0 /* Idle */, nodeState.specificState);
-    ctx.log.info("Node error state reset after bulk acknowledgement", {
-      nodeId,
-      valveName: nodeState.valveName
-    });
-  }
-  ctx.ui.notify(`${nodeState.valveName}: ${unacknowledgedCount} Fehler quittiert`, "success");
+  nodeState.errors = [];
+  nodeState.genericState = 0 /* Idle */;
+  updateNodeVisuals(ctx, nodeId, 0 /* Idle */, nodeState.specificState);
+  ctx.log.info("Node state reset after acknowledgement", {
+    nodeId,
+    valveName: nodeState.valveName,
+    newState: "Idle"
+  });
+  ctx.ui.notify(`${nodeState.valveName}: ${errorCount} Fehler quittiert`, "success");
 }
 function getNodeState(nodeId) {
   return pluginState.getNode(nodeId);

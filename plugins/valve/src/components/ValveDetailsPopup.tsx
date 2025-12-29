@@ -18,7 +18,6 @@ import {
   sendModeBistableMiddle,
   getCurrentMqttFormat,
   getUnacknowledgedErrorCount,
-  acknowledgeError,
   acknowledgeAllErrors,
 } from '../index';
 import {
@@ -481,21 +480,20 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
 
                 {/* Selected Error Detail */}
                 {selectedErrorIdx !== null && nodeState.errors[selectedErrorIdx] && (
-                  <>
-                    <pre style={{
-                      margin: '0 0 8px 0',
-                      padding: '10px',
-                      backgroundColor: '#1a1a1a',
-                      color: '#0f0',
-                      fontSize: '11px',
-                      fontFamily: 'Consolas, Monaco, monospace',
-                      borderRadius: '4px',
-                      border: '2px solid #dc3545',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-all',
-                      maxHeight: '200px',
-                      overflow: 'auto',
-                    }}>
+                  <pre style={{
+                    margin: 0,
+                    padding: '10px',
+                    backgroundColor: '#1a1a1a',
+                    color: '#0f0',
+                    fontSize: '11px',
+                    fontFamily: 'Consolas, Monaco, monospace',
+                    borderRadius: '4px',
+                    border: '2px solid #dc3545',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                    maxHeight: '200px',
+                    overflow: 'auto',
+                  }}>
 {(() => {
   const err = nodeState.errors[selectedErrorIdx];
   try {
@@ -504,30 +502,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
     return err.rawPayload || 'No payload';
   }
 })()}
-                    </pre>
-
-                    {/* Quittieren Button for selected error */}
-                    {!nodeState.errors[selectedErrorIdx].acknowledged && (
-                      <button
-                        onClick={() => {
-                          acknowledgeError(nodeId, selectedErrorIdx);
-                          setUpdateCounter((c) => c + 1);
-                        }}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#007bff',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        #{selectedErrorIdx} Quittieren
-                      </button>
-                    )}
-                  </>
+                  </pre>
                 )}
               </>
             )}

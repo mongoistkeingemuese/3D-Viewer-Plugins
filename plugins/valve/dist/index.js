@@ -479,101 +479,122 @@ var ValveDetailsPopup = ({ data }) => {
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsxs("div", { style: styles.noErrors, children: [
           /* @__PURE__ */ jsx("span", { style: { fontSize: "24px" }, children: "\u2713" }),
           /* @__PURE__ */ jsx("p", { children: "Keine Errors aufgezeichnet" })
-        ] }) : /* @__PURE__ */ jsx("div", { style: styles.errorList, children: nodeState.errors.map((err, idx) => {
+        ] }) : /* @__PURE__ */ jsx("div", { style: { display: "flex", flexDirection: "column", gap: "8px" }, children: nodeState.errors.map((err, idx) => {
           const isExpanded = expandedErrors.has(idx);
           return /* @__PURE__ */ jsxs(
             "div",
             {
               style: {
-                ...styles.errorItem,
-                backgroundColor: err.acknowledged ? "#f8f9fa" : "#fff",
-                borderLeft: `4px solid ${getErrorLevelColor(err.level)}`
+                backgroundColor: err.acknowledged ? "#f0f0f0" : "#fff",
+                border: "1px solid #ccc",
+                borderLeft: `4px solid ${getErrorLevelColor(err.level)}`,
+                borderRadius: "4px",
+                overflow: "hidden"
               },
               children: [
                 /* @__PURE__ */ jsxs(
                   "div",
                   {
                     style: {
-                      ...styles.errorDropdownHeader,
-                      cursor: "pointer",
-                      backgroundColor: hoveredError === idx ? "#e9ecef" : "transparent"
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "12px",
+                      backgroundColor: hoveredError === idx ? "#e9ecef" : isExpanded ? "#f8f9fa" : "transparent",
+                      cursor: "pointer"
                     },
-                    onClick: (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleErrorExpanded(idx);
-                    },
+                    onClick: () => toggleErrorExpanded(idx),
                     onMouseEnter: () => setHoveredError(idx),
                     onMouseLeave: () => setHoveredError(null),
-                    role: "button",
-                    tabIndex: 0,
-                    onKeyDown: (e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        toggleErrorExpanded(idx);
-                      }
-                    },
                     children: [
-                      /* @__PURE__ */ jsxs("div", { style: styles.errorHeaderLeft, children: [
-                        /* @__PURE__ */ jsx("span", { style: styles.expandIcon, children: isExpanded ? "\u25BC" : "\u25B6" }),
+                      /* @__PURE__ */ jsxs("div", { style: { display: "flex", alignItems: "center", gap: "10px", flex: 1 }, children: [
+                        /* @__PURE__ */ jsx("span", { style: { fontSize: "12px", color: "#333" }, children: isExpanded ? "\u25BC" : "\u25B6" }),
                         /* @__PURE__ */ jsx(
                           "span",
                           {
                             style: {
-                              ...styles.errorLevelBadge,
-                              backgroundColor: getErrorLevelColor(err.level)
+                              backgroundColor: getErrorLevelColor(err.level),
+                              color: "#fff",
+                              padding: "2px 8px",
+                              borderRadius: "3px",
+                              fontSize: "11px",
+                              fontWeight: "bold"
                             },
                             children: err.level
                           }
                         ),
-                        err.errorNo !== void 0 && /* @__PURE__ */ jsxs("span", { style: styles.errorNumber, children: [
+                        err.errorNo !== void 0 && /* @__PURE__ */ jsxs("span", { style: { fontFamily: "monospace", fontWeight: "bold" }, children: [
                           "#",
                           err.errorNo
                         ] }),
-                        /* @__PURE__ */ jsx("span", { style: styles.errorMessagePreview, children: err.message.length > 50 ? `${err.message.substring(0, 50)}...` : err.message })
+                        /* @__PURE__ */ jsx("span", { style: { fontSize: "13px", color: "#333" }, children: err.message })
                       ] }),
-                      /* @__PURE__ */ jsxs("div", { style: styles.errorHeaderRight, children: [
-                        /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(err.timestamp) }),
-                        !err.acknowledged ? /* @__PURE__ */ jsx(
+                      /* @__PURE__ */ jsxs("div", { style: { display: "flex", alignItems: "center", gap: "10px" }, children: [
+                        /* @__PURE__ */ jsx("span", { style: { fontSize: "11px", color: "#666" }, children: formatTimestamp(err.timestamp) }),
+                        !err.acknowledged && /* @__PURE__ */ jsx(
                           "button",
                           {
                             onClick: (e) => {
                               e.stopPropagation();
                               handleAcknowledge(idx);
                             },
-                            style: styles.ackButtonSmall,
+                            style: {
+                              padding: "4px 8px",
+                              backgroundColor: "#007bff",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "3px",
+                              cursor: "pointer",
+                              fontSize: "12px"
+                            },
                             children: "\u2713"
                           }
-                        ) : /* @__PURE__ */ jsx("span", { style: styles.acknowledgedIcon, children: "\u2713" })
+                        )
                       ] })
                     ]
                   }
                 ),
-                isExpanded && /* @__PURE__ */ jsxs("div", { style: styles.errorExpandedContent, children: [
-                  /* @__PURE__ */ jsxs("div", { style: styles.errorDetailSection, children: [
-                    /* @__PURE__ */ jsx("div", { style: styles.errorDetailLabel, children: "Message:" }),
-                    /* @__PURE__ */ jsx("div", { style: styles.errorDetailValue, children: err.message })
+                isExpanded && /* @__PURE__ */ jsxs("div", { style: { padding: "12px", backgroundColor: "#f8f9fa", borderTop: "1px solid #ddd" }, children: [
+                  /* @__PURE__ */ jsxs("div", { style: { marginBottom: "12px" }, children: [
+                    /* @__PURE__ */ jsx("div", { style: { fontSize: "11px", fontWeight: "bold", color: "#666", marginBottom: "4px" }, children: "MESSAGE:" }),
+                    /* @__PURE__ */ jsx("div", { style: { fontSize: "14px", color: "#212529" }, children: err.message })
                   ] }),
-                  /* @__PURE__ */ jsxs("div", { style: styles.errorDetailSection, children: [
-                    /* @__PURE__ */ jsx("div", { style: styles.errorDetailLabel, children: "Quelle:" }),
-                    /* @__PURE__ */ jsx("div", { style: styles.errorDetailValue, children: err.source })
+                  /* @__PURE__ */ jsxs("div", { style: { marginBottom: "12px" }, children: [
+                    /* @__PURE__ */ jsx("div", { style: { fontSize: "11px", fontWeight: "bold", color: "#666", marginBottom: "4px" }, children: "QUELLE:" }),
+                    /* @__PURE__ */ jsx("div", { style: { fontSize: "13px", color: "#212529" }, children: err.source })
                   ] }),
-                  /* @__PURE__ */ jsxs("div", { style: styles.errorDetailSection, children: [
-                    /* @__PURE__ */ jsx("div", { style: styles.errorDetailLabel, children: "Zeitpunkt:" }),
-                    /* @__PURE__ */ jsx("div", { style: styles.errorDetailValue, children: new Date(err.timestamp).toLocaleString("de-DE") })
+                  /* @__PURE__ */ jsxs("div", { style: { marginBottom: "12px" }, children: [
+                    /* @__PURE__ */ jsx("div", { style: { fontSize: "11px", fontWeight: "bold", color: "#666", marginBottom: "4px" }, children: "RAW PAYLOAD:" }),
+                    /* @__PURE__ */ jsx("pre", { style: {
+                      fontSize: "11px",
+                      fontFamily: "monospace",
+                      backgroundColor: "#1e1e1e",
+                      color: "#d4d4d4",
+                      padding: "12px",
+                      borderRadius: "4px",
+                      overflow: "auto",
+                      maxHeight: "200px",
+                      margin: 0,
+                      whiteSpace: "pre-wrap"
+                    }, children: JSON.stringify(err.rawMsg, null, 2) })
                   ] }),
-                  /* @__PURE__ */ jsxs("div", { style: styles.errorDetailSection, children: [
-                    /* @__PURE__ */ jsx("div", { style: styles.errorDetailLabel, children: "Raw Payload:" }),
-                    /* @__PURE__ */ jsx("pre", { style: styles.errorPayload, children: JSON.stringify(err.rawMsg, null, 2) })
-                  ] }),
-                  !err.acknowledged && /* @__PURE__ */ jsx("div", { style: styles.errorActions, children: /* @__PURE__ */ jsx(
+                  !err.acknowledged && /* @__PURE__ */ jsx(
                     "button",
                     {
                       onClick: () => handleAcknowledge(idx),
-                      style: styles.ackButton,
+                      style: {
+                        padding: "8px 16px",
+                        backgroundColor: "#28a745",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: "bold"
+                      },
                       children: "Fehler Quittieren"
                     }
-                  ) })
+                  )
                 ] })
               ]
             },

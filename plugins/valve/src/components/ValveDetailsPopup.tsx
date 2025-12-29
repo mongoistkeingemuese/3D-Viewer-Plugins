@@ -475,128 +475,141 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                 <p>Keine Errors aufgezeichnet</p>
               </div>
             ) : (
-              <div style={styles.errorList}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {nodeState.errors.map((err, idx) => {
                   const isExpanded = expandedErrors.has(idx);
                   return (
                     <div
                       key={idx}
                       style={{
-                        ...styles.errorItem,
-                        backgroundColor: err.acknowledged ? '#f8f9fa' : '#fff',
+                        backgroundColor: err.acknowledged ? '#f0f0f0' : '#fff',
+                        border: '1px solid #ccc',
                         borderLeft: `4px solid ${getErrorLevelColor(err.level)}`,
+                        borderRadius: '4px',
+                        overflow: 'hidden',
                       }}
                     >
                       {/* Clickable Header */}
                       <div
                         style={{
-                          ...styles.errorDropdownHeader,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '12px',
+                          backgroundColor: hoveredError === idx ? '#e9ecef' : (isExpanded ? '#f8f9fa' : 'transparent'),
                           cursor: 'pointer',
-                          backgroundColor: hoveredError === idx ? '#e9ecef' : 'transparent',
                         }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleErrorExpanded(idx);
-                        }}
+                        onClick={() => toggleErrorExpanded(idx)}
                         onMouseEnter={() => setHoveredError(idx)}
                         onMouseLeave={() => setHoveredError(null)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            toggleErrorExpanded(idx);
-                          }
-                        }}
                       >
-                        {/* Left side: Expand icon + Level + ErrorNo + Message preview */}
-                        <div style={styles.errorHeaderLeft}>
-                          <span style={styles.expandIcon}>
+                        {/* Left: Arrow + Level + Message */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                          <span style={{ fontSize: '12px', color: '#333' }}>
                             {isExpanded ? '▼' : '▶'}
                           </span>
                           <span
                             style={{
-                              ...styles.errorLevelBadge,
                               backgroundColor: getErrorLevelColor(err.level),
+                              color: '#fff',
+                              padding: '2px 8px',
+                              borderRadius: '3px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
                             }}
                           >
                             {err.level}
                           </span>
                           {err.errorNo !== undefined && (
-                            <span style={styles.errorNumber}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
                               #{err.errorNo}
                             </span>
                           )}
-                          <span style={styles.errorMessagePreview}>
-                            {err.message.length > 50
-                              ? `${err.message.substring(0, 50)}...`
-                              : err.message}
+                          <span style={{ fontSize: '13px', color: '#333' }}>
+                            {err.message}
                           </span>
                         </div>
 
-                        {/* Right side: Timestamp + Acknowledge */}
-                        <div style={styles.errorHeaderRight}>
-                          <span style={styles.errorTime}>
+                        {/* Right: Time + Ack Button */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '11px', color: '#666' }}>
                             {formatTimestamp(err.timestamp)}
                           </span>
-                          {!err.acknowledged ? (
+                          {!err.acknowledged && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleAcknowledge(idx);
                               }}
-                              style={styles.ackButtonSmall}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: '#007bff',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '3px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                              }}
                             >
                               ✓
                             </button>
-                          ) : (
-                            <span style={styles.acknowledgedIcon}>✓</span>
                           )}
                         </div>
                       </div>
 
-                      {/* Expanded Content: Full Payload */}
+                      {/* Expanded Content */}
                       {isExpanded && (
-                        <div style={styles.errorExpandedContent}>
-                          {/* Full Message */}
-                          <div style={styles.errorDetailSection}>
-                            <div style={styles.errorDetailLabel}>Message:</div>
-                            <div style={styles.errorDetailValue}>{err.message}</div>
-                          </div>
-
-                          {/* Source */}
-                          <div style={styles.errorDetailSection}>
-                            <div style={styles.errorDetailLabel}>Quelle:</div>
-                            <div style={styles.errorDetailValue}>{err.source}</div>
-                          </div>
-
-                          {/* Timestamp */}
-                          <div style={styles.errorDetailSection}>
-                            <div style={styles.errorDetailLabel}>Zeitpunkt:</div>
-                            <div style={styles.errorDetailValue}>
-                              {new Date(err.timestamp).toLocaleString('de-DE')}
+                        <div style={{ padding: '12px', backgroundColor: '#f8f9fa', borderTop: '1px solid #ddd' }}>
+                          <div style={{ marginBottom: '12px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#666', marginBottom: '4px' }}>
+                              MESSAGE:
                             </div>
+                            <div style={{ fontSize: '14px', color: '#212529' }}>{err.message}</div>
                           </div>
 
-                          {/* Raw Payload */}
-                          <div style={styles.errorDetailSection}>
-                            <div style={styles.errorDetailLabel}>Raw Payload:</div>
-                            <pre style={styles.errorPayload}>
+                          <div style={{ marginBottom: '12px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#666', marginBottom: '4px' }}>
+                              QUELLE:
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#212529' }}>{err.source}</div>
+                          </div>
+
+                          <div style={{ marginBottom: '12px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#666', marginBottom: '4px' }}>
+                              RAW PAYLOAD:
+                            </div>
+                            <pre style={{
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              backgroundColor: '#1e1e1e',
+                              color: '#d4d4d4',
+                              padding: '12px',
+                              borderRadius: '4px',
+                              overflow: 'auto',
+                              maxHeight: '200px',
+                              margin: 0,
+                              whiteSpace: 'pre-wrap',
+                            }}>
                               {JSON.stringify(err.rawMsg, null, 2)}
                             </pre>
                           </div>
 
-                          {/* Acknowledge Button (if not acknowledged) */}
                           {!err.acknowledged && (
-                            <div style={styles.errorActions}>
-                              <button
-                                onClick={() => handleAcknowledge(idx)}
-                                style={styles.ackButton}
-                              >
-                                Fehler Quittieren
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => handleAcknowledge(idx)}
+                              style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#28a745',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                fontWeight: 'bold',
+                              }}
+                            >
+                              Fehler Quittieren
+                            </button>
                           )}
                         </div>
                       )}

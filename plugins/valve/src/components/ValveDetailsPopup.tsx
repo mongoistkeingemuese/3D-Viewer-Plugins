@@ -395,127 +395,92 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
         {/* ERRORS TAB */}
         {activeTab === 'errors' && (
           <div style={styles.section}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h3 style={{ ...styles.sectionTitle, margin: 0, border: 'none', paddingBottom: 0 }}>
-                Fehlermeldungen ({nodeState.errors.length})
-              </h3>
-              {unacknowledgedCount > 0 && (
-                <button
-                  onClick={() => {
-                    acknowledgeAllErrors(nodeId);
-                    setUpdateCounter((c) => c + 1);
-                  }}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#28a745',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    fontSize: '12px',
-                  }}
-                >
-                  Alle Quittieren ({unacknowledgedCount})
-                </button>
-              )}
-            </div>
+            <h3 style={styles.sectionTitle}>
+              Fehlermeldungen ({nodeState.errors.length}) - {unacknowledgedCount} offen
+            </h3>
+
+            {/* Alle Quittieren Button */}
+            {unacknowledgedCount > 0 && (
+              <button
+                onClick={() => {
+                  acknowledgeAllErrors(nodeId);
+                  setUpdateCounter((c) => c + 1);
+                }}
+                style={{
+                  marginBottom: '12px',
+                  padding: '10px 20px',
+                  backgroundColor: '#28a745',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  width: '100%',
+                }}
+              >
+                Alle Quittieren ({unacknowledgedCount})
+              </button>
+            )}
 
             {nodeState.errors.length === 0 ? (
-              <div style={{ color: '#28a745', textAlign: 'center', padding: '20px' }}>
+              <pre style={{ color: '#28a745', padding: '20px', textAlign: 'center', margin: 0 }}>
                 Keine Fehlermeldungen
-              </div>
+              </pre>
             ) : (
               <>
-                {/* Error List using native details/summary */}
-                {nodeState.errors.map((err, idx) => {
-                  let msg = 'Keine Nachricht';
-                  let formattedPayload = err.rawPayload || '';
-                  try {
-                    const payload = JSON.parse(err.rawPayload || '{}');
-                    msg = payload.msg?.txt || payload.msg?.text || (typeof payload.msg === 'string' ? payload.msg : 'Keine Nachricht');
-                    formattedPayload = JSON.stringify(payload, null, 2);
-                  } catch {
-                    // Keep defaults
-                  }
+                {/* Error Messages in pre tag (works!) */}
+                <pre style={{
+                  margin: '0 0 12px 0',
+                  padding: '12px',
+                  backgroundColor: '#1a1a1a',
+                  color: '#0f0',
+                  fontSize: '12px',
+                  fontFamily: 'Consolas, Monaco, monospace',
+                  borderRadius: '6px',
+                  border: '2px solid #dc3545',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                  maxHeight: '300px',
+                  overflow: 'auto',
+                }}>
+{nodeState.errors.map((err, idx) => {
+  try {
+    const p = JSON.parse(err.rawPayload || '{}');
+    const msg = p.msg?.txt || p.msg?.text || p.msg || 'No message';
+    const ack = err.acknowledged ? ' [QUITTIERT]' : '';
+    return `[${idx}] ${err.level}${ack}: ${msg}\n${'─'.repeat(50)}\n${JSON.stringify(p, null, 2)}\n\n`;
+  } catch {
+    return `[${idx}] ${err.level}: Parse error\n\n`;
+  }
+}).join('')}
+                </pre>
 
-                  const borderColor = err.level === 'ERR' ? '#dc3545' : err.level === 'WARN' ? '#ffc107' : '#17a2b8';
-                  const bgColor = err.acknowledged ? '#f5f5f5' : '#fff';
-
-                  return (
-                    <details
-                      key={idx}
-                      style={{
-                        marginBottom: '8px',
-                        border: `2px solid ${borderColor}`,
-                        borderRadius: '6px',
-                        backgroundColor: bgColor,
-                      }}
-                    >
-                      <summary
+                {/* Individual Quittieren Buttons */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {nodeState.errors.map((err, idx) => (
+                    !err.acknowledged && (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          acknowledgeError(nodeId, idx);
+                          setUpdateCounter((c) => c + 1);
+                        }}
                         style={{
-                          padding: '10px 12px',
+                          padding: '8px 12px',
+                          backgroundColor: '#007bff',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '4px',
                           cursor: 'pointer',
-                          fontWeight: 'bold',
-                          fontSize: '13px',
-                          color: '#000',
-                          listStyle: 'none',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
+                          fontSize: '12px',
                         }}
                       >
-                        <span style={{
-                          backgroundColor: borderColor,
-                          color: '#fff',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                        }}>
-                          {err.level}
-                        </span>
-                        <span style={{ flex: 1, color: '#000' }}>{msg}</span>
-                        {err.acknowledged && <span style={{ color: '#28a745' }}>✓</span>}
-                      </summary>
-                      <div style={{ padding: '12px', borderTop: `1px solid ${borderColor}` }}>
-                        <pre style={{
-                          margin: '0 0 10px 0',
-                          padding: '10px',
-                          backgroundColor: '#1a1a1a',
-                          color: '#0f0',
-                          fontSize: '11px',
-                          fontFamily: 'Consolas, Monaco, monospace',
-                          borderRadius: '4px',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-all',
-                          maxHeight: '200px',
-                          overflow: 'auto',
-                        }}>
-                          {formattedPayload}
-                        </pre>
-                        {!err.acknowledged && (
-                          <button
-                            onClick={() => {
-                              acknowledgeError(nodeId, idx);
-                              setUpdateCounter((c) => c + 1);
-                            }}
-                            style={{
-                              padding: '6px 12px',
-                              backgroundColor: '#007bff',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                            }}
-                          >
-                            Quittieren
-                          </button>
-                        )}
-                      </div>
-                    </details>
-                  );
-                })}
+                        #{idx} Quittieren
+                      </button>
+                    )
+                  ))}
+                </div>
               </>
             )}
           </div>

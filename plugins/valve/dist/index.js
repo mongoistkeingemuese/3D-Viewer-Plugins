@@ -445,52 +445,63 @@ var ValveDetailsPopup = ({ data }) => {
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsxs("div", { style: styles.noErrors, children: [
           /* @__PURE__ */ jsx("span", { style: { fontSize: "24px" }, children: "\u2713" }),
           /* @__PURE__ */ jsx("p", { children: "Keine Errors aufgezeichnet" })
-        ] }) : /* @__PURE__ */ jsx("div", { style: styles.errorList, children: nodeState.errors.map((error, index) => /* @__PURE__ */ jsxs(
-          "div",
-          {
-            style: {
-              ...styles.errorItem,
-              backgroundColor: error.acknowledged ? "#f0f0f0" : "#ffffff",
-              borderLeft: `4px solid ${getErrorLevelColor(error.level)}`
-            },
-            children: [
-              /* @__PURE__ */ jsxs("div", { style: styles.errorHeader, children: [
-                /* @__PURE__ */ jsx(
-                  "span",
-                  {
-                    style: {
-                      ...styles.errorLevel,
-                      color: getErrorLevelColor(error.level)
-                    },
-                    children: error.level
-                  }
-                ),
-                /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(error.timestamp) })
-              ] }),
-              /* @__PURE__ */ jsx("div", { style: styles.errorMessage, children: error.message || "(kein Text)" }),
-              error.values && Object.keys(error.values).length > 0 && /* @__PURE__ */ jsx("div", { style: styles.errorValues, children: Object.entries(error.values).map(([key, value]) => /* @__PURE__ */ jsxs("span", { style: styles.errorValueItem, children: [
-                key,
-                ": ",
-                String(value)
-              ] }, key)) }),
-              /* @__PURE__ */ jsxs("div", { style: styles.errorFooter, children: [
-                /* @__PURE__ */ jsxs("span", { style: styles.errorSource, children: [
-                  "Source: ",
-                  error.source
+        ] }) : /* @__PURE__ */ jsxs("div", { style: styles.errorList, children: [
+          console.log("[VALVE POPUP] Rendering errors:", nodeState.errors.map((e) => ({
+            message: e.message,
+            messageType: typeof e.message,
+            values: e.values,
+            level: e.level
+          }))),
+          nodeState.errors.map((error, index) => /* @__PURE__ */ jsxs(
+            "div",
+            {
+              style: {
+                ...styles.errorItem,
+                backgroundColor: error.acknowledged ? "#f0f0f0" : "#ffffff",
+                borderLeft: `4px solid ${getErrorLevelColor(error.level)}`
+              },
+              children: [
+                /* @__PURE__ */ jsxs("div", { style: styles.errorHeader, children: [
+                  /* @__PURE__ */ jsx(
+                    "span",
+                    {
+                      style: {
+                        ...styles.errorLevel,
+                        color: getErrorLevelColor(error.level)
+                      },
+                      children: error.level
+                    }
+                  ),
+                  /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(error.timestamp) })
                 ] }),
-                !error.acknowledged ? /* @__PURE__ */ jsx(
-                  "button",
-                  {
-                    onClick: () => handleAcknowledge(index),
-                    style: styles.ackButton,
-                    children: "Acknowledge"
-                  }
-                ) : /* @__PURE__ */ jsx("span", { style: styles.acknowledgedBadge, children: "\u2713 Acknowledged" })
-              ] })
-            ]
-          },
-          index
-        )) })
+                /* @__PURE__ */ jsxs("div", { style: styles.errorMessage, children: [
+                  console.log("[VALVE POPUP] Error item:", index, "message:", error.message, "type:", typeof error.message),
+                  error.message || "(kein Text)"
+                ] }),
+                error.values && Object.keys(error.values).length > 0 && /* @__PURE__ */ jsx("div", { style: styles.errorValues, children: Object.entries(error.values).map(([key, value]) => /* @__PURE__ */ jsxs("span", { style: styles.errorValueItem, children: [
+                  key,
+                  ": ",
+                  String(value)
+                ] }, key)) }),
+                /* @__PURE__ */ jsxs("div", { style: styles.errorFooter, children: [
+                  /* @__PURE__ */ jsxs("span", { style: styles.errorSource, children: [
+                    "Source: ",
+                    error.source
+                  ] }),
+                  !error.acknowledged ? /* @__PURE__ */ jsx(
+                    "button",
+                    {
+                      onClick: () => handleAcknowledge(index),
+                      style: styles.ackButton,
+                      children: "Acknowledge"
+                    }
+                  ) : /* @__PURE__ */ jsx("span", { style: styles.acknowledgedBadge, children: "\u2713 Acknowledged" })
+                ] })
+              ]
+            },
+            index
+          ))
+        ] })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.footer, children: [

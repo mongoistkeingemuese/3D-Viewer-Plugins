@@ -404,31 +404,34 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {nodeState.errors.map((err, idx) => {
                   const isExpanded = expandedErrors.has(idx);
-                  const toggleExpand = (): void => {
-                    setExpandedErrors(prev => {
-                      const next = new Set(prev);
-                      if (next.has(idx)) {
-                        next.delete(idx);
-                      } else {
-                        next.add(idx);
-                      }
-                      return next;
-                    });
-                  };
 
                   // Extract message from rawPayload
-                  let messageText = 'Fehlermeldung';
-                  try {
-                    const payload = JSON.parse(err.rawPayload);
-                    if (typeof payload.msg === 'string') {
-                      messageText = payload.msg;
-                    } else if (payload.msg?.txt) {
-                      messageText = payload.msg.txt;
-                    } else if (payload.msg?.text) {
-                      messageText = payload.msg.text;
+                  let messageText = '';
+                  let hasPayload = false;
+                  let formattedPayload = '';
+
+                  if (err.rawPayload) {
+                    hasPayload = true;
+                    try {
+                      const payload = JSON.parse(err.rawPayload);
+                      formattedPayload = JSON.stringify(payload, null, 2);
+
+                      // Try different message formats
+                      if (typeof payload.msg === 'string') {
+                        messageText = payload.msg;
+                      } else if (payload.msg?.txt) {
+                        messageText = payload.msg.txt;
+                      } else if (payload.msg?.text) {
+                        messageText = payload.msg.text;
+                      }
+                    } catch {
+                      formattedPayload = err.rawPayload;
                     }
-                  } catch {
-                    messageText = err.source || 'Fehlermeldung';
+                  }
+
+                  // Fallback if no message found
+                  if (!messageText) {
+                    messageText = err.source ? `Source: ${err.source}` : 'Keine Nachricht';
                   }
 
                   // Level color
@@ -439,23 +442,35 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                   return (
                     <div
                       key={idx}
-                      onClick={toggleExpand}
                       style={{
                         backgroundColor: '#fff',
                         border: `2px solid ${levelColor}`,
                         borderRadius: '6px',
-                        cursor: 'pointer',
                         overflow: 'hidden',
                       }}
                     >
                       {/* Header - always visible */}
-                      <div style={{
-                        padding: '10px 12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        backgroundColor: isExpanded ? '#f8f9fa' : '#fff',
-                      }}>
+                      <div
+                        onClick={() => {
+                          setExpandedErrors(prev => {
+                            const next = new Set(prev);
+                            if (next.has(idx)) {
+                              next.delete(idx);
+                            } else {
+                              next.add(idx);
+                            }
+                            return next;
+                          });
+                        }}
+                        style={{
+                          padding: '10px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          backgroundColor: isExpanded ? '#f8f9fa' : '#fff',
+                          cursor: hasPayload ? 'pointer' : 'default',
+                        }}
+                      >
                         <span style={{
                           backgroundColor: levelColor,
                           color: '#fff',
@@ -463,31 +478,30 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                           borderRadius: '4px',
                           fontSize: '11px',
                           fontWeight: 'bold',
+                          flexShrink: 0,
                         }}>
-                          {err.level}
+                          {err.level || 'INFO'}
                         </span>
                         <span style={{
                           flex: 1,
                           color: '#333',
                           fontSize: '13px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: isExpanded ? 'normal' : 'nowrap',
                         }}>
                           {messageText}
                         </span>
-                        <span style={{
-                          color: '#666',
-                          fontSize: '16px',
-                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.2s',
-                        }}>
-                          ▼
-                        </span>
+                        {hasPayload && (
+                          <span style={{
+                            color: '#666',
+                            fontSize: '14px',
+                            flexShrink: 0,
+                          }}>
+                            {isExpanded ? '▲' : '▼'}
+                          </span>
+                        )}
                       </div>
 
                       {/* Expanded content - JSON payload */}
-                      {isExpanded && (
+                      {isExpanded && hasPayload && (
                         <div style={{ borderTop: '1px solid #ddd' }}>
                           <pre style={{
                             margin: 0,
@@ -501,14 +515,21 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-all',
                           }}>
-                            {(() => {
-                              try {
-                                return JSON.stringify(JSON.parse(err.rawPayload), null, 2);
-                              } catch {
-                                return err.rawPayload;
-                              }
-                            })()}
+                            {formattedPayload}
                           </pre>
+                        </div>
+                      )}
+
+                      {/* Debug info if no payload */}
+                      {!hasPayload && (
+                        <div style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#fff3cd',
+                          color: '#856404',
+                          fontSize: '11px',
+                          borderTop: '1px solid #ffc107',
+                        }}>
+                          Debug: rawPayload ist leer. level={err.level}, source={err.source}, timestamp={err.timestamp}
                         </div>
                       )}
                     </div>

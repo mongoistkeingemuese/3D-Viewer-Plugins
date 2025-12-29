@@ -405,74 +405,85 @@ var ValveDetailsPopup = ({ data }) => {
         ] }),
         nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("div", { style: { color: "#28a745", textAlign: "center", padding: "20px" }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsx("div", { style: { display: "flex", flexDirection: "column", gap: "8px" }, children: nodeState.errors.map((err, idx) => {
           const isExpanded = expandedErrors.has(idx);
-          const toggleExpand = () => {
-            setExpandedErrors((prev) => {
-              const next = new Set(prev);
-              if (next.has(idx)) {
-                next.delete(idx);
-              } else {
-                next.add(idx);
+          let messageText = "";
+          let hasPayload = false;
+          let formattedPayload = "";
+          if (err.rawPayload) {
+            hasPayload = true;
+            try {
+              const payload = JSON.parse(err.rawPayload);
+              formattedPayload = JSON.stringify(payload, null, 2);
+              if (typeof payload.msg === "string") {
+                messageText = payload.msg;
+              } else if (payload.msg?.txt) {
+                messageText = payload.msg.txt;
+              } else if (payload.msg?.text) {
+                messageText = payload.msg.text;
               }
-              return next;
-            });
-          };
-          let messageText = "Fehlermeldung";
-          try {
-            const payload = JSON.parse(err.rawPayload);
-            if (typeof payload.msg === "string") {
-              messageText = payload.msg;
-            } else if (payload.msg?.txt) {
-              messageText = payload.msg.txt;
-            } else if (payload.msg?.text) {
-              messageText = payload.msg.text;
+            } catch {
+              formattedPayload = err.rawPayload;
             }
-          } catch {
-            messageText = err.source || "Fehlermeldung";
+          }
+          if (!messageText) {
+            messageText = err.source ? `Source: ${err.source}` : "Keine Nachricht";
           }
           const levelColor = err.level === "ERR" ? "#dc3545" : err.level === "WARN" ? "#ffc107" : "#17a2b8";
           return /* @__PURE__ */ jsxs(
             "div",
             {
-              onClick: toggleExpand,
               style: {
                 backgroundColor: "#fff",
                 border: `2px solid ${levelColor}`,
                 borderRadius: "6px",
-                cursor: "pointer",
                 overflow: "hidden"
               },
               children: [
-                /* @__PURE__ */ jsxs("div", { style: {
-                  padding: "10px 12px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  backgroundColor: isExpanded ? "#f8f9fa" : "#fff"
-                }, children: [
-                  /* @__PURE__ */ jsx("span", { style: {
-                    backgroundColor: levelColor,
-                    color: "#fff",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                    fontSize: "11px",
-                    fontWeight: "bold"
-                  }, children: err.level }),
-                  /* @__PURE__ */ jsx("span", { style: {
-                    flex: 1,
-                    color: "#333",
-                    fontSize: "13px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: isExpanded ? "normal" : "nowrap"
-                  }, children: messageText }),
-                  /* @__PURE__ */ jsx("span", { style: {
-                    color: "#666",
-                    fontSize: "16px",
-                    transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                    transition: "transform 0.2s"
-                  }, children: "\u25BC" })
-                ] }),
-                isExpanded && /* @__PURE__ */ jsx("div", { style: { borderTop: "1px solid #ddd" }, children: /* @__PURE__ */ jsx("pre", { style: {
+                /* @__PURE__ */ jsxs(
+                  "div",
+                  {
+                    onClick: () => {
+                      setExpandedErrors((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(idx)) {
+                          next.delete(idx);
+                        } else {
+                          next.add(idx);
+                        }
+                        return next;
+                      });
+                    },
+                    style: {
+                      padding: "10px 12px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      backgroundColor: isExpanded ? "#f8f9fa" : "#fff",
+                      cursor: hasPayload ? "pointer" : "default"
+                    },
+                    children: [
+                      /* @__PURE__ */ jsx("span", { style: {
+                        backgroundColor: levelColor,
+                        color: "#fff",
+                        padding: "2px 8px",
+                        borderRadius: "4px",
+                        fontSize: "11px",
+                        fontWeight: "bold",
+                        flexShrink: 0
+                      }, children: err.level || "INFO" }),
+                      /* @__PURE__ */ jsx("span", { style: {
+                        flex: 1,
+                        color: "#333",
+                        fontSize: "13px"
+                      }, children: messageText }),
+                      hasPayload && /* @__PURE__ */ jsx("span", { style: {
+                        color: "#666",
+                        fontSize: "14px",
+                        flexShrink: 0
+                      }, children: isExpanded ? "\u25B2" : "\u25BC" })
+                    ]
+                  }
+                ),
+                isExpanded && hasPayload && /* @__PURE__ */ jsx("div", { style: { borderTop: "1px solid #ddd" }, children: /* @__PURE__ */ jsx("pre", { style: {
                   margin: 0,
                   padding: "12px",
                   backgroundColor: "#1e1e1e",
@@ -483,13 +494,21 @@ var ValveDetailsPopup = ({ data }) => {
                   maxHeight: "300px",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-all"
-                }, children: (() => {
-                  try {
-                    return JSON.stringify(JSON.parse(err.rawPayload), null, 2);
-                  } catch {
-                    return err.rawPayload;
-                  }
-                })() }) })
+                }, children: formattedPayload }) }),
+                !hasPayload && /* @__PURE__ */ jsxs("div", { style: {
+                  padding: "8px 12px",
+                  backgroundColor: "#fff3cd",
+                  color: "#856404",
+                  fontSize: "11px",
+                  borderTop: "1px solid #ffc107"
+                }, children: [
+                  "Debug: rawPayload ist leer. level=",
+                  err.level,
+                  ", source=",
+                  err.source,
+                  ", timestamp=",
+                  err.timestamp
+                ] })
               ]
             },
             idx

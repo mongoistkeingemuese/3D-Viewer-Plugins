@@ -186,6 +186,11 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
 
   return (
     <div style={styles.container}>
+      {/* VERSION TEST BANNER */}
+      <div style={{ backgroundColor: 'red', color: 'white', padding: '20px', fontSize: '24px', fontWeight: 'bold', textAlign: 'center', marginBottom: '10px' }}>
+        🔴 VERSION 1.4.2 GELADEN 🔴
+      </div>
+
       {/* Header */}
       <div style={styles.header}>
         <h2 style={styles.title}>Valve: {nodeState.valveName}</h2>

@@ -195,6 +195,7 @@ var ValveDetailsPopup = ({ data }) => {
   const genericStateName = GenericStateNames[nodeState.genericState] || "Unknown";
   const unacknowledgedCount = getUnacknowledgedErrorCount(nodeId);
   return /* @__PURE__ */ jsxs("div", { style: styles.container, children: [
+    /* @__PURE__ */ jsx("div", { style: { backgroundColor: "red", color: "white", padding: "20px", fontSize: "24px", fontWeight: "bold", textAlign: "center", marginBottom: "10px" }, children: "\u{1F534} VERSION 1.4.2 GELADEN \u{1F534}" }),
     /* @__PURE__ */ jsxs("div", { style: styles.header, children: [
       /* @__PURE__ */ jsxs("h2", { style: styles.title, children: [
         "Valve: ",

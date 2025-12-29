@@ -1,6 +1,6 @@
 {
   "name": "com.rexat.valve",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "private": true,
   "description": "Valve monitoring and control plugin with status display, position animation, and HTTP command integration for Release 8-11",
   "scripts": {

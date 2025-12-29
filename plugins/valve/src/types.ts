@@ -115,6 +115,7 @@ export interface ErrorEntry {
   level: string;
   source: string;
   message: string;
+  values?: Record<string, unknown>;
   acknowledged: boolean;
 }
 

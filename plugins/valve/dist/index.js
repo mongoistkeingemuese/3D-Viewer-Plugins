@@ -467,7 +467,12 @@ var ValveDetailsPopup = ({ data }) => {
                 ),
                 /* @__PURE__ */ jsx("span", { style: styles.errorTime, children: formatTimestamp(error.timestamp) })
               ] }),
-              /* @__PURE__ */ jsx("div", { style: styles.errorMessage, children: error.message }),
+              /* @__PURE__ */ jsx("div", { style: styles.errorMessage, children: error.message || "(kein Text)" }),
+              error.values && Object.keys(error.values).length > 0 && /* @__PURE__ */ jsx("div", { style: styles.errorValues, children: Object.entries(error.values).map(([key, value]) => /* @__PURE__ */ jsxs("span", { style: styles.errorValueItem, children: [
+                key,
+                ": ",
+                String(value)
+              ] }, key)) }),
               /* @__PURE__ */ jsxs("div", { style: styles.errorFooter, children: [
                 /* @__PURE__ */ jsxs("span", { style: styles.errorSource, children: [
                   "Source: ",
@@ -720,7 +725,25 @@ var styles = {
     fontSize: "12px",
     color: "#333",
     marginBottom: "6px",
-    lineHeight: "1.3"
+    lineHeight: "1.3",
+    fontWeight: "bold"
+  },
+  errorValues: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px",
+    marginBottom: "6px",
+    padding: "4px",
+    backgroundColor: "#f8f9fa",
+    borderRadius: "4px"
+  },
+  errorValueItem: {
+    fontSize: "11px",
+    color: "#555",
+    backgroundColor: "#e9ecef",
+    padding: "2px 6px",
+    borderRadius: "3px",
+    fontFamily: "monospace"
   },
   errorFooter: {
     display: "flex",
@@ -1072,22 +1095,32 @@ function handleErrorMessage(ctx, rawPayload) {
         match: source === expectedValveName
       });
       if (source === expectedValveName) {
+        const msgObj = typeof payload.msg === "object" ? payload.msg : null;
+        const values = msgObj?.val;
         const errorEntry = {
           timestamp: payload.utc,
           level: payload.lvl,
           source: payload.src,
           message: messageText,
+          values,
           acknowledged: false
         };
+        console.log("[VALVE] Creating ErrorEntry:", {
+          message: messageText,
+          values,
+          fullEntry: errorEntry
+        });
         nodeState.errors.unshift(errorEntry);
         if (nodeState.errors.length > 10) {
           nodeState.errors = nodeState.errors.slice(0, 10);
         }
-        ctx.log.error("Valve error received", {
+        console.log("[VALVE] Stored errors count:", nodeState.errors.length);
+        console.log("[VALVE] First error message:", nodeState.errors[0]?.message);
+        ctx.log.error(`Valve error: ${messageText}`, {
           nodeId: nodeState.nodeId,
-          valveName: nodeState.valveName,
+          nodeName: nodeState.valveName,
           level: payload.lvl,
-          message: messageText,
+          values,
           timestamp: new Date(payload.utc).toISOString()
         });
         if (payload.lvl === "ERR") {

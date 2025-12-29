@@ -455,13 +455,25 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
         match: source === expectedValveName,
       });
       if (source === expectedValveName) {
+        // Extract values from payload
+        const msgObj = typeof payload.msg === 'object' ? payload.msg : null;
+        const values = msgObj?.val as Record<string, unknown> | undefined;
+
         const errorEntry: ErrorEntry = {
           timestamp: payload.utc,
           level: payload.lvl,
           source: payload.src,
           message: messageText,
+          values: values,
           acknowledged: false,
         };
+
+        // Debug: Log what we're storing
+        console.log('[VALVE] Creating ErrorEntry:', {
+          message: messageText,
+          values: values,
+          fullEntry: errorEntry,
+        });
 
         // Add to errors list
         nodeState.errors.unshift(errorEntry);
@@ -469,12 +481,16 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
           nodeState.errors = nodeState.errors.slice(0, 10);
         }
 
-        // Log the error
-        ctx.log.error('Valve error received', {
+        // Debug: Verify storage
+        console.log('[VALVE] Stored errors count:', nodeState.errors.length);
+        console.log('[VALVE] First error message:', nodeState.errors[0]?.message);
+
+        // Log the error to Viewer Log
+        ctx.log.error(`Valve error: ${messageText}`, {
           nodeId: nodeState.nodeId,
-          valveName: nodeState.valveName,
+          nodeName: nodeState.valveName,
           level: payload.lvl,
-          message: messageText,
+          values: values,
           timestamp: new Date(payload.utc).toISOString(),
         });
 

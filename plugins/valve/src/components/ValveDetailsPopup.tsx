@@ -460,7 +460,18 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                         {formatTimestamp(error.timestamp)}
                       </span>
                     </div>
-                    <div style={styles.errorMessage}>{error.message}</div>
+                    <div style={styles.errorMessage}>
+                      {error.message || '(kein Text)'}
+                    </div>
+                    {error.values && Object.keys(error.values).length > 0 && (
+                      <div style={styles.errorValues}>
+                        {Object.entries(error.values).map(([key, value]) => (
+                          <span key={key} style={styles.errorValueItem}>
+                            {key}: {String(value)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div style={styles.errorFooter}>
                       <span style={styles.errorSource}>Source: {error.source}</span>
                       {!error.acknowledged ? (
@@ -721,6 +732,24 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#333',
     marginBottom: '6px',
     lineHeight: '1.3',
+    fontWeight: 'bold',
+  },
+  errorValues: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    marginBottom: '6px',
+    padding: '4px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '4px',
+  },
+  errorValueItem: {
+    fontSize: '11px',
+    color: '#555',
+    backgroundColor: '#e9ecef',
+    padding: '2px 6px',
+    borderRadius: '3px',
+    fontFamily: 'monospace',
   },
   errorFooter: {
     display: 'flex',

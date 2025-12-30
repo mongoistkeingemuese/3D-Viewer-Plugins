@@ -1066,13 +1066,15 @@ function updateNodeVisuals(ctx, nodeId, motionState, hasError = false) {
   const homingColor = globalConfig.homingColor || "#00aaff";
   const motionColor = globalConfig.motionColor || "#00ff00";
   const intensity = globalConfig.emissiveIntensity || 0.6;
-  node.emissive = "#000000";
-  node.emissiveIntensity = 0;
-  if (hasError || motionState === 0 /* ErrorStop */) {
+  const nodeState = pluginState.getNode(nodeId);
+  const hasUnacknowledgedErrors = nodeState?.errors.some((e) => !e.acknowledged) ?? false;
+  if (hasUnacknowledgedErrors || hasError || motionState === 0 /* ErrorStop */) {
     node.emissive = errorColor;
-    node.emissiveIntensity = intensity;
+    node.emissiveIntensity = 1;
     return;
   }
+  node.emissive = "#000000";
+  node.emissiveIntensity = 0;
   switch (motionState) {
     case 2 /* Homing */:
       node.emissive = homingColor;

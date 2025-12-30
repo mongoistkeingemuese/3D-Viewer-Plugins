@@ -227,6 +227,12 @@ function updateNodePosition(
  * Update node visual state (emissive highlighting)
  *
  * Purpose: Show visual feedback during movement or error
+ *
+ * Error State Priority:
+ * - Error state has highest priority and MUST NOT be overwritten by other events
+ * - Error always uses 100% intensity (ignores global config)
+ * - Error state persists until manually acknowledged
+ *
  */
 function updateNodeVisuals(
   ctx: PluginContext,
@@ -242,18 +248,23 @@ function updateNodeVisuals(
   const errorColor = (globalConfig.errorColor as string) || '#ff0000';
   const intensity = (globalConfig.highlightIntensity as number) || 0.6;
 
-  // Reset emissive
-  node.emissive = '#000000';
-  node.emissiveIntensity = 0;
+  // Check for unacknowledged errors (highest priority)
+  const nodeState = pluginState.getNode(nodeId);
+  const hasUnacknowledgedErrors = nodeState?.errors.some(e => !e.acknowledged) ?? false;
 
-  // Error state has priority
-  if (genericState === GenericState.Error) {
+  // Error state has HIGHEST priority - always 100% intensity
+  // Error state MUST NOT be overwritten until acknowledged
+  if (hasUnacknowledgedErrors || genericState === GenericState.Error) {
     node.emissive = errorColor;
-    node.emissiveIntensity = intensity;
+    node.emissiveIntensity = 1.0; // Always 100% for errors
     return;
   }
 
-  // Highlight during movement
+  // Reset emissive for non-error states
+  node.emissive = '#000000';
+  node.emissiveIntensity = 0;
+
+  // Highlight during movement (uses configured intensity)
   if (
     specificState === ValvePosition.MovingToBasePosition ||
     specificState === ValvePosition.MovingToWorkPosition

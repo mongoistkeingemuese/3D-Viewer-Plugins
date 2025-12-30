@@ -191,6 +191,13 @@ function getMqttApi(ctx: PluginContext): typeof ctx.mqtt {
 
 /**
  * Update node visual state based on MotionState
+ *
+ * Error State Priority:
+ * - Error state has highest priority and MUST NOT be overwritten by other events
+ * - Error always uses 100% intensity (ignores global config)
+ * - Error state persists until manually acknowledged
+ *
+ * @param hasError - External error flag (from error subscription)
  */
 function updateNodeVisuals(
   ctx: PluginContext,
@@ -207,16 +214,23 @@ function updateNodeVisuals(
   const motionColor = globalConfig.motionColor as string || '#00ff00';
   const intensity = globalConfig.emissiveIntensity as number || 0.6;
 
-  node.emissive = '#000000';
-  node.emissiveIntensity = 0;
+  // Check for unacknowledged errors (highest priority)
+  const nodeState = pluginState.getNode(nodeId);
+  const hasUnacknowledgedErrors = nodeState?.errors.some(e => !e.acknowledged) ?? false;
 
-  // Error state has priority
-  if (hasError || motionState === MotionState.ErrorStop) {
+  // Error state has HIGHEST priority - always 100% intensity
+  // Error state MUST NOT be overwritten until acknowledged
+  if (hasUnacknowledgedErrors || hasError || motionState === MotionState.ErrorStop) {
     node.emissive = errorColor;
-    node.emissiveIntensity = intensity;
+    node.emissiveIntensity = 1.0; // Always 100% for errors
     return;
   }
 
+  // Reset emissive for non-error states
+  node.emissive = '#000000';
+  node.emissiveIntensity = 0;
+
+  // Other states use configured intensity
   switch (motionState) {
     case MotionState.Homing:
       node.emissive = homingColor;

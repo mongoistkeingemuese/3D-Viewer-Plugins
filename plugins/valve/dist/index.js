@@ -1071,13 +1071,15 @@ function updateNodeVisuals(ctx, nodeId, genericState, specificState) {
   const highlightColor = globalConfig.highlightColor || "#00aaff";
   const errorColor = globalConfig.errorColor || "#ff0000";
   const intensity = globalConfig.highlightIntensity || 0.6;
-  node.emissive = "#000000";
-  node.emissiveIntensity = 0;
-  if (genericState === 3 /* Error */) {
+  const nodeState = pluginState.getNode(nodeId);
+  const hasUnacknowledgedErrors = nodeState?.errors.some((e) => !e.acknowledged) ?? false;
+  if (hasUnacknowledgedErrors || genericState === 3 /* Error */) {
     node.emissive = errorColor;
-    node.emissiveIntensity = intensity;
+    node.emissiveIntensity = 1;
     return;
   }
+  node.emissive = "#000000";
+  node.emissiveIntensity = 0;
   if (specificState === 1 /* MovingToBasePosition */ || specificState === 2 /* MovingToWorkPosition */) {
     node.emissive = highlightColor;
     node.emissiveIntensity = intensity;

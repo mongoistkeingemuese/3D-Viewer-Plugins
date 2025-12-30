@@ -83,3 +83,15 @@ This file documents recurring errors and their solutions. Auto-updated by agents
 **Cause:** Global error acknowledgment in the 3D Viewer does NOT trigger `ctx.events.onLogAcknowledged()`. The event only fires for per-entry acknowledgments with matching `nodeId`.
 **Fix:** Plugins must provide their own UI for error acknowledgment (e.g., "Acknowledge All" button in plugin popup). The valve plugin implements this via `acknowledgeAllErrors()` function.
 **Prevention:** Always implement plugin-level error acknowledgment UI. Do not rely on global Viewer acknowledgment for plugin error states.
+
+### Duplicate Error Logs When Multiple Nodes Bound to Plugin
+**Date:** 2024-12-30
+**Context:** Plugin error messages appear N times in Diagnostics Log (N = number of bound nodes)
+**Cause:** MQTT subscriptions for global topics (like error topics) were created per-node in `onNodeBound` via `setupSubscriptions()`. Each subscription receives the same message, resulting in N log entries.
+**Fix:** Separate global subscriptions (error topics) from per-node subscriptions (valve data topics):
+- Global subscriptions: Create ONCE in `onLoad` using `setupGlobalErrorSubscription()`
+- Per-node subscriptions: Create in `onNodeBound` for node-specific data filtering
+**Prevention:**
+- Global topics (errors, status, etc.): Subscribe ONCE in `onLoad`, store unsubscribe in `PluginState`
+- Per-node topics (node-specific data): Subscribe in `onNodeBound`, filter by node identifier
+- Use `pluginState.hasErrorSubscription()` guard to prevent duplicate subscriptions

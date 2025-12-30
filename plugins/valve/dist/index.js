@@ -1239,6 +1239,25 @@ function handleErrorMessage(ctx, rawPayload) {
     ctx.log.error("Failed to process error message", { error });
   }
 }
+function setupGlobalErrorSubscription(ctx) {
+  if (pluginState.hasErrorSubscription()) {
+    ctx.log.debug("Global error subscription already exists, skipping");
+    return;
+  }
+  const globalConfig = ctx.config.global.getAll();
+  const errorTopic = globalConfig.errorTopic || "machine/errors";
+  const mqtt = getMqttApi(ctx);
+  const availableSources = ctx.mqtt.getSources();
+  if (availableSources.length === 0) {
+    ctx.log.warn("No MQTT sources available for error subscription");
+    return;
+  }
+  ctx.log.info("Setting up global error subscription", { errorTopic });
+  const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
+    handleErrorMessage(ctx, msg.payload);
+  });
+  pluginState.setErrorSubscription(errorUnsub);
+}
 function setupSubscriptions(ctx, nodeId) {
   const nodeState = pluginState.getNode(nodeId);
   if (!nodeState)
@@ -1252,20 +1271,11 @@ function setupSubscriptions(ctx, nodeId) {
     ctx.ui.notify("Keine MQTT-Broker konfiguriert", "error");
     return;
   }
-  const errorTopic = globalConfig.errorTopic || "machine/errors";
-  ctx.log.info("SUB 1: valve topic", { mainTopic });
+  ctx.log.info("Setting up valve subscription", { nodeId, mainTopic });
   const valveUnsub = mqtt.subscribe(mainTopic, (msg) => {
-    ctx.log.info("CALLBACK 1 (valve) fired!", { topic: mainTopic });
     handleValveData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(valveUnsub);
-  ctx.log.info("SUB 2: error topic", { errorTopic });
-  const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
-    ctx.log.info("CALLBACK 2 (error) fired!", { topic: errorTopic, payload: msg.payload });
-    handleErrorMessage(ctx, msg.payload);
-  });
-  nodeState.subscriptions.push(errorUnsub);
-  ctx.log.info("Both subscriptions created", { mainTopic, errorTopic });
 }
 async function sendValveCommand(nodeId, functionCommand) {
   const ctx = pluginState.getContext();
@@ -1452,6 +1462,7 @@ var plugin = {
     ctx.log.info("Valve Plugin loaded", {
       pluginId: ctx.pluginId
     });
+    setupGlobalErrorSubscription(ctx);
     ctx.events.on("context-menu-action", (data) => {
       const event = data;
       if (event.action === "show-valve-details") {

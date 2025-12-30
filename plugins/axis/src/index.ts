@@ -132,6 +132,36 @@ class PluginState {
 const pluginState = new PluginState();
 
 /**
+ * Setup global error subscription (called once in onLoad)
+ *
+ * Purpose: Subscribe to error topic ONCE globally to avoid duplicate error logs
+ * when multiple nodes are bound to the plugin.
+ */
+function setupGlobalErrorSubscription(ctx: PluginContext): void {
+  // Only subscribe once
+  if (pluginState.hasErrorSubscription()) {
+    ctx.log.debug('Global error subscription already exists, skipping');
+    return;
+  }
+
+  const globalConfig = ctx.config.global.getAll();
+  const errorTopic = (globalConfig.errorTopic as string) || 'machine/errors';
+  const mqtt = getMqttApi(ctx);
+
+  const availableSources = ctx.mqtt.getSources();
+  if (availableSources.length === 0) {
+    ctx.log.warn('No MQTT sources available for error subscription');
+    return;
+  }
+
+  ctx.log.info('Setting up global error subscription', { errorTopic });
+  const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
+    handleErrorMessage(ctx, msg.payload);
+  });
+  pluginState.setErrorSubscription(errorUnsub);
+}
+
+/**
  * Get configured MQTT format
  */
 function getMqttFormat(ctx: PluginContext): MqttFormat {
@@ -518,7 +548,10 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
 }
 
 /**
- * Setup MQTT subscriptions for a node
+ * Setup MQTT subscriptions for a node (axis data only)
+ *
+ * Note: Error subscription is handled globally in onLoad to prevent
+ * duplicate error logs when multiple nodes are bound.
  */
 function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
   const nodeState = pluginState.getNode(nodeId);
@@ -535,25 +568,12 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
     return;
   }
 
-  const errorTopic = (globalConfig.errorTopic as string) || 'machine/errors';
-
-  // SUBSCRIPTION 1: Axis topic
-  ctx.log.info('SUB 1: axis topic', { mainTopic });
+  // Subscribe to axis topic for this specific node
+  ctx.log.info('Setting up axis subscription', { nodeId, mainTopic });
   const axisUnsub = mqtt.subscribe(mainTopic, (msg: MqttMessage) => {
-    ctx.log.debug('CALLBACK 1 (axis) fired!', { topic: mainTopic });
     handleAxisData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(axisUnsub);
-
-  // SUBSCRIPTION 2: Error topic
-  ctx.log.info('SUB 2: error topic', { errorTopic });
-  const errorUnsub = mqtt.subscribe(errorTopic, (msg: MqttMessage) => {
-    ctx.log.debug('CALLBACK 2 (error) fired!', { topic: errorTopic, payload: msg.payload });
-    handleErrorMessage(ctx, msg.payload);
-  });
-  nodeState.subscriptions.push(errorUnsub);
-
-  ctx.log.info('Both subscriptions created', { mainTopic, errorTopic });
 }
 
 // ============================================================================
@@ -1000,6 +1020,9 @@ const plugin: Plugin = {
     ctx.log.info('Axis Plugin loaded', {
       pluginId: ctx.pluginId,
     });
+
+    // Setup global error subscription ONCE (not per node)
+    setupGlobalErrorSubscription(ctx);
 
     ctx.events.on('context-menu-action', (data: unknown) => {
       const event = data as { action: string; nodeId: string };

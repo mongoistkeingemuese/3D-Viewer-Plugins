@@ -1,6 +1,6 @@
 {
   "name": "com.rexat.axis",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "description": "Axis monitoring plugin with comprehensive status display, step control function, and HTTP API integration",
   "scripts": {

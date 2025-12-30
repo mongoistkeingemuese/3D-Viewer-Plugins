@@ -1019,6 +1019,25 @@ var PluginState = class {
   }
 };
 var pluginState = new PluginState();
+function setupGlobalErrorSubscription(ctx) {
+  if (pluginState.hasErrorSubscription()) {
+    ctx.log.debug("Global error subscription already exists, skipping");
+    return;
+  }
+  const globalConfig = ctx.config.global.getAll();
+  const errorTopic = globalConfig.errorTopic || "machine/errors";
+  const mqtt = getMqttApi(ctx);
+  const availableSources = ctx.mqtt.getSources();
+  if (availableSources.length === 0) {
+    ctx.log.warn("No MQTT sources available for error subscription");
+    return;
+  }
+  ctx.log.info("Setting up global error subscription", { errorTopic });
+  const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
+    handleErrorMessage(ctx, msg.payload);
+  });
+  pluginState.setErrorSubscription(errorUnsub);
+}
 function getMqttFormat(ctx) {
   const globalConfig = ctx.config.global.getAll();
   return globalConfig.mqttFormat || "release11";
@@ -1310,20 +1329,11 @@ function setupSubscriptions(ctx, nodeId) {
     ctx.ui.notify("Keine MQTT-Broker konfiguriert", "error");
     return;
   }
-  const errorTopic = globalConfig.errorTopic || "machine/errors";
-  ctx.log.info("SUB 1: axis topic", { mainTopic });
+  ctx.log.info("Setting up axis subscription", { nodeId, mainTopic });
   const axisUnsub = mqtt.subscribe(mainTopic, (msg) => {
-    ctx.log.debug("CALLBACK 1 (axis) fired!", { topic: mainTopic });
     handleAxisData(ctx, nodeId, msg.payload);
   });
   nodeState.subscriptions.push(axisUnsub);
-  ctx.log.info("SUB 2: error topic", { errorTopic });
-  const errorUnsub = mqtt.subscribe(errorTopic, (msg) => {
-    ctx.log.debug("CALLBACK 2 (error) fired!", { topic: errorTopic, payload: msg.payload });
-    handleErrorMessage(ctx, msg.payload);
-  });
-  nodeState.subscriptions.push(errorUnsub);
-  ctx.log.info("Both subscriptions created", { mainTopic, errorTopic });
 }
 async function sendStepCommand(nodeId, stepValue) {
   const ctx = pluginState.getContext();
@@ -1640,6 +1650,7 @@ var plugin = {
     ctx.log.info("Axis Plugin loaded", {
       pluginId: ctx.pluginId
     });
+    setupGlobalErrorSubscription(ctx);
     ctx.events.on("context-menu-action", (data) => {
       const event = data;
       if (event.action === "show-axis-details") {

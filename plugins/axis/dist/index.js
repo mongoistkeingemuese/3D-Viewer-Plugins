@@ -1059,10 +1059,8 @@ function getMqttApi(ctx) {
 }
 function updateNodeVisuals(ctx, nodeId, motionState, hasError = false) {
   const node = ctx.nodes.get(nodeId);
-  if (!node) {
-    ctx.log.warn("updateNodeVisuals: node not found", { nodeId });
+  if (!node)
     return;
-  }
   const globalConfig = ctx.config.global.getAll();
   const errorColor = globalConfig.errorColor || "#ff0000";
   const homingColor = globalConfig.homingColor || "#00aaff";
@@ -1070,21 +1068,7 @@ function updateNodeVisuals(ctx, nodeId, motionState, hasError = false) {
   const intensity = globalConfig.emissiveIntensity || 0.6;
   const nodeState = pluginState.getNode(nodeId);
   const hasUnacknowledgedErrors = nodeState?.errors.some((e) => !e.acknowledged) ?? false;
-  const errorCount = nodeState?.errors.length ?? 0;
-  ctx.log.debug("updateNodeVisuals called", {
-    nodeId,
-    motionState,
-    hasError,
-    hasUnacknowledgedErrors,
-    errorCount
-  });
   if (hasUnacknowledgedErrors || hasError || motionState === 0 /* ErrorStop */) {
-    ctx.log.info("Setting ERROR visual state", {
-      nodeId,
-      errorColor,
-      intensity: 1,
-      reason: hasUnacknowledgedErrors ? "unacknowledgedErrors" : hasError ? "hasError" : "ErrorStop"
-    });
     node.emissive = errorColor;
     node.emissiveIntensity = 1;
     return;
@@ -1311,12 +1295,6 @@ function handleErrorMessage(ctx, rawPayload) {
             nodeId: nodeState.nodeId,
             nodeName: nodeState.axisName,
             payload
-          });
-          ctx.log.info("handleErrorMessage: calling updateNodeVisuals for ERR", {
-            nodeId: nodeState.nodeId,
-            axisName: nodeState.axisName,
-            currentState: nodeState.currentState,
-            errorCount: nodeState.errors.length
           });
           updateNodeVisuals(ctx, nodeState.nodeId, nodeState.currentState, true);
           ctx.ui.notify(`Error: ${nodeState.axisName} - ${msgText}`, "error");

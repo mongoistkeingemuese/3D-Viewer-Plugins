@@ -206,10 +206,7 @@ function updateNodeVisuals(
   hasError: boolean = false
 ): void {
   const node = ctx.nodes.get(nodeId);
-  if (!node) {
-    ctx.log.warn('updateNodeVisuals: node not found', { nodeId });
-    return;
-  }
+  if (!node) return;
 
   const globalConfig = ctx.config.global.getAll();
   const errorColor = globalConfig.errorColor as string || '#ff0000';
@@ -220,25 +217,10 @@ function updateNodeVisuals(
   // Check for unacknowledged errors (highest priority)
   const nodeState = pluginState.getNode(nodeId);
   const hasUnacknowledgedErrors = nodeState?.errors.some(e => !e.acknowledged) ?? false;
-  const errorCount = nodeState?.errors.length ?? 0;
-
-  ctx.log.debug('updateNodeVisuals called', {
-    nodeId,
-    motionState,
-    hasError,
-    hasUnacknowledgedErrors,
-    errorCount,
-  });
 
   // Error state has HIGHEST priority - always 100% intensity
   // Error state MUST NOT be overwritten until acknowledged
   if (hasUnacknowledgedErrors || hasError || motionState === MotionState.ErrorStop) {
-    ctx.log.info('Setting ERROR visual state', {
-      nodeId,
-      errorColor,
-      intensity: 1.0,
-      reason: hasUnacknowledgedErrors ? 'unacknowledgedErrors' : hasError ? 'hasError' : 'ErrorStop',
-    });
     node.emissive = errorColor;
     node.emissiveIntensity = 1.0; // Always 100% for errors
     return;
@@ -556,12 +538,6 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
             payload: payload,
           });
           // Update visuals to show error state
-          ctx.log.info('handleErrorMessage: calling updateNodeVisuals for ERR', {
-            nodeId: nodeState.nodeId,
-            axisName: nodeState.axisName,
-            currentState: nodeState.currentState,
-            errorCount: nodeState.errors.length,
-          });
           updateNodeVisuals(ctx, nodeState.nodeId, nodeState.currentState, true);
           ctx.ui.notify(`Error: ${nodeState.axisName} - ${msgText}`, 'error');
         } else if (payload.lvl === 'WARN') {

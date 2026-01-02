@@ -7,6 +7,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import type { PluginI18n } from '@3dviewer/plugin-sdk';
 import {
   getNodeState,
   sendMoveToBase,
@@ -27,6 +28,26 @@ import {
   ValvePositionNames,
 } from '../types';
 import { formatDuration, formatTime } from '../utils';
+
+/**
+ * Get the usePluginI18n hook from the host window.
+ * Plugin popup components are wrapped with PluginI18nProvider by the host.
+ */
+function usePluginI18n(): PluginI18n {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hook = (window as any).usePluginI18n;
+  if (hook) {
+    return hook();
+  }
+  // Fallback if hook not available (e.g., in dev/test environment)
+  return {
+    language: 'de',
+    t: (text: string) => text,
+    getLanguages: () => ['de', 'en'],
+    formatNumber: (value: number) => value.toString(),
+    formatDate: (date: Date | number | string) => new Date(date).toLocaleString(),
+  };
+}
 
 /**
  * Props interface for ValveDetailsPopup component
@@ -93,6 +114,7 @@ function getGenericStateColor(state: GenericState): string {
  */
 export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) => {
   const nodeId = data?.nodeId as string;
+  const i18n = usePluginI18n();
   const [nodeState, setNodeState] = useState(() => getNodeState(nodeId));
   const [updateCounter, setUpdateCounter] = useState(0);
   const [activeTab, setActiveTab] = useState<TabType>('status');
@@ -123,8 +145,8 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
     return (
       <div style={styles.container}>
         <div style={styles.error}>
-          <h3>No Data Available</h3>
-          <p>Node state not found. Please ensure the valve is properly configured.</p>
+          <h3>{i18n.t('Keine Daten verfügbar')}</h3>
+          <p>{i18n.t('Knotenstatus nicht gefunden. Bitte stellen Sie sicher, dass das Ventil korrekt konfiguriert ist.')}</p>
         </div>
       </div>
     );
@@ -165,7 +187,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <h2 style={styles.title}>Valve: {nodeState.valveName}</h2>
+        <h2 style={styles.title}>{i18n.t('Ventil')}: {nodeState.valveName}</h2>
         <div style={styles.headerInfo}>
           <span style={styles.formatLabel}>{mqttFormat}</span>
           <span
@@ -188,7 +210,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
             ...(activeTab === 'status' ? styles.tabButtonActive : {}),
           }}
         >
-          Status
+          {i18n.t('Status')}
         </button>
         <button
           onClick={() => setActiveTab('control')}
@@ -197,7 +219,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
             ...(activeTab === 'control' ? styles.tabButtonActive : {}),
           }}
         >
-          Bedienung
+          {i18n.t('Bedienung')}
         </button>
         <button
           onClick={() => setActiveTab('errors')}
@@ -206,7 +228,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
             ...(activeTab === 'errors' ? styles.tabButtonActive : {}),
           }}
         >
-          Errors
+          {i18n.t('Fehler')}
           {unacknowledgedCount > 0 && (
             <span style={styles.errorBadge}>{unacknowledgedCount}</span>
           )}
@@ -220,10 +242,10 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
           <>
             {/* Valve Status */}
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Ventilstatus</h3>
+              <h3 style={styles.sectionTitle}>{i18n.t('Ventilstatus')}</h3>
               <div style={styles.dataGrid}>
                 <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>Generic State:</span>
+                  <span style={styles.dataLabel}>{i18n.t('Allgemeiner Status')}:</span>
                   <span
                     style={{
                       ...styles.dataValue,
@@ -235,7 +257,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                   </span>
                 </div>
                 <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>Specific State:</span>
+                  <span style={styles.dataLabel}>{i18n.t('Spezifischer Status')}:</span>
                   <span
                     style={{
                       ...styles.dataValue,
@@ -248,7 +270,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                 </div>
                 {nodeState.recipe > 0 && (
                   <div style={styles.dataRow}>
-                    <span style={styles.dataLabel}>Recipe:</span>
+                    <span style={styles.dataLabel}>{i18n.t('Rezept')}:</span>
                     <span style={styles.dataValue}>{nodeState.recipe}</span>
                   </div>
                 )}
@@ -257,16 +279,16 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
 
             {/* Runtime Measurements */}
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Laufzeiten</h3>
+              <h3 style={styles.sectionTitle}>{i18n.t('Laufzeiten')}</h3>
               <div style={styles.dataGrid}>
                 <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>Letzte GST → AST:</span>
+                  <span style={styles.dataLabel}>{i18n.t('Letzte GST → AST')}:</span>
                   <span style={styles.dataValue}>
                     {formatDuration(nodeState.lastDurationGstToAst)}
                   </span>
                 </div>
                 <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>Letzte AST → GST:</span>
+                  <span style={styles.dataLabel}>{i18n.t('Letzte AST → GST')}:</span>
                   <span style={styles.dataValue}>
                     {formatDuration(nodeState.lastDurationAstToGst)}
                   </span>
@@ -277,7 +299,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
             {/* Last Update */}
             <div style={styles.section}>
               <div style={styles.dataRow}>
-                <span style={styles.dataLabel}>Letztes Update:</span>
+                <span style={styles.dataLabel}>{i18n.t('Letztes Update')}:</span>
                 <span style={styles.dataValue}>{formatTime(nodeState.lastUpdate)}</span>
               </div>
             </div>
@@ -291,14 +313,14 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
             {!nodeState.functionNo && (
               <div style={styles.section}>
                 <div style={styles.warningBox}>
-                  Keine Funktionsnummer konfiguriert - Befehle deaktiviert
+                  {i18n.t('Keine Funktionsnummer konfiguriert - Befehle deaktiviert')}
                 </div>
               </div>
             )}
 
             {/* Main Controls */}
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Hauptbedienung</h3>
+              <h3 style={styles.sectionTitle}>{i18n.t('Hauptbedienung')}</h3>
               <div style={styles.controlGrid}>
                 <button
                   onClick={handleMoveToAst}
@@ -309,7 +331,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                     opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
-                  {isLoadingAst ? 'Sende...' : 'AST fahren'}
+                  {isLoadingAst ? i18n.t('Sende...') : i18n.t('AST fahren')}
                 </button>
                 <button
                   onClick={handleMoveToGst}
@@ -320,7 +342,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                     opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
-                  {isLoadingGst ? 'Sende...' : 'GST fahren'}
+                  {isLoadingGst ? i18n.t('Sende...') : i18n.t('GST fahren')}
                 </button>
                 <button
                   onClick={handlePressureFree}
@@ -331,14 +353,14 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                     opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
-                  {isLoadingPressureFree ? 'Sende...' : 'Drucklos'}
+                  {isLoadingPressureFree ? i18n.t('Sende...') : i18n.t('Drucklos')}
                 </button>
               </div>
             </div>
 
             {/* Mode Selection */}
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Betriebsmodus</h3>
+              <h3 style={styles.sectionTitle}>{i18n.t('Betriebsmodus')}</h3>
               <div style={styles.modeGrid}>
                 <button
                   onClick={() => handleModeChange('mono', sendModeMonostable)}
@@ -386,7 +408,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                 </button>
               </div>
               <p style={styles.modeHint}>
-                Hinweis: Modi werden ohne Feedback vom PLC gesendet
+                {i18n.t('Hinweis: Modi werden ohne Feedback vom PLC gesendet')}
               </p>
             </div>
           </>
@@ -396,7 +418,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
         {activeTab === 'errors' && (
           <div style={styles.section}>
             <h3 style={styles.sectionTitle}>
-              Fehlermeldungen ({nodeState.errors.length}) - {unacknowledgedCount} offen
+              {i18n.t('Fehlermeldungen')} ({nodeState.errors.length}) - {unacknowledgedCount} {i18n.t('offen')}
             </h3>
 
             {/* Alle Quittieren Button */}
@@ -420,13 +442,13 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                   width: '100%',
                 }}
               >
-                Alle Quittieren ({unacknowledgedCount})
+                {i18n.t('Alle Quittieren')} ({unacknowledgedCount})
               </button>
             )}
 
             {nodeState.errors.length === 0 ? (
               <pre style={{ color: '#28a745', padding: '20px', textAlign: 'center', margin: 0 }}>
-                Keine Fehlermeldungen
+                {i18n.t('Keine Fehlermeldungen')}
               </pre>
             ) : (
               <>

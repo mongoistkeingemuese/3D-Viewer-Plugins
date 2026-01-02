@@ -781,6 +781,125 @@ export interface LogAPI {
 }
 
 /**
+ * Translation category for content translations
+ */
+export type TranslationCategory = 'ui' | 'error' | 'label' | 'config' | 'node' | 'status' | 'tooltip';
+
+/**
+ * i18n API for internationalization
+ *
+ * Allows plugins to:
+ * - Get translations for texts
+ * - Register texts for translation (auto-collection)
+ * - Subscribe to language changes
+ */
+export interface I18nAPI {
+  /**
+   * Get the current language code (e.g., 'de', 'en')
+   */
+  readonly language: string;
+
+  /**
+   * Translate a text.
+   *
+   * If the text has a registered translation for the current language,
+   * returns the translation. Otherwise returns the original text.
+   *
+   * @param text The original text to translate
+   * @param params Optional parameters for interpolation (e.g., { count: 5 })
+   * @param options Optional translation options
+   * @returns The translated text
+   *
+   * @example
+   * ```typescript
+   * // Simple translation
+   * const msg = ctx.i18n.t('Ventil blockiert');
+   *
+   * // With parameters
+   * const msg = ctx.i18n.t('{{count}} Fehler gefunden', { count: 3 });
+   * ```
+   */
+  t(text: string, params?: Record<string, string | number>, options?: TranslationOptions): string;
+
+  /**
+   * Register a text for translation (auto-collection).
+   *
+   * This registers the text in the translation system so it can be
+   * translated later via the Translation Editor.
+   *
+   * @param text The original text to register
+   * @param category Category of the text (ui, error, label, config, node, status, tooltip)
+   *
+   * @example
+   * ```typescript
+   * // Register an error message
+   * ctx.i18n.register('Ventil reagiert nicht', 'error');
+   *
+   * // Register a UI label
+   * ctx.i18n.register('Einstellungen', 'ui');
+   * ```
+   */
+  register(text: string, category?: TranslationCategory): void;
+
+  /**
+   * Subscribe to language changes.
+   *
+   * @param callback Called when the language changes
+   * @returns Unsubscribe function
+   *
+   * @example
+   * ```typescript
+   * ctx.i18n.onLanguageChange((lang) => {
+   *   console.log('Language changed to:', lang);
+   *   // Re-render UI with new language
+   * });
+   * ```
+   */
+  onLanguageChange(callback: (language: string) => void): Unsubscribe;
+
+  /**
+   * Get all available languages
+   * @returns Array of language codes
+   */
+  getLanguages(): string[];
+
+  /**
+   * Format a number according to the current locale
+   * @param value The number to format
+   * @param options Intl.NumberFormat options
+   */
+  formatNumber(value: number, options?: Intl.NumberFormatOptions): string;
+
+  /**
+   * Format a date according to the current locale
+   * @param date The date to format
+   * @param options Intl.DateTimeFormat options
+   */
+  formatDate(date: Date | number | string, options?: Intl.DateTimeFormatOptions): string;
+}
+
+/**
+ * Options for translation
+ */
+export interface TranslationOptions {
+  /**
+   * Category of the text for auto-registration
+   */
+  category?: TranslationCategory;
+
+  /**
+   * Whether to automatically register the text if not found
+   * @default true
+   */
+  autoRegister?: boolean;
+
+  /**
+   * Default value if translation not found
+   */
+  defaultValue?: string;
+}
+
+/**
  * Global configuration API
  */
 export interface GlobalConfigAPI {
@@ -913,6 +1032,31 @@ export interface PluginContext {
 
   /** Logging API */
   readonly log: LogAPI;
+
+  /**
+   * Internationalization API for translations.
+   *
+   * Allows plugins to:
+   * - Translate texts with `ctx.i18n.t('text')`
+   * - Register texts for translation with `ctx.i18n.register('text', 'category')`
+   * - Subscribe to language changes
+   * - Format numbers and dates according to locale
+   *
+   * @example
+   * ```typescript
+   * // Translate a text
+   * const msg = ctx.i18n.t('Ventil blockiert');
+   *
+   * // Register texts during plugin load
+   * ctx.i18n.register('Fehler aufgetreten', 'error');
+   *
+   * // React to language changes
+   * ctx.i18n.onLanguageChange((lang) => {
+   *   console.log('New language:', lang);
+   * });
+   * ```
+   */
+  readonly i18n: I18nAPI;
 }
 
 // ============================================================================
@@ -1072,6 +1216,71 @@ export interface PluginRestoreResult {
   failedPlugins: string[];
   warnings: string[];
 }
+
+// ============================================================================
+// REACT COMPONENT I18N (for popup/overlay components)
+// ============================================================================
+
+/**
+ * Simplified i18n interface for plugin React components.
+ *
+ * Plugin popup components are rendered outside the PluginContext lifecycle,
+ * so they don't have direct access to ctx.i18n. Use the `usePluginI18n` hook
+ * instead to get this interface.
+ *
+ * @example
+ * ```tsx
+ * // In your popup component
+ * function MyPluginPopup() {
+ *   // Access the host's usePluginI18n hook from window
+ *   const usePluginI18n = (window as any).usePluginI18n;
+ *   const i18n = usePluginI18n();
+ *
+ *   return (
+ *     <div>
+ *       <h1>{i18n.t('Status')}</h1>
+ *       <p>{i18n.formatNumber(123.456)}</p>
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export interface PluginI18n {
+  /** Current language code (e.g., 'de', 'en') */
+  language: string;
+
+  /**
+   * Translate a text or return the original if no translation found.
+   * @param text The text to translate
+   * @param params Optional parameters for interpolation ({{param}} syntax)
+   */
+  t: (text: string, params?: Record<string, string | number>) => string;
+
+  /** Get available language codes */
+  getLanguages: () => string[];
+
+  /**
+   * Format a number according to the current locale.
+   * @param value The number to format
+   * @param options Intl.NumberFormat options
+   */
+  formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
+
+  /**
+   * Format a date according to the current locale.
+   * @param date The date to format
+   * @param options Intl.DateTimeFormat options
+   */
+  formatDate: (date: Date | number | string, options?: Intl.DateTimeFormatOptions) => string;
+}
+
+/**
+ * Hook type for accessing i18n in React components.
+ *
+ * Available on `window.usePluginI18n` when the plugin is loaded.
+ * Plugin popup components are automatically wrapped with the i18n provider.
+ */
+export type UsePluginI18n = () => PluginI18n;
 
 // ============================================================================
 // EXPORT ALL

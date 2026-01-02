@@ -92,6 +92,19 @@ var jsxs = React2.createElement;
 var Fragment2 = React2.Fragment;
 
 // src/components/ValveDetailsPopup.tsx
+function usePluginI18n() {
+  const hook = window.usePluginI18n;
+  if (hook) {
+    return hook();
+  }
+  return {
+    language: "de",
+    t: (text) => text,
+    getLanguages: () => ["de", "en"],
+    formatNumber: (value) => value.toString(),
+    formatDate: (date) => new Date(date).toLocaleString()
+  };
+}
 function getPositionStateColor(state) {
   switch (state) {
     case 3 /* IsInBasePosition */:
@@ -130,6 +143,7 @@ function getGenericStateColor(state) {
 }
 var ValveDetailsPopup = ({ data }) => {
   const nodeId = data?.nodeId;
+  const i18n = usePluginI18n();
   const [nodeState, setNodeState] = useState(() => getNodeState(nodeId));
   const [updateCounter, setUpdateCounter] = useState(0);
   const [activeTab, setActiveTab] = useState("status");
@@ -150,8 +164,8 @@ var ValveDetailsPopup = ({ data }) => {
   }, [nodeId]);
   if (!nodeState) {
     return /* @__PURE__ */ jsx("div", { style: styles.container, children: /* @__PURE__ */ jsxs("div", { style: styles.error, children: [
-      /* @__PURE__ */ jsx("h3", { children: "No Data Available" }),
-      /* @__PURE__ */ jsx("p", { children: "Node state not found. Please ensure the valve is properly configured." })
+      /* @__PURE__ */ jsx("h3", { children: i18n.t("Keine Daten verf\xFCgbar") }),
+      /* @__PURE__ */ jsx("p", { children: i18n.t("Knotenstatus nicht gefunden. Bitte stellen Sie sicher, dass das Ventil korrekt konfiguriert ist.") })
     ] }) });
   }
   const handleMoveToGst = async () => {
@@ -180,7 +194,8 @@ var ValveDetailsPopup = ({ data }) => {
   return /* @__PURE__ */ jsxs("div", { style: styles.container, children: [
     /* @__PURE__ */ jsxs("div", { style: styles.header, children: [
       /* @__PURE__ */ jsxs("h2", { style: styles.title, children: [
-        "Valve: ",
+        i18n.t("Ventil"),
+        ": ",
         nodeState.valveName
       ] }),
       /* @__PURE__ */ jsxs("div", { style: styles.headerInfo, children: [
@@ -206,7 +221,7 @@ var ValveDetailsPopup = ({ data }) => {
             ...styles.tabButton,
             ...activeTab === "status" ? styles.tabButtonActive : {}
           },
-          children: "Status"
+          children: i18n.t("Status")
         }
       ),
       /* @__PURE__ */ jsx(
@@ -217,7 +232,7 @@ var ValveDetailsPopup = ({ data }) => {
             ...styles.tabButton,
             ...activeTab === "control" ? styles.tabButtonActive : {}
           },
-          children: "Bedienung"
+          children: i18n.t("Bedienung")
         }
       ),
       /* @__PURE__ */ jsxs(
@@ -229,7 +244,7 @@ var ValveDetailsPopup = ({ data }) => {
             ...activeTab === "errors" ? styles.tabButtonActive : {}
           },
           children: [
-            "Errors",
+            i18n.t("Fehler"),
             unacknowledgedCount > 0 && /* @__PURE__ */ jsx("span", { style: styles.errorBadge, children: unacknowledgedCount })
           ]
         }
@@ -238,10 +253,13 @@ var ValveDetailsPopup = ({ data }) => {
     /* @__PURE__ */ jsxs("div", { style: styles.tabContent, children: [
       activeTab === "status" && /* @__PURE__ */ jsxs(Fragment2, { children: [
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Ventilstatus" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: i18n.t("Ventilstatus") }),
           /* @__PURE__ */ jsxs("div", { style: styles.dataGrid, children: [
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Generic State:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
+                i18n.t("Allgemeiner Status"),
+                ":"
+              ] }),
               /* @__PURE__ */ jsx(
                 "span",
                 {
@@ -255,7 +273,10 @@ var ValveDetailsPopup = ({ data }) => {
               )
             ] }),
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Specific State:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
+                i18n.t("Spezifischer Status"),
+                ":"
+              ] }),
               /* @__PURE__ */ jsx(
                 "span",
                 {
@@ -269,33 +290,45 @@ var ValveDetailsPopup = ({ data }) => {
               )
             ] }),
             nodeState.recipe > 0 && /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Recipe:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
+                i18n.t("Rezept"),
+                ":"
+              ] }),
               /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: nodeState.recipe })
             ] })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Laufzeiten" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: i18n.t("Laufzeiten") }),
           /* @__PURE__ */ jsxs("div", { style: styles.dataGrid, children: [
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Letzte GST \u2192 AST:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
+                i18n.t("Letzte GST \u2192 AST"),
+                ":"
+              ] }),
               /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: formatDuration(nodeState.lastDurationGstToAst) })
             ] }),
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Letzte AST \u2192 GST:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
+                i18n.t("Letzte AST \u2192 GST"),
+                ":"
+              ] }),
               /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: formatDuration(nodeState.lastDurationAstToGst) })
             ] })
           ] })
         ] }),
         /* @__PURE__ */ jsx("div", { style: styles.section, children: /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-          /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Letztes Update:" }),
+          /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
+            i18n.t("Letztes Update"),
+            ":"
+          ] }),
           /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: formatTime(nodeState.lastUpdate) })
         ] }) })
       ] }),
       activeTab === "control" && /* @__PURE__ */ jsxs(Fragment2, { children: [
-        !nodeState.functionNo && /* @__PURE__ */ jsx("div", { style: styles.section, children: /* @__PURE__ */ jsx("div", { style: styles.warningBox, children: "Keine Funktionsnummer konfiguriert - Befehle deaktiviert" }) }),
+        !nodeState.functionNo && /* @__PURE__ */ jsx("div", { style: styles.section, children: /* @__PURE__ */ jsx("div", { style: styles.warningBox, children: i18n.t("Keine Funktionsnummer konfiguriert - Befehle deaktiviert") }) }),
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Hauptbedienung" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: i18n.t("Hauptbedienung") }),
           /* @__PURE__ */ jsxs("div", { style: styles.controlGrid, children: [
             /* @__PURE__ */ jsx(
               "button",
@@ -307,7 +340,7 @@ var ValveDetailsPopup = ({ data }) => {
                   backgroundColor: "#28a745",
                   opacity: !nodeState.functionNo ? 0.5 : 1
                 },
-                children: isLoadingAst ? "Sende..." : "AST fahren"
+                children: isLoadingAst ? i18n.t("Sende...") : i18n.t("AST fahren")
               }
             ),
             /* @__PURE__ */ jsx(
@@ -320,7 +353,7 @@ var ValveDetailsPopup = ({ data }) => {
                   backgroundColor: "#007bff",
                   opacity: !nodeState.functionNo ? 0.5 : 1
                 },
-                children: isLoadingGst ? "Sende..." : "GST fahren"
+                children: isLoadingGst ? i18n.t("Sende...") : i18n.t("GST fahren")
               }
             ),
             /* @__PURE__ */ jsx(
@@ -333,13 +366,13 @@ var ValveDetailsPopup = ({ data }) => {
                   backgroundColor: "#6c757d",
                   opacity: !nodeState.functionNo ? 0.5 : 1
                 },
-                children: isLoadingPressureFree ? "Sende..." : "Drucklos"
+                children: isLoadingPressureFree ? i18n.t("Sende...") : i18n.t("Drucklos")
               }
             )
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Betriebsmodus" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: i18n.t("Betriebsmodus") }),
           /* @__PURE__ */ jsxs("div", { style: styles.modeGrid, children: [
             /* @__PURE__ */ jsx(
               "button",
@@ -394,16 +427,18 @@ var ValveDetailsPopup = ({ data }) => {
               }
             )
           ] }),
-          /* @__PURE__ */ jsx("p", { style: styles.modeHint, children: "Hinweis: Modi werden ohne Feedback vom PLC gesendet" })
+          /* @__PURE__ */ jsx("p", { style: styles.modeHint, children: i18n.t("Hinweis: Modi werden ohne Feedback vom PLC gesendet") })
         ] })
       ] }),
       activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
         /* @__PURE__ */ jsxs("h3", { style: styles.sectionTitle, children: [
-          "Fehlermeldungen (",
+          i18n.t("Fehlermeldungen"),
+          " (",
           nodeState.errors.length,
           ") - ",
           unacknowledgedCount,
-          " offen"
+          " ",
+          i18n.t("offen")
         ] }),
         unacknowledgedCount > 0 && /* @__PURE__ */ jsxs(
           "button",
@@ -426,13 +461,14 @@ var ValveDetailsPopup = ({ data }) => {
               width: "100%"
             },
             children: [
-              "Alle Quittieren (",
+              i18n.t("Alle Quittieren"),
+              " (",
               unacknowledgedCount,
               ")"
             ]
           }
         ),
-        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("pre", { style: { color: "#28a745", padding: "20px", textAlign: "center", margin: 0 }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsxs(Fragment2, { children: [
+        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("pre", { style: { color: "#28a745", padding: "20px", textAlign: "center", margin: 0 }, children: i18n.t("Keine Fehlermeldungen") }) : /* @__PURE__ */ jsxs(Fragment2, { children: [
           /* @__PURE__ */ jsx("pre", { style: {
             margin: "0 0 8px 0",
             padding: "10px",

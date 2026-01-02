@@ -135,10 +135,10 @@ If you deploy without bumping versions:
 
 | Component | Version |
 |-----------|---------|
-| **Monorepo (latest tag)** | v1.6.23 |
+| **Monorepo (latest tag)** | v1.6.24 |
 | plugin-sdk | 1.1.0 |
 | plugin-devtools | 1.0.0 |
-| valve | 1.25.0 |
+| valve | 1.26.0 |
 | axis | 1.7.0 |
 | blueprint-iframe | 1.0.0 |
 

@@ -35,6 +35,9 @@ import type {
   UiAPI,
   StateAPI,
   LogAPI,
+  I18nAPI,
+  TranslationCategory,
+  TranslationOptions,
   PluginConfigAPI,
   GlobalConfigAPI,
   InstanceConfigAPI,
@@ -832,6 +835,89 @@ export class MockLogAPI implements LogAPI {
 }
 
 /**
+ * Mock I18n API
+ */
+export class MockI18nAPI implements I18nAPI {
+  currentLanguage = 'de';
+  registeredTexts: Array<{ text: string; category: TranslationCategory }> = [];
+  translations: Map<string, Map<string, string>> = new Map(); // key -> lang -> translation
+  languageCallbacks: Array<(language: string) => void> = [];
+
+  get language(): string {
+    return this.currentLanguage;
+  }
+
+  t(
+    text: string,
+    params?: Record<string, string | number>,
+    _options?: TranslationOptions
+  ): string {
+    // Check for translation
+    const translations = this.translations.get(text);
+    const translation = translations?.get(this.currentLanguage) || text;
+
+    // Interpolate params
+    if (params) {
+      return translation.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+        return params[key]?.toString() ?? match;
+      });
+    }
+
+    return translation;
+  }
+
+  register(text: string, category: TranslationCategory = 'ui'): void {
+    this.registeredTexts.push({ text, category });
+  }
+
+  onLanguageChange(callback: (language: string) => void): Unsubscribe {
+    this.languageCallbacks.push(callback);
+    return () => {
+      const idx = this.languageCallbacks.indexOf(callback);
+      if (idx >= 0) this.languageCallbacks.splice(idx, 1);
+    };
+  }
+
+  getLanguages(): string[] {
+    return ['de', 'en'];
+  }
+
+  formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
+    const locale = this.currentLanguage === 'de' ? 'de-DE' : 'en-US';
+    return new Intl.NumberFormat(locale, options).format(value);
+  }
+
+  formatDate(date: Date | number | string, options?: Intl.DateTimeFormatOptions): string {
+    const locale = this.currentLanguage === 'de' ? 'de-DE' : 'en-US';
+    const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+    return new Intl.DateTimeFormat(locale, options).format(dateObj);
+  }
+
+  /** Set language (for testing) */
+  setLanguage(lang: string): void {
+    this.currentLanguage = lang;
+    for (const cb of this.languageCallbacks) {
+      cb(lang);
+    }
+  }
+
+  /** Add translation (for testing) */
+  addTranslation(text: string, language: string, translation: string): void {
+    if (!this.translations.has(text)) {
+      this.translations.set(text, new Map());
+    }
+    this.translations.get(text)!.set(language, translation);
+  }
+
+  reset(): void {
+    this.currentLanguage = 'de';
+    this.registeredTexts = [];
+    this.translations.clear();
+    this.languageCallbacks = [];
+  }
+}
+
+/**
  * Mock Global Config API
  */
 export class MockGlobalConfigAPI implements GlobalConfigAPI {
@@ -995,6 +1081,7 @@ export interface MockPluginContext extends PluginContext {
   state: MockStateAPI;
   log: MockLogAPI;
   config: MockPluginConfigAPI;
+  i18n: MockI18nAPI;
 
   /** Reset all APIs to initial state */
   reset(): void;
@@ -1037,6 +1124,7 @@ export function createMockContext(options: MockContextOptions = {}): MockPluginC
   const state = new MockStateAPI();
   const log = new MockLogAPI();
   const config = new MockPluginConfigAPI();
+  const i18n = new MockI18nAPI();
 
   // Initialize nodes
   if (options.initialNodes) {
@@ -1080,6 +1168,7 @@ export function createMockContext(options: MockContextOptions = {}): MockPluginC
     state,
     log,
     config,
+    i18n,
 
     reset() {
       mqtt.reset();
@@ -1093,6 +1182,7 @@ export function createMockContext(options: MockContextOptions = {}): MockPluginC
       state.reset();
       log.reset();
       config.reset();
+      i18n.reset();
 
       // Re-initialize after reset
       if (options.initialNodes) {

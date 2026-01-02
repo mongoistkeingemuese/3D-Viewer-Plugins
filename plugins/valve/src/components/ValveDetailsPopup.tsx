@@ -282,13 +282,13 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
               <h3 style={styles.sectionTitle}>{i18n.t('Laufzeiten')}</h3>
               <div style={styles.dataGrid}>
                 <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>{i18n.t('Letzte GST → AST')}:</span>
+                  <span style={styles.dataLabel}>{i18n.t('Letzte Grund → Arbeit')}:</span>
                   <span style={styles.dataValue}>
                     {formatDuration(nodeState.lastDurationGstToAst)}
                   </span>
                 </div>
                 <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>{i18n.t('Letzte AST → GST')}:</span>
+                  <span style={styles.dataLabel}>{i18n.t('Letzte Arbeit → Grund')}:</span>
                   <span style={styles.dataValue}>
                     {formatDuration(nodeState.lastDurationAstToGst)}
                   </span>
@@ -331,7 +331,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                     opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
-                  {isLoadingAst ? i18n.t('Sende...') : i18n.t('AST fahren')}
+                  {isLoadingAst ? i18n.t('Sende...') : i18n.t('Arbeitsstellung fahren')}
                 </button>
                 <button
                   onClick={handleMoveToGst}
@@ -342,7 +342,7 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
                     opacity: !nodeState.functionNo ? 0.5 : 1,
                   }}
                 >
-                  {isLoadingGst ? i18n.t('Sende...') : i18n.t('GST fahren')}
+                  {isLoadingGst ? i18n.t('Sende...') : i18n.t('Grundstellung fahren')}
                 </button>
                 <button
                   onClick={handlePressureFree}

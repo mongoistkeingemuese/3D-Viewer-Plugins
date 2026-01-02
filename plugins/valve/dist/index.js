@@ -303,14 +303,14 @@ var ValveDetailsPopup = ({ data }) => {
           /* @__PURE__ */ jsxs("div", { style: styles.dataGrid, children: [
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
               /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
-                i18n.t("Letzte GST \u2192 AST"),
+                i18n.t("Letzte Grund \u2192 Arbeit"),
                 ":"
               ] }),
               /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: formatDuration(nodeState.lastDurationGstToAst) })
             ] }),
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
               /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
-                i18n.t("Letzte AST \u2192 GST"),
+                i18n.t("Letzte Arbeit \u2192 Grund"),
                 ":"
               ] }),
               /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: formatDuration(nodeState.lastDurationAstToGst) })
@@ -340,7 +340,7 @@ var ValveDetailsPopup = ({ data }) => {
                   backgroundColor: "#28a745",
                   opacity: !nodeState.functionNo ? 0.5 : 1
                 },
-                children: isLoadingAst ? i18n.t("Sende...") : i18n.t("AST fahren")
+                children: isLoadingAst ? i18n.t("Sende...") : i18n.t("Arbeitsstellung fahren")
               }
             ),
             /* @__PURE__ */ jsx(
@@ -353,7 +353,7 @@ var ValveDetailsPopup = ({ data }) => {
                   backgroundColor: "#007bff",
                   opacity: !nodeState.functionNo ? 0.5 : 1
                 },
-                children: isLoadingGst ? i18n.t("Sende...") : i18n.t("GST fahren")
+                children: isLoadingGst ? i18n.t("Sende...") : i18n.t("Grundstellung fahren")
               }
             ),
             /* @__PURE__ */ jsx(

@@ -59,10 +59,10 @@ When releasing multiple plugins:
 
 Example:
 ```
-release(axis-release-10, blueprint-sandbox): v1.2.3
+release(valve, axis): v1.2.3
 
-- axis-release-10: MQTT debugging improvements
-- blueprint-sandbox: Minor UI fixes
+- valve: Error handling improvements
+- axis: Added step control feature
 ```
 
 ## Version History
@@ -135,11 +135,11 @@ If you deploy without bumping versions:
 
 | Component | Version |
 |-----------|---------|
-| **Monorepo (latest tag)** | v1.1.0 |
+| **Monorepo (latest tag)** | v1.6.23 |
 | plugin-sdk | 1.1.0 |
 | plugin-devtools | 1.0.0 |
-| axis-release-10 | 1.0.8 |
-| blueprint-sandbox | 1.0.0 |
+| valve | 1.25.0 |
+| axis | 1.7.0 |
 | blueprint-iframe | 1.0.0 |
 
 ---

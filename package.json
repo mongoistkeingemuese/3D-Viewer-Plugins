@@ -15,7 +15,7 @@
     "build": "npm run build:sdk && npm run build:devtools && npm run build:plugins",
     "build:sdk": "npm run build --workspace=packages/plugin-sdk",
     "build:devtools": "npm run build --workspace=packages/plugin-devtools",
-    "build:plugins": "npm run build --workspace=plugins/blueprint-sandbox && npm run build --workspace=plugins/blueprint-iframe",
+    "build:plugins": "npm run build --workspace=plugins/valve && npm run build --workspace=plugins/axis && npm run build --workspace=plugins/blueprint-iframe",
     "build:watch": "npm run build:watch --workspace=packages/plugin-sdk",
     "test": "vitest",
     "test:unit": "vitest run --dir tests/unit",

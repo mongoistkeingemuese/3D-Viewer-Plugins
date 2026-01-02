@@ -1,6 +1,6 @@
 # Source Selection Patterns
 
-Reference implementation: `plugins/axis-release-10`
+Reference implementation: `plugins/axis` and `plugins/valve`
 
 This document describes the standard patterns for MQTT and OPC-UA source selection.
 
@@ -275,7 +275,7 @@ function validateSources(ctx: PluginContext): boolean {
 
 ## State Management Pattern
 
-From axis-release-10 - centralized state with proper cleanup:
+From axis and valve plugins - centralized state with proper cleanup:
 
 ```typescript
 interface NodeState {

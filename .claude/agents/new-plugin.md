@@ -67,7 +67,7 @@ Ask (AskUserQuestion, multiSelect: true):
 ## Step 3: Define Global Properties
 
 **Reference:** See `.claude/rules/source-patterns.md` for complete patterns.
-**Template:** Use `plugins/axis-release-10` as reference implementation.
+**Template:** Use `plugins/axis` or `plugins/valve` as reference implementation.
 
 Based on data sources, generate these global settings:
 
@@ -387,7 +387,7 @@ export default plugin;
 
 ## Template: Plugin with MQTT Binding (Source Selection)
 
-**Based on:** `plugins/axis-release-10` (production-tested reference)
+**Based on:** `plugins/axis` and `plugins/valve` (production-tested references)
 
 ```typescript
 /**
@@ -775,7 +775,7 @@ After successful creation:
 
 📚 Documentation:
    - API Reference: docs/llm-context/PLUGIN_API_REFERENCE.md
-   - Examples: plugins/blueprint-sandbox/
+   - Examples: plugins/valve/ and plugins/axis/
 ```
 
 After build completes, ALWAYS show the installation info:

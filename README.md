@@ -24,7 +24,8 @@ npm run new:plugin -- my-plugin -t sandbox
 │   ├── plugin-sdk/          # TypeScript SDK mit allen APIs
 │   └── plugin-devtools/     # Dev-Server & CLI
 ├── plugins/
-│   ├── blueprint-sandbox/   # Vollständiges Sandbox-Beispiel
+│   ├── valve/               # Produktions-Plugin für Ventilsteuerung
+│   ├── axis/                # Produktions-Plugin für Achsenvisualisierung
 │   └── blueprint-iframe/    # Vollständiges IFrame-Beispiel
 ├── docs/
 │   ├── llm-context/         # LLM-optimierte Referenz
@@ -84,22 +85,27 @@ npm run test:unit
 npm test -- --coverage
 ```
 
-## Blueprint Plugins
+## Produktions-Plugins
 
-Die Blueprint-Plugins demonstrieren alle verfügbaren Features:
+### valve
+- Vollständige MQTT-Integration mit Broker-Auswahl
+- Fehlertracking mit Bestätigungs-UI
+- HTTP-Befehlsintegration
+- Positionsanimation mit Laufzeitmessung
+- PluginState-Klassenmuster mit korrektem Cleanup
+- React Popup-Komponente für Details/Steuerung
 
-### blueprint-sandbox
-- Node-Manipulation
-- MQTT/OPC-UA/HTTP Bindings
-- UI-Komponenten (Panel, Popup, Overlay)
-- Konfiguration mit JSON Schema
-- Event-Handling
+### axis
+- MQTT-Integration für Achsenüberwachung
+- Broker-Auswahl über 3D Viewer Serverliste
+- Schrittsteuerungsfunktion
+- HTTP-API-Integration
 
 ### blueprint-iframe
+- IFrame-Beispiel für Drittanbieter-Plugins
 - Isolierte Ausführung
 - Async APIs
 - postMessage-Kommunikation
-- Sichere Datenbindung
 
 ## Plugin erstellen
 
@@ -168,6 +174,6 @@ https://cdn.jsdelivr.net/gh/mongoistkeingemuese/3D-Viewer-Plugins@v1.1.0/plugins
 
 | Plugin | Path | Beschreibung |
 |--------|------|--------------|
-| blueprint-sandbox | `plugins/blueprint-sandbox/dist` | Vollständiges Sandbox-Beispiel |
-| blueprint-iframe | `plugins/blueprint-iframe/dist` | Vollständiges IFrame-Beispiel |
-| axis-release-10 | `plugins/axis-release-10/dist` | Achsen-Monitoring mit MQTT |
+| valve | `plugins/valve/dist` | Produktions-Plugin für Ventilsteuerung |
+| axis | `plugins/axis/dist` | Produktions-Plugin für Achsenvisualisierung |
+| blueprint-iframe | `plugins/blueprint-iframe/dist` | IFrame-Beispiel für Drittanbieter-Plugins |

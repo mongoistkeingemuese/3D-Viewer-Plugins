@@ -13,8 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │   └── plugin-devtools/     # Dev-Server (port 3100) & CLI
 ├── plugins/
 │   ├── valve/               # Production valve control plugin
-│   ├── axis-release-10/     # Reference MQTT plugin
-│   ├── blueprint-sandbox/   # Sandbox plugin example
+│   ├── axis/                # Production axis visualization plugin
 │   └── blueprint-iframe/    # IFrame plugin example
 ├── docs/
 │   ├── llm-context/PLUGIN_API_REFERENCE.md  # Complete API reference
@@ -346,7 +345,7 @@ See `.claude/rules/versioning.md` for details.
 - PluginState class pattern with proper cleanup
 - React popup component for details/control
 
-### Production Reference: `axis-release-10`
+### Production Reference: `axis`
 
 **USE THIS** for simpler MQTT/OPC-UA plugins:
 - Source selection from 3D Viewer server list (`x-source-type: "mqtt"`)
@@ -354,11 +353,9 @@ See `.claude/rules/versioning.md` for details.
 - PluginState class pattern
 - Proper subscription cleanup
 
-### Demo Plugins: `blueprint-*`
+### Demo Plugin: `blueprint-iframe`
 
-**Legacy patterns** - demonstrate all UI features but use direct URLs:
-- `blueprint-sandbox` - Full feature demo (Panel, Popup, Overlay, Context Menu)
-- `blueprint-iframe` - IFrame async patterns
+IFrame plugin example demonstrating async API patterns.
 
 **Do NOT copy** the config patterns from blueprints for new plugins.
 

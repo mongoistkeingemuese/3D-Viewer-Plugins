@@ -47,7 +47,7 @@ npm run build
 This builds in the correct order:
 1. `packages/plugin-sdk` - The SDK
 2. `packages/plugin-devtools` - Dev-Server & CLI
-3. `plugins/blueprint-*` - Blueprint plugins
+3. All plugins (valve, axis, blueprint-iframe)
 
 ### Step 4: Validate Build
 
@@ -73,8 +73,9 @@ Available commands:
   npm test              → Run tests
 
 Existing plugins:
-  - blueprint-sandbox
-  - blueprint-iframe
+  - valve (production valve control)
+  - axis (production axis visualization)
+  - blueprint-iframe (IFrame example)
 
 Start the dev server with: npm run dev
 ```

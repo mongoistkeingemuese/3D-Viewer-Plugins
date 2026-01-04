@@ -19,27 +19,183 @@ var {
 } = React;
 
 // src/types.ts
-var GenericStateNames = {
-  [-1]: "Unknown",
-  [0]: "Idle",
-  [1]: "Executing",
-  [2]: "Done",
-  [3]: "Error",
-  [4]: "Pausing",
-  [5]: "Paused",
-  [6]: "Aborting",
-  [7]: "Aborted",
-  [8]: "Resetting",
-  [9]: "Preparing",
-  [10]: "Initialising"
+var GenericStateKeys = {
+  [-1]: "state.unknown",
+  [0]: "state.idle",
+  [1]: "state.executing",
+  [2]: "state.done",
+  [3]: "state.error",
+  [4]: "state.pausing",
+  [5]: "state.paused",
+  [6]: "state.aborting",
+  [7]: "state.aborted",
+  [8]: "state.resetting",
+  [9]: "state.preparing",
+  [10]: "state.initialising"
 };
-var ValvePositionNames = {
-  [0]: "Drucklos",
-  [1]: "F\xE4hrt zu GST",
-  [2]: "F\xE4hrt zu AST",
-  [3]: "In GST",
-  [4]: "In AST",
-  [5]: "Undefiniert"
+var ValvePositionKeys = {
+  [0]: "position.pressureFree",
+  [1]: "position.movingToBase",
+  [2]: "position.movingToWork",
+  [3]: "position.inBase",
+  [4]: "position.inWork",
+  [5]: "position.undefined"
+};
+var DefaultTranslations = {
+  de: {
+    // GenericState
+    "state.unknown": "Unbekannt",
+    "state.idle": "Bereit",
+    "state.executing": "Ausf\xFChren",
+    "state.done": "Fertig",
+    "state.error": "Fehler",
+    "state.pausing": "Pausieren",
+    "state.paused": "Pausiert",
+    "state.aborting": "Abbrechen",
+    "state.aborted": "Abgebrochen",
+    "state.resetting": "Zur\xFCcksetzen",
+    "state.preparing": "Vorbereiten",
+    "state.initialising": "Initialisieren",
+    // ValvePosition
+    "position.pressureFree": "Drucklos",
+    "position.movingToBase": "F\xE4hrt zu GST",
+    "position.movingToWork": "F\xE4hrt zu AST",
+    "position.inBase": "In GST",
+    "position.inWork": "In AST",
+    "position.undefined": "Undefiniert",
+    // FunctionCommand
+    "command.moveToBase": "GST fahren",
+    "command.moveToWork": "AST fahren",
+    "command.togglePosition": "Position wechseln",
+    "command.pressureFree": "Drucklos",
+    "command.modeMonostable": "Monostabil",
+    "command.modeBistablePulsed": "Bistabil Pulsed",
+    "command.modeBistablePermanent": "Bistabil Permanent",
+    "command.modeBistableMiddle": "Bistabil Mittelstellung",
+    // UI Labels
+    "ui.valve": "Ventil",
+    "ui.status": "Status",
+    "ui.control": "Bedienung",
+    "ui.errors": "Fehler",
+    "ui.valveStatus": "Ventilstatus",
+    "ui.generalStatus": "Allgemeiner Status",
+    "ui.specificStatus": "Spezifischer Status",
+    "ui.recipe": "Rezept",
+    "ui.runtimes": "Laufzeiten",
+    "ui.lastBaseToWork": "Letzte Grund \u2192 Arbeit",
+    "ui.lastWorkToBase": "Letzte Arbeit \u2192 Grund",
+    "ui.lastUpdate": "Letztes Update",
+    "ui.mainControl": "Hauptbedienung",
+    "ui.operatingMode": "Betriebsmodus",
+    "ui.errorMessages": "Fehlermeldungen",
+    "ui.open": "offen",
+    "ui.acknowledgeAll": "Alle Quittieren",
+    "ui.noErrors": "Keine Fehlermeldungen",
+    "ui.noDataAvailable": "Keine Daten verf\xFCgbar",
+    "ui.nodeStatusNotFound": "Knotenstatus nicht gefunden. Bitte stellen Sie sicher, dass das Ventil korrekt konfiguriert ist.",
+    "ui.noFunctionNumber": "Keine Funktionsnummer konfiguriert - Befehle deaktiviert",
+    "ui.modeHint": "Hinweis: Modi werden ohne Feedback vom PLC gesendet",
+    "ui.sending": "Sende...",
+    "ui.moveToWork": "Arbeitsstellung fahren",
+    "ui.moveToBase": "Grundstellung fahren",
+    "ui.pressureFree": "Drucklos",
+    // Notifications
+    "notify.noMqttBroker": "Keine MQTT-Broker konfiguriert",
+    "notify.sendError": "Fehler beim Senden des Befehls",
+    "notify.commandFailed": "Befehl fehlgeschlagen",
+    "notify.moveToBaseSent": "GST fahren gesendet",
+    "notify.moveToWorkSent": "AST fahren gesendet",
+    "notify.togglePositionSent": "Position wechseln gesendet",
+    "notify.pressureFreeSent": "Drucklos gesendet",
+    "notify.modeMonostable": "Monostabil aktiviert",
+    "notify.modeBistablePulsed": "Bistabil Pulsed aktiviert",
+    "notify.modeBistablePermanent": "Bistabil Permanent aktiviert",
+    "notify.modeBistableMiddle": "Bistabil Mittelstellung aktiviert",
+    "notify.errorsAcknowledged": "Fehler quittiert",
+    "notify.configureValveName": "Bitte Ventilname f\xFCr {name} konfigurieren",
+    "notify.monitoringActive": "Monitoring: {name}",
+    "notify.monitoringCommandsDisabled": "Monitoring: {name} (Befehle deaktiviert - keine Funktionsnummer)",
+    "notify.mqttBrokerNotFound": 'MQTT Broker "{source}" nicht gefunden',
+    "notify.errorAcknowledged": "{name}: Fehler quittiert",
+    "notify.errorsAcknowledgedCount": "{name}: {count} Fehler quittiert"
+  },
+  en: {
+    // GenericState
+    "state.unknown": "Unknown",
+    "state.idle": "Idle",
+    "state.executing": "Executing",
+    "state.done": "Done",
+    "state.error": "Error",
+    "state.pausing": "Pausing",
+    "state.paused": "Paused",
+    "state.aborting": "Aborting",
+    "state.aborted": "Aborted",
+    "state.resetting": "Resetting",
+    "state.preparing": "Preparing",
+    "state.initialising": "Initialising",
+    // ValvePosition
+    "position.pressureFree": "Pressure Free",
+    "position.movingToBase": "Moving to Base",
+    "position.movingToWork": "Moving to Work",
+    "position.inBase": "In Base Position",
+    "position.inWork": "In Work Position",
+    "position.undefined": "Undefined",
+    // FunctionCommand
+    "command.moveToBase": "Move to Base",
+    "command.moveToWork": "Move to Work",
+    "command.togglePosition": "Toggle Position",
+    "command.pressureFree": "Pressure Free",
+    "command.modeMonostable": "Monostable",
+    "command.modeBistablePulsed": "Bistable Pulsed",
+    "command.modeBistablePermanent": "Bistable Permanent",
+    "command.modeBistableMiddle": "Bistable Middle",
+    // UI Labels
+    "ui.valve": "Valve",
+    "ui.status": "Status",
+    "ui.control": "Control",
+    "ui.errors": "Errors",
+    "ui.valveStatus": "Valve Status",
+    "ui.generalStatus": "General Status",
+    "ui.specificStatus": "Specific Status",
+    "ui.recipe": "Recipe",
+    "ui.runtimes": "Runtimes",
+    "ui.lastBaseToWork": "Last Base \u2192 Work",
+    "ui.lastWorkToBase": "Last Work \u2192 Base",
+    "ui.lastUpdate": "Last Update",
+    "ui.mainControl": "Main Control",
+    "ui.operatingMode": "Operating Mode",
+    "ui.errorMessages": "Error Messages",
+    "ui.open": "open",
+    "ui.acknowledgeAll": "Acknowledge All",
+    "ui.noErrors": "No error messages",
+    "ui.noDataAvailable": "No data available",
+    "ui.nodeStatusNotFound": "Node status not found. Please make sure the valve is configured correctly.",
+    "ui.noFunctionNumber": "No function number configured - commands disabled",
+    "ui.modeHint": "Note: Modes are sent without PLC feedback",
+    "ui.sending": "Sending...",
+    "ui.moveToWork": "Move to Work Position",
+    "ui.moveToBase": "Move to Base Position",
+    "ui.pressureFree": "Pressure Free",
+    // Notifications
+    "notify.noMqttBroker": "No MQTT broker configured",
+    "notify.sendError": "Error sending command",
+    "notify.commandFailed": "Command failed",
+    "notify.moveToBaseSent": "Move to base sent",
+    "notify.moveToWorkSent": "Move to work sent",
+    "notify.togglePositionSent": "Toggle position sent",
+    "notify.pressureFreeSent": "Pressure free sent",
+    "notify.modeMonostable": "Monostable activated",
+    "notify.modeBistablePulsed": "Bistable Pulsed activated",
+    "notify.modeBistablePermanent": "Bistable Permanent activated",
+    "notify.modeBistableMiddle": "Bistable Middle activated",
+    "notify.errorsAcknowledged": "Errors acknowledged",
+    "notify.configureValveName": "Please configure valve name for {name}",
+    "notify.monitoringActive": "Monitoring: {name}",
+    "notify.monitoringCommandsDisabled": "Monitoring: {name} (commands disabled - no function number)",
+    "notify.mqttBrokerNotFound": 'MQTT Broker "{source}" not found',
+    "notify.errorAcknowledged": "{name}: Error acknowledged",
+    "notify.errorsAcknowledgedCount": "{name}: {count} errors acknowledged"
+  }
 };
 
 // src/utils.ts
@@ -105,6 +261,10 @@ function usePluginI18n() {
     formatDate: (date) => new Date(date).toLocaleString()
   };
 }
+function translateKey(key, language) {
+  const translations = DefaultTranslations[language] || DefaultTranslations["de"];
+  return translations[key] || key;
+}
 function getPositionStateColor(state) {
   switch (state) {
     case 3 /* IsInBasePosition */:
@@ -144,6 +304,7 @@ function getGenericStateColor(state) {
 var ValveDetailsPopup = ({ data }) => {
   const nodeId = data?.nodeId;
   const i18n = usePluginI18n();
+  const t = (key) => translateKey(key, i18n.language);
   const [nodeState, setNodeState] = useState(() => getNodeState(nodeId));
   const [updateCounter, setUpdateCounter] = useState(0);
   const [activeTab, setActiveTab] = useState("status");
@@ -164,8 +325,8 @@ var ValveDetailsPopup = ({ data }) => {
   }, [nodeId]);
   if (!nodeState) {
     return /* @__PURE__ */ jsx("div", { style: styles.container, children: /* @__PURE__ */ jsxs("div", { style: styles.error, children: [
-      /* @__PURE__ */ jsx("h3", { children: i18n.t("Keine Daten verf\xFCgbar") }),
-      /* @__PURE__ */ jsx("p", { children: i18n.t("Knotenstatus nicht gefunden. Bitte stellen Sie sicher, dass das Ventil korrekt konfiguriert ist.") })
+      /* @__PURE__ */ jsx("h3", { children: t("ui.noDataAvailable") }),
+      /* @__PURE__ */ jsx("p", { children: t("ui.nodeStatusNotFound") })
     ] }) });
   }
   const handleMoveToGst = async () => {
@@ -188,13 +349,15 @@ var ValveDetailsPopup = ({ data }) => {
     await sendFn(nodeId);
     setIsLoadingMode(null);
   };
-  const positionStateName = ValvePositionNames[nodeState.specificState] || "Unknown";
-  const genericStateName = GenericStateNames[nodeState.genericState] || "Unknown";
+  const positionKey = ValvePositionKeys[nodeState.specificState] || "position.undefined";
+  const genericKey = GenericStateKeys[nodeState.genericState] || "state.unknown";
+  const positionStateName = translateKey(positionKey, i18n.language);
+  const genericStateName = translateKey(genericKey, i18n.language);
   const unacknowledgedCount = getUnacknowledgedErrorCount(nodeId);
   return /* @__PURE__ */ jsxs("div", { style: styles.container, children: [
     /* @__PURE__ */ jsxs("div", { style: styles.header, children: [
       /* @__PURE__ */ jsxs("h2", { style: styles.title, children: [
-        i18n.t("Ventil"),
+        t("ui.valve"),
         ": ",
         nodeState.valveName
       ] }),
@@ -221,7 +384,7 @@ var ValveDetailsPopup = ({ data }) => {
             ...styles.tabButton,
             ...activeTab === "status" ? styles.tabButtonActive : {}
           },
-          children: i18n.t("Status")
+          children: t("ui.status")
         }
       ),
       /* @__PURE__ */ jsx(
@@ -232,7 +395,7 @@ var ValveDetailsPopup = ({ data }) => {
             ...styles.tabButton,
             ...activeTab === "control" ? styles.tabButtonActive : {}
           },
-          children: i18n.t("Bedienung")
+          children: t("ui.control")
         }
       ),
       /* @__PURE__ */ jsxs(
@@ -244,7 +407,7 @@ var ValveDetailsPopup = ({ data }) => {
             ...activeTab === "errors" ? styles.tabButtonActive : {}
           },
           children: [
-            i18n.t("Fehler"),
+            t("ui.errors"),
             unacknowledgedCount > 0 && /* @__PURE__ */ jsx("span", { style: styles.errorBadge, children: unacknowledgedCount })
           ]
         }
@@ -253,11 +416,11 @@ var ValveDetailsPopup = ({ data }) => {
     /* @__PURE__ */ jsxs("div", { style: styles.tabContent, children: [
       activeTab === "status" && /* @__PURE__ */ jsxs(Fragment2, { children: [
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: i18n.t("Ventilstatus") }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.valveStatus") }),
           /* @__PURE__ */ jsxs("div", { style: styles.dataGrid, children: [
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
               /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
-                i18n.t("Allgemeiner Status"),
+                t("ui.generalStatus"),
                 ":"
               ] }),
               /* @__PURE__ */ jsx(
@@ -274,7 +437,7 @@ var ValveDetailsPopup = ({ data }) => {
             ] }),
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
               /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
-                i18n.t("Spezifischer Status"),
+                t("ui.specificStatus"),
                 ":"
               ] }),
               /* @__PURE__ */ jsx(
@@ -291,7 +454,7 @@ var ValveDetailsPopup = ({ data }) => {
             ] }),
             nodeState.recipe > 0 && /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
               /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
-                i18n.t("Rezept"),
+                t("ui.recipe"),
                 ":"
               ] }),
               /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: nodeState.recipe })
@@ -299,18 +462,18 @@ var ValveDetailsPopup = ({ data }) => {
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: i18n.t("Laufzeiten") }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.runtimes") }),
           /* @__PURE__ */ jsxs("div", { style: styles.dataGrid, children: [
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
               /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
-                i18n.t("Letzte Grund \u2192 Arbeit"),
+                t("ui.lastBaseToWork"),
                 ":"
               ] }),
               /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: formatDuration(nodeState.lastDurationGstToAst) })
             ] }),
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
               /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
-                i18n.t("Letzte Arbeit \u2192 Grund"),
+                t("ui.lastWorkToBase"),
                 ":"
               ] }),
               /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: formatDuration(nodeState.lastDurationAstToGst) })
@@ -319,16 +482,16 @@ var ValveDetailsPopup = ({ data }) => {
         ] }),
         /* @__PURE__ */ jsx("div", { style: styles.section, children: /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
           /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
-            i18n.t("Letztes Update"),
+            t("ui.lastUpdate"),
             ":"
           ] }),
           /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: formatTime(nodeState.lastUpdate) })
         ] }) })
       ] }),
       activeTab === "control" && /* @__PURE__ */ jsxs(Fragment2, { children: [
-        !nodeState.functionNo && /* @__PURE__ */ jsx("div", { style: styles.section, children: /* @__PURE__ */ jsx("div", { style: styles.warningBox, children: i18n.t("Keine Funktionsnummer konfiguriert - Befehle deaktiviert") }) }),
+        !nodeState.functionNo && /* @__PURE__ */ jsx("div", { style: styles.section, children: /* @__PURE__ */ jsx("div", { style: styles.warningBox, children: t("ui.noFunctionNumber") }) }),
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: i18n.t("Hauptbedienung") }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.mainControl") }),
           /* @__PURE__ */ jsxs("div", { style: styles.controlGrid, children: [
             /* @__PURE__ */ jsx(
               "button",
@@ -340,7 +503,7 @@ var ValveDetailsPopup = ({ data }) => {
                   backgroundColor: "#28a745",
                   opacity: !nodeState.functionNo ? 0.5 : 1
                 },
-                children: isLoadingAst ? i18n.t("Sende...") : i18n.t("Arbeitsstellung fahren")
+                children: isLoadingAst ? t("ui.sending") : t("ui.moveToWork")
               }
             ),
             /* @__PURE__ */ jsx(
@@ -353,7 +516,7 @@ var ValveDetailsPopup = ({ data }) => {
                   backgroundColor: "#007bff",
                   opacity: !nodeState.functionNo ? 0.5 : 1
                 },
-                children: isLoadingGst ? i18n.t("Sende...") : i18n.t("Grundstellung fahren")
+                children: isLoadingGst ? t("ui.sending") : t("ui.moveToBase")
               }
             ),
             /* @__PURE__ */ jsx(
@@ -366,13 +529,13 @@ var ValveDetailsPopup = ({ data }) => {
                   backgroundColor: "#6c757d",
                   opacity: !nodeState.functionNo ? 0.5 : 1
                 },
-                children: isLoadingPressureFree ? i18n.t("Sende...") : i18n.t("Drucklos")
+                children: isLoadingPressureFree ? t("ui.sending") : t("ui.pressureFree")
               }
             )
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: i18n.t("Betriebsmodus") }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.operatingMode") }),
           /* @__PURE__ */ jsxs("div", { style: styles.modeGrid, children: [
             /* @__PURE__ */ jsx(
               "button",
@@ -427,18 +590,18 @@ var ValveDetailsPopup = ({ data }) => {
               }
             )
           ] }),
-          /* @__PURE__ */ jsx("p", { style: styles.modeHint, children: i18n.t("Hinweis: Modi werden ohne Feedback vom PLC gesendet") })
+          /* @__PURE__ */ jsx("p", { style: styles.modeHint, children: t("ui.modeHint") })
         ] })
       ] }),
       activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
         /* @__PURE__ */ jsxs("h3", { style: styles.sectionTitle, children: [
-          i18n.t("Fehlermeldungen"),
+          t("ui.errorMessages"),
           " (",
           nodeState.errors.length,
           ") - ",
           unacknowledgedCount,
           " ",
-          i18n.t("offen")
+          t("ui.open")
         ] }),
         unacknowledgedCount > 0 && /* @__PURE__ */ jsxs(
           "button",
@@ -461,14 +624,14 @@ var ValveDetailsPopup = ({ data }) => {
               width: "100%"
             },
             children: [
-              i18n.t("Alle Quittieren"),
+              t("ui.acknowledgeAll"),
               " (",
               unacknowledgedCount,
               ")"
             ]
           }
         ),
-        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("pre", { style: { color: "#28a745", padding: "20px", textAlign: "center", margin: 0 }, children: i18n.t("Keine Fehlermeldungen") }) : /* @__PURE__ */ jsxs(Fragment2, { children: [
+        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("pre", { style: { color: "#28a745", padding: "20px", textAlign: "center", margin: 0 }, children: t("ui.noErrors") }) : /* @__PURE__ */ jsxs(Fragment2, { children: [
           /* @__PURE__ */ jsx("pre", { style: {
             margin: "0 0 8px 0",
             padding: "10px",
@@ -963,6 +1126,32 @@ var styles = {
 };
 
 // src/index.ts
+function getPositionName(position) {
+  const key = ValvePositionKeys[position] || "position.undefined";
+  return DefaultTranslations.en[key] || key;
+}
+function getCurrentLanguage() {
+  try {
+    const hostI18n = window.__i18n__ || window.i18n;
+    if (hostI18n?.language) {
+      return hostI18n.language.split("-")[0];
+    }
+  } catch {
+  }
+  const stored = localStorage.getItem("i18n_language");
+  return stored || "de";
+}
+function translateNotify(key, params) {
+  const lang = getCurrentLanguage();
+  const translations = DefaultTranslations[lang] || DefaultTranslations["de"];
+  let text = translations[key] || key;
+  if (params) {
+    for (const [param, value] of Object.entries(params)) {
+      text = text.replace(new RegExp(`\\{${param}\\}`, "g"), String(value));
+    }
+  }
+  return text;
+}
 var PluginState = class {
   constructor() {
     this.nodes = /* @__PURE__ */ new Map();
@@ -1046,7 +1235,7 @@ function getMqttApi(ctx) {
       ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
         available: availableSources
       });
-      ctx.ui.notify(`MQTT Broker "${mqttSource}" nicht gefunden`, "warning");
+      ctx.ui.notify(translateNotify("notify.mqttBrokerNotFound", { source: mqttSource }), "warning");
     }
     return ctx.mqtt.withSource(mqttSource);
   }
@@ -1153,9 +1342,9 @@ function handleValveData(ctx, nodeId, rawPayload) {
         ctx.log.info("Movement started", {
           nodeId,
           previousState,
-          previousStateName: ValvePositionNames[previousState],
+          previousStateName: getPositionName(previousState),
           specificState,
-          specificStateName: ValvePositionNames[specificState],
+          specificStateName: getPositionName(specificState),
           startTimestamp: timestamp
         });
       } else if ((specificState === 3 /* IsInBasePosition */ || specificState === 4 /* IsInWorkPosition */) && nodeState.moveStartTimestamp !== null) {
@@ -1163,9 +1352,9 @@ function handleValveData(ctx, nodeId, rawPayload) {
         ctx.log.info("Movement completed - calculating duration", {
           nodeId,
           previousState,
-          previousStateName: ValvePositionNames[previousState],
+          previousStateName: getPositionName(previousState),
           specificState,
-          specificStateName: ValvePositionNames[specificState],
+          specificStateName: getPositionName(specificState),
           startTimestamp: nodeState.moveStartTimestamp,
           endTimestamp: timestamp,
           durationMs: duration
@@ -1188,7 +1377,7 @@ function handleValveData(ctx, nodeId, rawPayload) {
           ctx.log.warn("Duration calculated but previousState not a moving state", {
             nodeId,
             previousState,
-            previousStateName: ValvePositionNames[previousState],
+            previousStateName: getPositionName(previousState),
             durationMs: duration
           });
         }
@@ -1306,7 +1495,7 @@ function setupSubscriptions(ctx, nodeId) {
   const availableSources = ctx.mqtt.getSources();
   if (availableSources.length === 0) {
     ctx.log.error("No MQTT sources available", { nodeId });
-    ctx.ui.notify("Keine MQTT-Broker konfiguriert", "error");
+    ctx.ui.notify(translateNotify("notify.noMqttBroker"), "error");
     return;
   }
   ctx.log.info("Setting up valve subscription", { nodeId, mainTopic });
@@ -1358,68 +1547,68 @@ async function sendValveCommand(nodeId, functionCommand) {
         status: response.status,
         statusText: response.statusText
       });
-      ctx.ui.notify(`Befehl fehlgeschlagen: ${response.statusText}`, "error");
+      ctx.ui.notify(`${translateNotify("notify.commandFailed")}: ${response.statusText}`, "error");
       return false;
     }
   } catch (error) {
     ctx.log.error("Valve command error", { nodeId, error });
-    ctx.ui.notify("Fehler beim Senden des Befehls", "error");
+    ctx.ui.notify(translateNotify("notify.sendError"), "error");
     return false;
   }
 }
 async function sendMoveToBase(nodeId) {
   const result = await sendValveCommand(nodeId, 0 /* MoveToBasePosition */);
   if (result) {
-    pluginState.getContext().ui.notify("GST fahren gesendet", "success");
+    pluginState.getContext().ui.notify(translateNotify("notify.moveToBaseSent"), "success");
   }
   return result;
 }
 async function sendMoveToWork(nodeId) {
   const result = await sendValveCommand(nodeId, 1 /* MoveToWorkPosition */);
   if (result) {
-    pluginState.getContext().ui.notify("AST fahren gesendet", "success");
+    pluginState.getContext().ui.notify(translateNotify("notify.moveToWorkSent"), "success");
   }
   return result;
 }
 async function sendTogglePosition(nodeId) {
   const result = await sendValveCommand(nodeId, 2 /* TogglePosition */);
   if (result) {
-    pluginState.getContext().ui.notify("Position wechseln gesendet", "success");
+    pluginState.getContext().ui.notify(translateNotify("notify.togglePositionSent"), "success");
   }
   return result;
 }
 async function sendPressureFree(nodeId) {
   const result = await sendValveCommand(nodeId, 3 /* SwitchToPressureFree */);
   if (result) {
-    pluginState.getContext().ui.notify("Drucklos gesendet", "success");
+    pluginState.getContext().ui.notify(translateNotify("notify.pressureFreeSent"), "success");
   }
   return result;
 }
 async function sendModeMonostable(nodeId) {
   const result = await sendValveCommand(nodeId, 50 /* SwitchToOptionMonostable */);
   if (result) {
-    pluginState.getContext().ui.notify("Monostabil aktiviert", "success");
+    pluginState.getContext().ui.notify(translateNotify("notify.modeMonostable"), "success");
   }
   return result;
 }
 async function sendModeBistablePulsed(nodeId) {
   const result = await sendValveCommand(nodeId, 51 /* SwitchToOptionBistablePulsed */);
   if (result) {
-    pluginState.getContext().ui.notify("Bistabil Pulsed aktiviert", "success");
+    pluginState.getContext().ui.notify(translateNotify("notify.modeBistablePulsed"), "success");
   }
   return result;
 }
 async function sendModeBistablePermanent(nodeId) {
   const result = await sendValveCommand(nodeId, 52 /* SwitchToOptionBistablePermanent */);
   if (result) {
-    pluginState.getContext().ui.notify("Bistabil Permanent aktiviert", "success");
+    pluginState.getContext().ui.notify(translateNotify("notify.modeBistablePermanent"), "success");
   }
   return result;
 }
 async function sendModeBistableMiddle(nodeId) {
   const result = await sendValveCommand(nodeId, 53 /* SwitchToOptionBistableMiddlePositionOpen */);
   if (result) {
-    pluginState.getContext().ui.notify("Bistabil Mittelstellung aktiviert", "success");
+    pluginState.getContext().ui.notify(translateNotify("notify.modeBistableMiddle"), "success");
   }
   return result;
 }
@@ -1446,7 +1635,7 @@ function acknowledgeError(nodeId, errorIndex) {
       nodeId,
       valveName: nodeState.valveName
     });
-    ctx.ui.notify(`${nodeState.valveName}: Fehler quittiert`, "success");
+    ctx.ui.notify(translateNotify("notify.errorAcknowledged", { name: nodeState.valveName }), "success");
   }
 }
 function acknowledgeAllErrors(nodeId) {
@@ -1473,7 +1662,7 @@ function acknowledgeAllErrors(nodeId) {
     valveName: nodeState.valveName,
     newState: "Idle"
   });
-  ctx.ui.notify(`${nodeState.valveName}: ${errorCount} Fehler quittiert`, "success");
+  ctx.ui.notify(translateNotify("notify.errorsAcknowledgedCount", { name: nodeState.valveName, count: errorCount }), "success");
 }
 function getNodeState(nodeId) {
   return pluginState.getNode(nodeId);
@@ -1541,7 +1730,7 @@ var plugin = {
     const functionNo = config.functionNo || 0;
     if (!valveName) {
       ctx.log.warn(`No valve name configured for node ${node.id}`);
-      ctx.ui.notify(`Bitte Ventilname f\xFCr ${node.name} konfigurieren`, "warning");
+      ctx.ui.notify(translateNotify("notify.configureValveName", { name: node.name }), "warning");
       return;
     }
     ctx.log.info(
@@ -1550,9 +1739,9 @@ var plugin = {
     pluginState.addNode(node.id, valveName, functionNo);
     setupSubscriptions(ctx, node.id);
     if (!functionNo) {
-      ctx.ui.notify(`Monitoring: ${valveName} (Befehle deaktiviert - keine Funktionsnummer)`, "warning");
+      ctx.ui.notify(translateNotify("notify.monitoringCommandsDisabled", { name: valveName }), "warning");
     } else {
-      ctx.ui.notify(`Monitoring: ${valveName}`, "success");
+      ctx.ui.notify(translateNotify("notify.monitoringActive", { name: valveName }), "success");
     }
   },
   onNodeUnbound(ctx, node) {

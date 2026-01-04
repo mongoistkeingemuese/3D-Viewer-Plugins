@@ -29,7 +29,8 @@ import { ValveDetailsPopup } from './components/ValveDetailsPopup';
 import {
   GenericState,
   ValvePosition,
-  ValvePositionNames,
+  ValvePositionKeys,
+  DefaultTranslations,
   FunctionCommand,
   type NodeState,
   type ValvePayload,
@@ -39,6 +40,51 @@ import {
   type MqttFormat,
 } from './types';
 import { hexToInt, parseMqttTimestamp, normalizeValveName } from './utils';
+
+/**
+ * Get valve position name for logging (always English)
+ */
+function getPositionName(position: ValvePosition): string {
+  const key = ValvePositionKeys[position] || 'position.undefined';
+  return DefaultTranslations.en[key] || key;
+}
+
+/**
+ * Get current language from host i18n
+ */
+function getCurrentLanguage(): string {
+  // Try to get language from host i18n (available via window in proxy sandbox)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hostI18n = (window as any).__i18n__ || (window as any).i18n;
+    if (hostI18n?.language) {
+      return hostI18n.language.split('-')[0]; // Handle 'de-DE' -> 'de'
+    }
+  } catch {
+    // Ignore errors
+  }
+  // Fallback: check localStorage
+  const stored = localStorage.getItem('i18n_language');
+  return stored || 'de';
+}
+
+/**
+ * Translate a notification key using DefaultTranslations with optional parameters
+ */
+function translateNotify(key: string, params?: Record<string, string | number>): string {
+  const lang = getCurrentLanguage();
+  const translations = DefaultTranslations[lang] || DefaultTranslations['de'];
+  let text = translations[key] || key;
+
+  // Replace placeholders like {name} with actual values
+  if (params) {
+    for (const [param, value] of Object.entries(params)) {
+      text = text.replace(new RegExp(`\\{${param}\\}`, 'g'), String(value));
+    }
+  }
+
+  return text;
+}
 
 /**
  * Plugin state manager
@@ -145,7 +191,7 @@ function getMqttApi(ctx: PluginContext): typeof ctx.mqtt {
       ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
         available: availableSources,
       });
-      ctx.ui.notify(`MQTT Broker "${mqttSource}" nicht gefunden`, 'warning');
+      ctx.ui.notify(translateNotify('notify.mqttBrokerNotFound', { source: mqttSource }), 'warning');
     }
     return ctx.mqtt.withSource(mqttSource);
   }
@@ -327,9 +373,9 @@ function handleValveData(
         ctx.log.info('Movement started', {
           nodeId,
           previousState,
-          previousStateName: ValvePositionNames[previousState],
+          previousStateName: getPositionName(previousState),
           specificState,
-          specificStateName: ValvePositionNames[specificState],
+          specificStateName: getPositionName(specificState),
           startTimestamp: timestamp,
         });
       } else if (
@@ -343,9 +389,9 @@ function handleValveData(
         ctx.log.info('Movement completed - calculating duration', {
           nodeId,
           previousState,
-          previousStateName: ValvePositionNames[previousState],
+          previousStateName: getPositionName(previousState),
           specificState,
-          specificStateName: ValvePositionNames[specificState],
+          specificStateName: getPositionName(specificState),
           startTimestamp: nodeState.moveStartTimestamp,
           endTimestamp: timestamp,
           durationMs: duration,
@@ -369,7 +415,7 @@ function handleValveData(
           ctx.log.warn('Duration calculated but previousState not a moving state', {
             nodeId,
             previousState,
-            previousStateName: ValvePositionNames[previousState],
+            previousStateName: getPositionName(previousState),
             durationMs: duration,
           });
         }
@@ -530,7 +576,7 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
   const availableSources = ctx.mqtt.getSources();
   if (availableSources.length === 0) {
     ctx.log.error('No MQTT sources available', { nodeId });
-    ctx.ui.notify('Keine MQTT-Broker konfiguriert', 'error');
+    ctx.ui.notify(translateNotify('notify.noMqttBroker'), 'error');
     return;
   }
 
@@ -604,12 +650,12 @@ async function sendValveCommand(
         status: response.status,
         statusText: response.statusText,
       });
-      ctx.ui.notify(`Befehl fehlgeschlagen: ${response.statusText}`, 'error');
+      ctx.ui.notify(`${translateNotify('notify.commandFailed')}: ${response.statusText}`, 'error');
       return false;
     }
   } catch (error) {
     ctx.log.error('Valve command error', { nodeId, error });
-    ctx.ui.notify('Fehler beim Senden des Befehls', 'error');
+    ctx.ui.notify(translateNotify('notify.sendError'), 'error');
     return false;
   }
 }
@@ -620,7 +666,7 @@ async function sendValveCommand(
 export async function sendMoveToBase(nodeId: string): Promise<boolean> {
   const result = await sendValveCommand(nodeId, FunctionCommand.MoveToBasePosition);
   if (result) {
-    pluginState.getContext().ui.notify('GST fahren gesendet', 'success');
+    pluginState.getContext().ui.notify(translateNotify('notify.moveToBaseSent'), 'success');
   }
   return result;
 }
@@ -631,7 +677,7 @@ export async function sendMoveToBase(nodeId: string): Promise<boolean> {
 export async function sendMoveToWork(nodeId: string): Promise<boolean> {
   const result = await sendValveCommand(nodeId, FunctionCommand.MoveToWorkPosition);
   if (result) {
-    pluginState.getContext().ui.notify('AST fahren gesendet', 'success');
+    pluginState.getContext().ui.notify(translateNotify('notify.moveToWorkSent'), 'success');
   }
   return result;
 }
@@ -642,7 +688,7 @@ export async function sendMoveToWork(nodeId: string): Promise<boolean> {
 export async function sendTogglePosition(nodeId: string): Promise<boolean> {
   const result = await sendValveCommand(nodeId, FunctionCommand.TogglePosition);
   if (result) {
-    pluginState.getContext().ui.notify('Position wechseln gesendet', 'success');
+    pluginState.getContext().ui.notify(translateNotify('notify.togglePositionSent'), 'success');
   }
   return result;
 }
@@ -653,7 +699,7 @@ export async function sendTogglePosition(nodeId: string): Promise<boolean> {
 export async function sendPressureFree(nodeId: string): Promise<boolean> {
   const result = await sendValveCommand(nodeId, FunctionCommand.SwitchToPressureFree);
   if (result) {
-    pluginState.getContext().ui.notify('Drucklos gesendet', 'success');
+    pluginState.getContext().ui.notify(translateNotify('notify.pressureFreeSent'), 'success');
   }
   return result;
 }
@@ -664,7 +710,7 @@ export async function sendPressureFree(nodeId: string): Promise<boolean> {
 export async function sendModeMonostable(nodeId: string): Promise<boolean> {
   const result = await sendValveCommand(nodeId, FunctionCommand.SwitchToOptionMonostable);
   if (result) {
-    pluginState.getContext().ui.notify('Monostabil aktiviert', 'success');
+    pluginState.getContext().ui.notify(translateNotify('notify.modeMonostable'), 'success');
   }
   return result;
 }
@@ -672,7 +718,7 @@ export async function sendModeMonostable(nodeId: string): Promise<boolean> {
 export async function sendModeBistablePulsed(nodeId: string): Promise<boolean> {
   const result = await sendValveCommand(nodeId, FunctionCommand.SwitchToOptionBistablePulsed);
   if (result) {
-    pluginState.getContext().ui.notify('Bistabil Pulsed aktiviert', 'success');
+    pluginState.getContext().ui.notify(translateNotify('notify.modeBistablePulsed'), 'success');
   }
   return result;
 }
@@ -680,7 +726,7 @@ export async function sendModeBistablePulsed(nodeId: string): Promise<boolean> {
 export async function sendModeBistablePermanent(nodeId: string): Promise<boolean> {
   const result = await sendValveCommand(nodeId, FunctionCommand.SwitchToOptionBistablePermanent);
   if (result) {
-    pluginState.getContext().ui.notify('Bistabil Permanent aktiviert', 'success');
+    pluginState.getContext().ui.notify(translateNotify('notify.modeBistablePermanent'), 'success');
   }
   return result;
 }
@@ -688,7 +734,7 @@ export async function sendModeBistablePermanent(nodeId: string): Promise<boolean
 export async function sendModeBistableMiddle(nodeId: string): Promise<boolean> {
   const result = await sendValveCommand(nodeId, FunctionCommand.SwitchToOptionBistableMiddlePositionOpen);
   if (result) {
-    pluginState.getContext().ui.notify('Bistabil Mittelstellung aktiviert', 'success');
+    pluginState.getContext().ui.notify(translateNotify('notify.modeBistableMiddle'), 'success');
   }
   return result;
 }
@@ -734,7 +780,7 @@ export function acknowledgeError(nodeId: string, errorIndex: number): void {
       valveName: nodeState.valveName,
     });
 
-    ctx.ui.notify(`${nodeState.valveName}: Fehler quittiert`, 'success');
+    ctx.ui.notify(translateNotify('notify.errorAcknowledged', { name: nodeState.valveName }), 'success');
   }
 }
 
@@ -775,7 +821,7 @@ export function acknowledgeAllErrors(nodeId: string): void {
     newState: 'Idle',
   });
 
-  ctx.ui.notify(`${nodeState.valveName}: ${errorCount} Fehler quittiert`, 'success');
+  ctx.ui.notify(translateNotify('notify.errorsAcknowledgedCount', { name: nodeState.valveName, count: errorCount }), 'success');
 }
 
 /**
@@ -875,7 +921,7 @@ const plugin: Plugin = {
 
     if (!valveName) {
       ctx.log.warn(`No valve name configured for node ${node.id}`);
-      ctx.ui.notify(`Bitte Ventilname für ${node.name} konfigurieren`, 'warning');
+      ctx.ui.notify(translateNotify('notify.configureValveName', { name: node.name }), 'warning');
       return;
     }
 
@@ -887,9 +933,9 @@ const plugin: Plugin = {
     setupSubscriptions(ctx, node.id);
 
     if (!functionNo) {
-      ctx.ui.notify(`Monitoring: ${valveName} (Befehle deaktiviert - keine Funktionsnummer)`, 'warning');
+      ctx.ui.notify(translateNotify('notify.monitoringCommandsDisabled', { name: valveName }), 'warning');
     } else {
-      ctx.ui.notify(`Monitoring: ${valveName}`, 'success');
+      ctx.ui.notify(translateNotify('notify.monitoringActive', { name: valveName }), 'success');
     }
   },
 

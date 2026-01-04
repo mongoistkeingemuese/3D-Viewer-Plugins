@@ -17,6 +17,64 @@ import * as esbuild from 'esbuild';
 import * as path from 'path';
 import * as fs from 'fs';
 
+/**
+ * esbuild plugin that replaces React imports with window.React
+ * This ensures plugins use the same React instance as the host application,
+ * preventing "Invalid hook call" errors from duplicate React instances.
+ */
+const reactGlobalPlugin: esbuild.Plugin = {
+  name: 'react-global',
+  setup(build) {
+    // Intercept 'react' and 'react/jsx-runtime' imports
+    build.onResolve({ filter: /^react$|^react\/jsx-runtime$|^react-dom$/ }, (args) => {
+      return {
+        path: args.path,
+        namespace: 'react-global',
+      };
+    });
+
+    // Return code that uses window.React
+    build.onLoad({ filter: /.*/, namespace: 'react-global' }, (args) => {
+      if (args.path === 'react') {
+        return {
+          contents: `
+            const React = window.React;
+            export default React;
+            export const {
+              useState, useEffect, useCallback, useMemo, useRef,
+              useContext, createContext, Fragment, createElement,
+              Component, PureComponent, memo, forwardRef, lazy, Suspense
+            } = React;
+          `,
+          loader: 'js',
+        };
+      }
+      if (args.path === 'react/jsx-runtime') {
+        return {
+          contents: `
+            const React = window.React;
+            export const jsx = React.createElement;
+            export const jsxs = React.createElement;
+            export const Fragment = React.Fragment;
+          `,
+          loader: 'js',
+        };
+      }
+      if (args.path === 'react-dom') {
+        return {
+          contents: `
+            export default window.ReactDOM || {};
+            export const createRoot = window.ReactDOM?.createRoot;
+            export const render = window.ReactDOM?.render;
+          `,
+          loader: 'js',
+        };
+      }
+      return null;
+    });
+  },
+};
+
 export interface DevServerOptions {
   /** Port for HTTP server (default: 3100) */
   port: number;
@@ -389,8 +447,7 @@ export class DevServer {
         platform: 'browser',
         target: 'es2020',
         sourcemap: true,
-        // Note: We bundle React/ReactDOM into each plugin for dev simplicity.
-        // Production builds should use import maps or shared externals.
+        plugins: [reactGlobalPlugin],
         define: {
           'process.env.NODE_ENV': '"development"',
         },

@@ -7,6 +7,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import type { PluginI18n } from '@3dviewer/plugin-sdk';
 import {
   getNodeState,
   acknowledgeError,
@@ -20,8 +21,36 @@ import {
   getCurrentMqttFormat,
   getUnacknowledgedErrorCount,
 } from '../index';
-import { MotionStateNames, type NodeState } from '../types';
+import { MotionStateKeys, DefaultTranslations, type NodeState } from '../types';
 import { formatTime } from '../utils';
+
+/**
+ * Get the usePluginI18n hook from the host window.
+ * Plugin popup components are wrapped with PluginI18nProvider by the host.
+ */
+function usePluginI18n(): PluginI18n {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hook = (window as any).usePluginI18n;
+  if (hook) {
+    return hook();
+  }
+  // Fallback if hook not available (e.g., in dev/test environment)
+  return {
+    language: 'de',
+    t: (text: string) => text,
+    getLanguages: () => ['de', 'en'],
+    formatNumber: (value: number) => value.toString(),
+    formatDate: (date: Date | number | string) => new Date(date).toLocaleString(),
+  };
+}
+
+/**
+ * Translate a key using DefaultTranslations based on current language
+ */
+function translateKey(key: string, language: string): string {
+  const translations = DefaultTranslations[language] || DefaultTranslations['de'];
+  return translations[key] || key;
+}
 
 /**
  * Props interface for AxisDetailsPopup component
@@ -110,6 +139,11 @@ const STEP_SIZES = [0.1, 1, 10, 100];
  */
 export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
   const nodeId = data?.nodeId as string;
+  const i18n = usePluginI18n();
+
+  // Local translate function using DefaultTranslations
+  const t = (key: string): string => translateKey(key, i18n.language);
+
   const [nodeState, setNodeState] = useState<NodeState | undefined>(() => getNodeState(nodeId));
   const [updateCounter, setUpdateCounter] = useState(0);
   const [selectedStep, setSelectedStep] = useState(1);
@@ -142,8 +176,8 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
     return (
       <div style={styles.container}>
         <div style={styles.error}>
-          <h3>No Data Available</h3>
-          <p>Node state not found. Please ensure the axis is properly configured.</p>
+          <h3>{t('ui.noDataAvailable')}</h3>
+          <p>{t('ui.nodeStatusNotFound')}</p>
         </div>
       </div>
     );
@@ -184,7 +218,9 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
     setIsMoveToLoading(false);
   };
 
-  const motionStateName = MotionStateNames[nodeState.currentState] || 'Unknown';
+  // Translate state name based on current language
+  const motionStateKey = MotionStateKeys[nodeState.currentState] || 'state.disabled';
+  const motionStateName = translateKey(motionStateKey, i18n.language);
   const { activityBits, statusMask } = nodeState;
   const unacknowledgedCount = getUnacknowledgedErrorCount(nodeId);
 
@@ -192,7 +228,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <h2 style={styles.title}>Axis: {nodeState.axisName}</h2>
+        <h2 style={styles.title}>{t('ui.axis')}: {nodeState.axisName}</h2>
         <div style={styles.headerInfo}>
           <span style={styles.formatLabel}>
             {mqttFormat === 'release11' ? 'Release 11' : 'Release 10'}
@@ -217,7 +253,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
             ...(activeTab === 'control' ? styles.tabButtonActive : {}),
           }}
         >
-          Control & Position
+          {t('ui.controlAndPosition')}
         </button>
         <button
           onClick={() => setActiveTab('status')}
@@ -228,7 +264,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
           }}
           disabled={mqttFormat !== 'release11'}
         >
-          Status Flags
+          {t('ui.statusFlags')}
         </button>
         <button
           onClick={() => setActiveTab('errors')}
@@ -237,7 +273,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
             ...(activeTab === 'errors' ? styles.tabButtonActive : {}),
           }}
         >
-          Errors
+          {t('ui.errors')}
           {unacknowledgedCount > 0 && (
             <span style={styles.errorBadge}>{unacknowledgedCount}</span>
           )}
@@ -250,22 +286,22 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
           <>
             {/* Position & Velocity */}
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Position & Velocity</h3>
+              <h3 style={styles.sectionTitle}>{t('ui.positionAndVelocity')}</h3>
               <div style={styles.dataGrid}>
                 <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>World Position:</span>
+                  <span style={styles.dataLabel}>{t('ui.worldPosition')}:</span>
                   <span style={styles.dataValue}>{nodeState.worldPosition.toFixed(3)} mm</span>
                 </div>
                 <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>Actual Position:</span>
+                  <span style={styles.dataLabel}>{t('ui.actualPosition')}:</span>
                   <span style={styles.dataValue}>{nodeState.position.toFixed(3)} mm</span>
                 </div>
                 <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>Velocity:</span>
+                  <span style={styles.dataLabel}>{t('ui.velocity')}:</span>
                   <span style={styles.dataValue}>{nodeState.velocity.toFixed(3)} mm/s</span>
                 </div>
                 <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>Last Update:</span>
+                  <span style={styles.dataLabel}>{t('ui.lastUpdate')}:</span>
                   <span style={styles.dataValue}>{formatTime(nodeState.lastUpdate)}</span>
                 </div>
               </div>
@@ -274,7 +310,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
             {/* Step Control */}
             {stepControlEnabled ? (
               <div style={styles.section}>
-                <h3 style={styles.sectionTitle}>Step Control</h3>
+                <h3 style={styles.sectionTitle}>{t('ui.stepControl')}</h3>
                 <div style={styles.stepControlRow}>
                   {/* Buttons left */}
                   <div style={styles.stepActions}>
@@ -335,15 +371,15 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
                   </div>
                 </div>
                 {isLoading && (
-                  <div style={styles.loadingIndicator}>Sending command...</div>
+                  <div style={styles.loadingIndicator}>{t('ui.sending')}</div>
                 )}
               </div>
             ) : (
               <div style={styles.section}>
-                <h3 style={styles.sectionTitle}>Step Control</h3>
+                <h3 style={styles.sectionTitle}>{t('ui.stepControl')}</h3>
                 <div style={styles.release10Notice}>
                   <span style={{ fontSize: '18px' }}>&#9432;</span>
-                  <span>Step-Betrieb nur mit Release 11 Format verfuegbar</span>
+                  <span>{t('ui.stepControlRelease11Only')}</span>
                 </div>
               </div>
             )}
@@ -351,7 +387,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
             {/* Move To Position */}
             {stepControlEnabled && (
               <div style={styles.section}>
-                <h3 style={styles.sectionTitle}>Move Absolut</h3>
+                <h3 style={styles.sectionTitle}>{t('ui.moveAbsolute')}</h3>
                 <div style={styles.moveToRow}>
                   <div style={styles.moveToInputGroup}>
                     <input
@@ -368,7 +404,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
                     disabled={isMoveToLoading}
                     style={styles.moveToButton}
                   >
-                    {isMoveToLoading ? 'Sending...' : 'Move To'}
+                    {isMoveToLoading ? t('ui.sending') : t('ui.moveTo')}
                   </button>
                 </div>
               </div>
@@ -377,14 +413,14 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
             {/* Axis Commands */}
             {stepControlEnabled && (
               <div style={styles.section}>
-                <h3 style={styles.sectionTitle}>Axis Commands</h3>
+                <h3 style={styles.sectionTitle}>{t('ui.axisCommands')}</h3>
                 <div style={styles.axisCommandsRow}>
                   <button
                     onClick={handleSwitchOn}
                     disabled={isSwitchOnLoading}
                     style={styles.axisCommandButton}
                   >
-                    {isSwitchOnLoading ? 'Sending...' : 'Switch On'}
+                    {isSwitchOnLoading ? t('ui.sending') : t('ui.switchOn')}
                   </button>
                   <button
                     onClick={handleHoming}
@@ -394,7 +430,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
                       backgroundColor: '#17a2b8',
                     }}
                   >
-                    {isHomingLoading ? 'Sending...' : 'Homing'}
+                    {isHomingLoading ? t('ui.sending') : t('ui.homing')}
                   </button>
                 </div>
               </div>
@@ -406,42 +442,42 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
           <>
             {/* Status Flags (motMsk) */}
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Status Flags (motMsk)</h3>
+              <h3 style={styles.sectionTitle}>{t('ui.statusFlagsMotMsk')}</h3>
               <div style={styles.bitGrid}>
-                <StatusBit label="Ready" active={statusMask.isReady} />
-                <StatusBit label="Enabled" active={statusMask.isEnabled} />
-                <StatusBit label="Switched On" active={statusMask.isSwitchedOn} />
-                <StatusBit label="Homed" active={statusMask.isHomed} />
-                <StatusBit label="Commutated" active={statusMask.isCommutated} />
-                <StatusBit label="In Velocity" active={statusMask.isInVelocity} />
-                <StatusBit label="Override" active={statusMask.overrideEnabled} />
-                <StatusBit label="HW Enable" active={statusMask.hardwareEnableActivated} />
-                <StatusBit label="Internal Limit" active={statusMask.internalLimitIsActive} warning />
-                <StatusBit label="Warning" active={statusMask.hasWarning} warning />
-                <StatusBit label="Error" active={statusMask.hasError} warning />
-                <StatusBit label="Home Switch" active={statusMask.hardwareHomeSwitchActivated} />
-                <StatusBit label="HW Limit-" active={statusMask.hardwareLimitSwitchNegativeActivated} warning />
-                <StatusBit label="HW Limit+" active={statusMask.hardwareLimitSwitchPositiveActivated} warning />
-                <StatusBit label="SW Limit-" active={statusMask.softwareLimitSwitchNegativeActivated} warning />
-                <StatusBit label="SW Limit+" active={statusMask.softwareLimitSwitchPositiveActivated} warning />
-                <StatusBit label="SW Reached-" active={statusMask.softwareLimitSwitchNegativeReached} warning />
-                <StatusBit label="SW Reached+" active={statusMask.softwareLimitSwitchPositiveReached} warning />
-                <StatusBit label="Emergency" active={statusMask.emergencyDetectedDelayedEnabled} warning />
+                <StatusBit label={t('ui.ready')} active={statusMask.isReady} />
+                <StatusBit label={t('ui.enabled')} active={statusMask.isEnabled} />
+                <StatusBit label={t('ui.switchedOn')} active={statusMask.isSwitchedOn} />
+                <StatusBit label={t('ui.homed')} active={statusMask.isHomed} />
+                <StatusBit label={t('ui.commutated')} active={statusMask.isCommutated} />
+                <StatusBit label={t('ui.inVelocity')} active={statusMask.isInVelocity} />
+                <StatusBit label={t('ui.override')} active={statusMask.overrideEnabled} />
+                <StatusBit label={t('ui.hwEnable')} active={statusMask.hardwareEnableActivated} />
+                <StatusBit label={t('ui.internalLimit')} active={statusMask.internalLimitIsActive} warning />
+                <StatusBit label={t('ui.warning')} active={statusMask.hasWarning} warning />
+                <StatusBit label={t('ui.error')} active={statusMask.hasError} warning />
+                <StatusBit label={t('ui.homeSwitch')} active={statusMask.hardwareHomeSwitchActivated} />
+                <StatusBit label={t('ui.hwLimitNeg')} active={statusMask.hardwareLimitSwitchNegativeActivated} warning />
+                <StatusBit label={t('ui.hwLimitPos')} active={statusMask.hardwareLimitSwitchPositiveActivated} warning />
+                <StatusBit label={t('ui.swLimitNeg')} active={statusMask.softwareLimitSwitchNegativeActivated} warning />
+                <StatusBit label={t('ui.swLimitPos')} active={statusMask.softwareLimitSwitchPositiveActivated} warning />
+                <StatusBit label={t('ui.swReachedNeg')} active={statusMask.softwareLimitSwitchNegativeReached} warning />
+                <StatusBit label={t('ui.swReachedPos')} active={statusMask.softwareLimitSwitchPositiveReached} warning />
+                <StatusBit label={t('ui.emergency')} active={statusMask.emergencyDetectedDelayedEnabled} warning />
               </div>
             </div>
 
             {/* Activity Status (mtAcMk) */}
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Activity Status (mtAcMk)</h3>
+              <h3 style={styles.sectionTitle}>{t('ui.activityStatusMtAcMk')}</h3>
               <div style={styles.bitGrid}>
-                <StatusBit label="Motion Active" active={activityBits.motionIsActive} />
-                <StatusBit label="Jog-" active={activityBits.jogNegativeIsActive} />
-                <StatusBit label="Jog+" active={activityBits.jogPositiveIsActive} />
-                <StatusBit label="Homing" active={activityBits.homingIsActive} />
-                <StatusBit label="Vel+" active={activityBits.velocityPositiveIsActive} />
-                <StatusBit label="Vel-" active={activityBits.velocityNegativeIsActive} />
-                <StatusBit label="Stopping" active={activityBits.stoppingIsActive} />
-                <StatusBit label="Reset Fault" active={activityBits.resetControllerFaultIsActive} />
+                <StatusBit label={t('ui.motionActive')} active={activityBits.motionIsActive} />
+                <StatusBit label={t('ui.jogNeg')} active={activityBits.jogNegativeIsActive} />
+                <StatusBit label={t('ui.jogPos')} active={activityBits.jogPositiveIsActive} />
+                <StatusBit label={t('ui.homing')} active={activityBits.homingIsActive} />
+                <StatusBit label={t('ui.velPos')} active={activityBits.velocityPositiveIsActive} />
+                <StatusBit label={t('ui.velNeg')} active={activityBits.velocityNegativeIsActive} />
+                <StatusBit label={t('ui.stopping')} active={activityBits.stoppingIsActive} />
+                <StatusBit label={t('ui.resetFault')} active={activityBits.resetControllerFaultIsActive} />
               </div>
             </div>
           </>
@@ -451,7 +487,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
         {activeTab === 'errors' && (
           <div style={styles.section}>
             <h3 style={styles.sectionTitle}>
-              Fehlermeldungen ({nodeState.errors.length}) - {unacknowledgedCount} offen
+              {t('ui.errorMessages')} ({nodeState.errors.length}) - {unacknowledgedCount} {t('ui.open')}
             </h3>
 
             {/* Alle Quittieren Button */}
@@ -475,13 +511,13 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
                   width: '100%',
                 }}
               >
-                Alle Quittieren ({unacknowledgedCount})
+                {t('ui.acknowledgeAll')} ({unacknowledgedCount})
               </button>
             )}
 
             {nodeState.errors.length === 0 ? (
               <pre style={{ color: '#28a745', padding: '20px', textAlign: 'center', margin: 0 }}>
-                Keine Fehlermeldungen
+                {t('ui.noErrors')}
               </pre>
             ) : (
               <>
@@ -574,7 +610,7 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
                           fontSize: '12px',
                         }}
                       >
-                        Quittieren
+                        {t('ui.acknowledge')}
                       </button>
                     )}
                   </>

@@ -19,15 +19,187 @@ var {
 } = React;
 
 // src/types.ts
-var MotionStateNames = {
-  [0]: "Error Stop",
-  [1]: "Standstill",
-  [2]: "Homing",
-  [3]: "Stopping",
-  [4]: "Disabled",
-  [5]: "Discrete Motion",
-  [6]: "Continuous Motion",
-  [7]: "Synchronized Motion"
+var MotionStateKeys = {
+  [0]: "state.errorStop",
+  [1]: "state.standstill",
+  [2]: "state.homing",
+  [3]: "state.stopping",
+  [4]: "state.disabled",
+  [5]: "state.discreteMotion",
+  [6]: "state.continuousMotion",
+  [7]: "state.synchronizedMotion"
+};
+var DefaultTranslations = {
+  de: {
+    // MotionState
+    "state.errorStop": "Fehlerstopp",
+    "state.standstill": "Stillstand",
+    "state.homing": "Referenzfahrt",
+    "state.stopping": "Stoppt",
+    "state.disabled": "Deaktiviert",
+    "state.discreteMotion": "Einzelbewegung",
+    "state.continuousMotion": "Kontinuierliche Bewegung",
+    "state.synchronizedMotion": "Synchrone Bewegung",
+    // UI Labels
+    "ui.axis": "Achse",
+    "ui.controlAndPosition": "Bedienung & Position",
+    "ui.statusFlags": "Status Flags",
+    "ui.errors": "Fehler",
+    "ui.positionAndVelocity": "Position & Geschwindigkeit",
+    "ui.worldPosition": "Weltposition",
+    "ui.actualPosition": "Ist-Position",
+    "ui.velocity": "Geschwindigkeit",
+    "ui.lastUpdate": "Letztes Update",
+    "ui.stepControl": "Schrittbetrieb",
+    "ui.stepControlRelease11Only": "Schrittbetrieb nur mit Release 11 Format verf\xFCgbar",
+    "ui.moveAbsolute": "Absolut fahren",
+    "ui.axisCommands": "Achsenbefehle",
+    "ui.errorMessages": "Fehlermeldungen",
+    "ui.open": "offen",
+    "ui.acknowledgeAll": "Alle Quittieren",
+    "ui.acknowledge": "Quittieren",
+    "ui.noErrors": "Keine Fehlermeldungen",
+    "ui.noDataAvailable": "Keine Daten verf\xFCgbar",
+    "ui.nodeStatusNotFound": "Knotenstatus nicht gefunden. Bitte stellen Sie sicher, dass die Achse korrekt konfiguriert ist.",
+    "ui.sending": "Sende...",
+    "ui.switchOn": "Einschalten",
+    "ui.homing": "Referenzfahrt",
+    "ui.moveTo": "Fahre zu",
+    // Status Flags
+    "ui.statusFlagsMotMsk": "Status Flags (motMsk)",
+    "ui.activityStatusMtAcMk": "Aktivit\xE4tsstatus (mtAcMk)",
+    "ui.ready": "Bereit",
+    "ui.enabled": "Freigegeben",
+    "ui.switchedOn": "Eingeschaltet",
+    "ui.homed": "Referenziert",
+    "ui.commutated": "Kommutiert",
+    "ui.inVelocity": "In Geschwindigkeit",
+    "ui.override": "Override",
+    "ui.hwEnable": "HW Freigabe",
+    "ui.internalLimit": "Internes Limit",
+    "ui.warning": "Warnung",
+    "ui.error": "Fehler",
+    "ui.homeSwitch": "Home-Schalter",
+    "ui.hwLimitNeg": "HW Limit-",
+    "ui.hwLimitPos": "HW Limit+",
+    "ui.swLimitNeg": "SW Limit-",
+    "ui.swLimitPos": "SW Limit+",
+    "ui.swReachedNeg": "SW Erreicht-",
+    "ui.swReachedPos": "SW Erreicht+",
+    "ui.emergency": "Notfall",
+    "ui.motionActive": "Bewegung aktiv",
+    "ui.jogNeg": "Jog-",
+    "ui.jogPos": "Jog+",
+    "ui.velPos": "Vel+",
+    "ui.velNeg": "Vel-",
+    "ui.stopping": "Stoppt",
+    "ui.resetFault": "Fehler Reset",
+    // Notifications
+    "notify.noMqttBroker": "Keine MQTT-Broker konfiguriert",
+    "notify.mqttBrokerNotFound": 'MQTT Broker "{source}" nicht gefunden',
+    "notify.configureAxisName": "Bitte Achsname f\xFCr {name} konfigurieren",
+    "notify.monitoringActive": "Monitoring: {name}",
+    "notify.stepSent": "Step {value} gesendet",
+    "notify.stepCommandFailed": "Step-Befehl fehlgeschlagen: {error}",
+    "notify.stepCommandError": "Fehler beim Senden des Step-Befehls",
+    "notify.switchOnSent": "Switch On gesendet",
+    "notify.switchOnFailed": "Switch On fehlgeschlagen: {error}",
+    "notify.switchOnError": "Fehler beim Senden des Switch On-Befehls",
+    "notify.homingStarted": "Referenzfahrt gestartet",
+    "notify.homingFailed": "Referenzfahrt fehlgeschlagen: {error}",
+    "notify.homingError": "Fehler beim Senden des Referenzfahrt-Befehls",
+    "notify.moveToSent": "Fahre zu {position} mm gesendet",
+    "notify.moveToFailed": "Fahre zu fehlgeschlagen: {error}",
+    "notify.moveToError": "Fehler beim Senden des Fahre zu-Befehls",
+    "notify.errorAcknowledged": "{name}: Fehler quittiert",
+    "notify.errorsAcknowledgedCount": "{name}: {count} Fehler quittiert",
+    "notify.mqttFormatError": "MQTT Format-Fehler: {expected} erwartet, aber anderes Format empfangen"
+  },
+  en: {
+    // MotionState
+    "state.errorStop": "Error Stop",
+    "state.standstill": "Standstill",
+    "state.homing": "Homing",
+    "state.stopping": "Stopping",
+    "state.disabled": "Disabled",
+    "state.discreteMotion": "Discrete Motion",
+    "state.continuousMotion": "Continuous Motion",
+    "state.synchronizedMotion": "Synchronized Motion",
+    // UI Labels
+    "ui.axis": "Axis",
+    "ui.controlAndPosition": "Control & Position",
+    "ui.statusFlags": "Status Flags",
+    "ui.errors": "Errors",
+    "ui.positionAndVelocity": "Position & Velocity",
+    "ui.worldPosition": "World Position",
+    "ui.actualPosition": "Actual Position",
+    "ui.velocity": "Velocity",
+    "ui.lastUpdate": "Last Update",
+    "ui.stepControl": "Step Control",
+    "ui.stepControlRelease11Only": "Step control only available with Release 11 format",
+    "ui.moveAbsolute": "Move Absolute",
+    "ui.axisCommands": "Axis Commands",
+    "ui.errorMessages": "Error Messages",
+    "ui.open": "open",
+    "ui.acknowledgeAll": "Acknowledge All",
+    "ui.acknowledge": "Acknowledge",
+    "ui.noErrors": "No error messages",
+    "ui.noDataAvailable": "No data available",
+    "ui.nodeStatusNotFound": "Node status not found. Please ensure the axis is properly configured.",
+    "ui.sending": "Sending...",
+    "ui.switchOn": "Switch On",
+    "ui.homing": "Homing",
+    "ui.moveTo": "Move To",
+    // Status Flags
+    "ui.statusFlagsMotMsk": "Status Flags (motMsk)",
+    "ui.activityStatusMtAcMk": "Activity Status (mtAcMk)",
+    "ui.ready": "Ready",
+    "ui.enabled": "Enabled",
+    "ui.switchedOn": "Switched On",
+    "ui.homed": "Homed",
+    "ui.commutated": "Commutated",
+    "ui.inVelocity": "In Velocity",
+    "ui.override": "Override",
+    "ui.hwEnable": "HW Enable",
+    "ui.internalLimit": "Internal Limit",
+    "ui.warning": "Warning",
+    "ui.error": "Error",
+    "ui.homeSwitch": "Home Switch",
+    "ui.hwLimitNeg": "HW Limit-",
+    "ui.hwLimitPos": "HW Limit+",
+    "ui.swLimitNeg": "SW Limit-",
+    "ui.swLimitPos": "SW Limit+",
+    "ui.swReachedNeg": "SW Reached-",
+    "ui.swReachedPos": "SW Reached+",
+    "ui.emergency": "Emergency",
+    "ui.motionActive": "Motion Active",
+    "ui.jogNeg": "Jog-",
+    "ui.jogPos": "Jog+",
+    "ui.velPos": "Vel+",
+    "ui.velNeg": "Vel-",
+    "ui.stopping": "Stopping",
+    "ui.resetFault": "Reset Fault",
+    // Notifications
+    "notify.noMqttBroker": "No MQTT broker configured",
+    "notify.mqttBrokerNotFound": 'MQTT Broker "{source}" not found',
+    "notify.configureAxisName": "Please configure axis name for {name}",
+    "notify.monitoringActive": "Monitoring: {name}",
+    "notify.stepSent": "Step {value} sent",
+    "notify.stepCommandFailed": "Step command failed: {error}",
+    "notify.stepCommandError": "Error sending step command",
+    "notify.switchOnSent": "Switch On sent",
+    "notify.switchOnFailed": "Switch On failed: {error}",
+    "notify.switchOnError": "Error sending Switch On command",
+    "notify.homingStarted": "Homing started",
+    "notify.homingFailed": "Homing failed: {error}",
+    "notify.homingError": "Error sending Homing command",
+    "notify.moveToSent": "Move to {position} mm sent",
+    "notify.moveToFailed": "Move to failed: {error}",
+    "notify.moveToError": "Error sending Move To command",
+    "notify.errorAcknowledged": "{name}: Error acknowledged",
+    "notify.errorsAcknowledgedCount": "{name}: {count} errors acknowledged",
+    "notify.mqttFormatError": "MQTT format error: Expected {expected}, but received different format"
+  }
 };
 
 // src/utils.ts
@@ -148,6 +320,23 @@ var jsxs = React2.createElement;
 var Fragment2 = React2.Fragment;
 
 // src/components/AxisDetailsPopup.tsx
+function usePluginI18n() {
+  const hook = window.usePluginI18n;
+  if (hook) {
+    return hook();
+  }
+  return {
+    language: "de",
+    t: (text) => text,
+    getLanguages: () => ["de", "en"],
+    formatNumber: (value) => value.toString(),
+    formatDate: (date) => new Date(date).toLocaleString()
+  };
+}
+function translateKey(key, language) {
+  const translations = DefaultTranslations[language] || DefaultTranslations["de"];
+  return translations[key] || key;
+}
 function getMotionStateColor(state) {
   switch (state) {
     case 0:
@@ -210,6 +399,8 @@ var StatusBit = ({
 var STEP_SIZES = [0.1, 1, 10, 100];
 var AxisDetailsPopup = ({ data }) => {
   const nodeId = data?.nodeId;
+  const i18n = usePluginI18n();
+  const t = (key) => translateKey(key, i18n.language);
   const [nodeState, setNodeState] = useState(() => getNodeState(nodeId));
   const [updateCounter, setUpdateCounter] = useState(0);
   const [selectedStep, setSelectedStep] = useState(1);
@@ -234,8 +425,8 @@ var AxisDetailsPopup = ({ data }) => {
   }, [nodeId]);
   if (!nodeState) {
     return /* @__PURE__ */ jsx("div", { style: styles.container, children: /* @__PURE__ */ jsxs("div", { style: styles.error, children: [
-      /* @__PURE__ */ jsx("h3", { children: "No Data Available" }),
-      /* @__PURE__ */ jsx("p", { children: "Node state not found. Please ensure the axis is properly configured." })
+      /* @__PURE__ */ jsx("h3", { children: t("ui.noDataAvailable") }),
+      /* @__PURE__ */ jsx("p", { children: t("ui.nodeStatusNotFound") })
     ] }) });
   }
   const handleAcknowledge = (errorIndex) => {
@@ -267,13 +458,15 @@ var AxisDetailsPopup = ({ data }) => {
     await sendMoveToPositionCommand(nodeId, targetPosition);
     setIsMoveToLoading(false);
   };
-  const motionStateName = MotionStateNames[nodeState.currentState] || "Unknown";
+  const motionStateKey = MotionStateKeys[nodeState.currentState] || "state.disabled";
+  const motionStateName = translateKey(motionStateKey, i18n.language);
   const { activityBits, statusMask } = nodeState;
   const unacknowledgedCount = getUnacknowledgedErrorCount(nodeId);
   return /* @__PURE__ */ jsxs("div", { style: styles.container, children: [
     /* @__PURE__ */ jsxs("div", { style: styles.header, children: [
       /* @__PURE__ */ jsxs("h2", { style: styles.title, children: [
-        "Axis: ",
+        t("ui.axis"),
+        ": ",
         nodeState.axisName
       ] }),
       /* @__PURE__ */ jsxs("div", { style: styles.headerInfo, children: [
@@ -299,7 +492,7 @@ var AxisDetailsPopup = ({ data }) => {
             ...styles.tabButton,
             ...activeTab === "control" ? styles.tabButtonActive : {}
           },
-          children: "Control & Position"
+          children: t("ui.controlAndPosition")
         }
       ),
       /* @__PURE__ */ jsx(
@@ -312,7 +505,7 @@ var AxisDetailsPopup = ({ data }) => {
             ...mqttFormat !== "release11" ? styles.tabButtonDisabled : {}
           },
           disabled: mqttFormat !== "release11",
-          children: "Status Flags"
+          children: t("ui.statusFlags")
         }
       ),
       /* @__PURE__ */ jsxs(
@@ -324,7 +517,7 @@ var AxisDetailsPopup = ({ data }) => {
             ...activeTab === "errors" ? styles.tabButtonActive : {}
           },
           children: [
-            "Errors",
+            t("ui.errors"),
             unacknowledgedCount > 0 && /* @__PURE__ */ jsx("span", { style: styles.errorBadge, children: unacknowledgedCount })
           ]
         }
@@ -333,37 +526,49 @@ var AxisDetailsPopup = ({ data }) => {
     /* @__PURE__ */ jsxs("div", { style: styles.tabContent, children: [
       activeTab === "control" && /* @__PURE__ */ jsxs(Fragment2, { children: [
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Position & Velocity" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.positionAndVelocity") }),
           /* @__PURE__ */ jsxs("div", { style: styles.dataGrid, children: [
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "World Position:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
+                t("ui.worldPosition"),
+                ":"
+              ] }),
               /* @__PURE__ */ jsxs("span", { style: styles.dataValue, children: [
                 nodeState.worldPosition.toFixed(3),
                 " mm"
               ] })
             ] }),
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Actual Position:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
+                t("ui.actualPosition"),
+                ":"
+              ] }),
               /* @__PURE__ */ jsxs("span", { style: styles.dataValue, children: [
                 nodeState.position.toFixed(3),
                 " mm"
               ] })
             ] }),
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Velocity:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
+                t("ui.velocity"),
+                ":"
+              ] }),
               /* @__PURE__ */ jsxs("span", { style: styles.dataValue, children: [
                 nodeState.velocity.toFixed(3),
                 " mm/s"
               ] })
             ] }),
             /* @__PURE__ */ jsxs("div", { style: styles.dataRow, children: [
-              /* @__PURE__ */ jsx("span", { style: styles.dataLabel, children: "Last Update:" }),
+              /* @__PURE__ */ jsxs("span", { style: styles.dataLabel, children: [
+                t("ui.lastUpdate"),
+                ":"
+              ] }),
               /* @__PURE__ */ jsx("span", { style: styles.dataValue, children: formatTime(nodeState.lastUpdate) })
             ] })
           ] })
         ] }),
         stepControlEnabled ? /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Step Control" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.stepControl") }),
           /* @__PURE__ */ jsxs("div", { style: styles.stepControlRow, children: [
             /* @__PURE__ */ jsxs("div", { style: styles.stepActions, children: [
               /* @__PURE__ */ jsxs(
@@ -432,16 +637,16 @@ var AxisDetailsPopup = ({ data }) => {
               ] })
             ] })
           ] }),
-          isLoading && /* @__PURE__ */ jsx("div", { style: styles.loadingIndicator, children: "Sending command..." })
+          isLoading && /* @__PURE__ */ jsx("div", { style: styles.loadingIndicator, children: t("ui.sending") })
         ] }) : /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Step Control" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.stepControl") }),
           /* @__PURE__ */ jsxs("div", { style: styles.release10Notice, children: [
             /* @__PURE__ */ jsx("span", { style: { fontSize: "18px" }, children: "\u24D8" }),
-            /* @__PURE__ */ jsx("span", { children: "Step-Betrieb nur mit Release 11 Format verfuegbar" })
+            /* @__PURE__ */ jsx("span", { children: t("ui.stepControlRelease11Only") })
           ] })
         ] }),
         stepControlEnabled && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Move Absolut" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.moveAbsolute") }),
           /* @__PURE__ */ jsxs("div", { style: styles.moveToRow, children: [
             /* @__PURE__ */ jsxs("div", { style: styles.moveToInputGroup, children: [
               /* @__PURE__ */ jsx(
@@ -462,13 +667,13 @@ var AxisDetailsPopup = ({ data }) => {
                 onClick: handleMoveTo,
                 disabled: isMoveToLoading,
                 style: styles.moveToButton,
-                children: isMoveToLoading ? "Sending..." : "Move To"
+                children: isMoveToLoading ? t("ui.sending") : t("ui.moveTo")
               }
             )
           ] })
         ] }),
         stepControlEnabled && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Axis Commands" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.axisCommands") }),
           /* @__PURE__ */ jsxs("div", { style: styles.axisCommandsRow, children: [
             /* @__PURE__ */ jsx(
               "button",
@@ -476,7 +681,7 @@ var AxisDetailsPopup = ({ data }) => {
                 onClick: handleSwitchOn,
                 disabled: isSwitchOnLoading,
                 style: styles.axisCommandButton,
-                children: isSwitchOnLoading ? "Sending..." : "Switch On"
+                children: isSwitchOnLoading ? t("ui.sending") : t("ui.switchOn")
               }
             ),
             /* @__PURE__ */ jsx(
@@ -488,7 +693,7 @@ var AxisDetailsPopup = ({ data }) => {
                   ...styles.axisCommandButton,
                   backgroundColor: "#17a2b8"
                 },
-                children: isHomingLoading ? "Sending..." : "Homing"
+                children: isHomingLoading ? t("ui.sending") : t("ui.homing")
               }
             )
           ] })
@@ -496,50 +701,52 @@ var AxisDetailsPopup = ({ data }) => {
       ] }),
       activeTab === "status" && mqttFormat === "release11" && /* @__PURE__ */ jsxs(Fragment2, { children: [
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Status Flags (motMsk)" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.statusFlagsMotMsk") }),
           /* @__PURE__ */ jsxs("div", { style: styles.bitGrid, children: [
-            /* @__PURE__ */ jsx(StatusBit, { label: "Ready", active: statusMask.isReady }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Enabled", active: statusMask.isEnabled }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Switched On", active: statusMask.isSwitchedOn }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Homed", active: statusMask.isHomed }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Commutated", active: statusMask.isCommutated }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "In Velocity", active: statusMask.isInVelocity }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Override", active: statusMask.overrideEnabled }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "HW Enable", active: statusMask.hardwareEnableActivated }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Internal Limit", active: statusMask.internalLimitIsActive, warning: true }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Warning", active: statusMask.hasWarning, warning: true }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Error", active: statusMask.hasError, warning: true }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Home Switch", active: statusMask.hardwareHomeSwitchActivated }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "HW Limit-", active: statusMask.hardwareLimitSwitchNegativeActivated, warning: true }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "HW Limit+", active: statusMask.hardwareLimitSwitchPositiveActivated, warning: true }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "SW Limit-", active: statusMask.softwareLimitSwitchNegativeActivated, warning: true }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "SW Limit+", active: statusMask.softwareLimitSwitchPositiveActivated, warning: true }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "SW Reached-", active: statusMask.softwareLimitSwitchNegativeReached, warning: true }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "SW Reached+", active: statusMask.softwareLimitSwitchPositiveReached, warning: true }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Emergency", active: statusMask.emergencyDetectedDelayedEnabled, warning: true })
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.ready"), active: statusMask.isReady }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.enabled"), active: statusMask.isEnabled }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.switchedOn"), active: statusMask.isSwitchedOn }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.homed"), active: statusMask.isHomed }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.commutated"), active: statusMask.isCommutated }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.inVelocity"), active: statusMask.isInVelocity }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.override"), active: statusMask.overrideEnabled }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.hwEnable"), active: statusMask.hardwareEnableActivated }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.internalLimit"), active: statusMask.internalLimitIsActive, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.warning"), active: statusMask.hasWarning, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.error"), active: statusMask.hasError, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.homeSwitch"), active: statusMask.hardwareHomeSwitchActivated }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.hwLimitNeg"), active: statusMask.hardwareLimitSwitchNegativeActivated, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.hwLimitPos"), active: statusMask.hardwareLimitSwitchPositiveActivated, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.swLimitNeg"), active: statusMask.softwareLimitSwitchNegativeActivated, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.swLimitPos"), active: statusMask.softwareLimitSwitchPositiveActivated, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.swReachedNeg"), active: statusMask.softwareLimitSwitchNegativeReached, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.swReachedPos"), active: statusMask.softwareLimitSwitchPositiveReached, warning: true }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.emergency"), active: statusMask.emergencyDetectedDelayedEnabled, warning: true })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
-          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: "Activity Status (mtAcMk)" }),
+          /* @__PURE__ */ jsx("h3", { style: styles.sectionTitle, children: t("ui.activityStatusMtAcMk") }),
           /* @__PURE__ */ jsxs("div", { style: styles.bitGrid, children: [
-            /* @__PURE__ */ jsx(StatusBit, { label: "Motion Active", active: activityBits.motionIsActive }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Jog-", active: activityBits.jogNegativeIsActive }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Jog+", active: activityBits.jogPositiveIsActive }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Homing", active: activityBits.homingIsActive }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Vel+", active: activityBits.velocityPositiveIsActive }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Vel-", active: activityBits.velocityNegativeIsActive }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Stopping", active: activityBits.stoppingIsActive }),
-            /* @__PURE__ */ jsx(StatusBit, { label: "Reset Fault", active: activityBits.resetControllerFaultIsActive })
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.motionActive"), active: activityBits.motionIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.jogNeg"), active: activityBits.jogNegativeIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.jogPos"), active: activityBits.jogPositiveIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.homing"), active: activityBits.homingIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.velPos"), active: activityBits.velocityPositiveIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.velNeg"), active: activityBits.velocityNegativeIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.stopping"), active: activityBits.stoppingIsActive }),
+            /* @__PURE__ */ jsx(StatusBit, { label: t("ui.resetFault"), active: activityBits.resetControllerFaultIsActive })
           ] })
         ] })
       ] }),
       activeTab === "errors" && /* @__PURE__ */ jsxs("div", { style: styles.section, children: [
         /* @__PURE__ */ jsxs("h3", { style: styles.sectionTitle, children: [
-          "Fehlermeldungen (",
+          t("ui.errorMessages"),
+          " (",
           nodeState.errors.length,
           ") - ",
           unacknowledgedCount,
-          " offen"
+          " ",
+          t("ui.open")
         ] }),
         unacknowledgedCount > 0 && /* @__PURE__ */ jsxs(
           "button",
@@ -562,13 +769,14 @@ var AxisDetailsPopup = ({ data }) => {
               width: "100%"
             },
             children: [
-              "Alle Quittieren (",
+              t("ui.acknowledgeAll"),
+              " (",
               unacknowledgedCount,
               ")"
             ]
           }
         ),
-        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("pre", { style: { color: "#28a745", padding: "20px", textAlign: "center", margin: 0 }, children: "Keine Fehlermeldungen" }) : /* @__PURE__ */ jsxs(Fragment2, { children: [
+        nodeState.errors.length === 0 ? /* @__PURE__ */ jsx("pre", { style: { color: "#28a745", padding: "20px", textAlign: "center", margin: 0 }, children: t("ui.noErrors") }) : /* @__PURE__ */ jsxs(Fragment2, { children: [
           /* @__PURE__ */ jsx("pre", { style: {
             margin: "0 0 8px 0",
             padding: "10px",
@@ -650,7 +858,7 @@ var AxisDetailsPopup = ({ data }) => {
                   cursor: "pointer",
                   fontSize: "12px"
                 },
-                children: "Quittieren"
+                children: t("ui.acknowledge")
               }
             )
           ] })
@@ -948,6 +1156,28 @@ var styles = {
 };
 
 // src/index.ts
+function getCurrentLanguage() {
+  try {
+    const hostI18n = window.__i18n__ || window.i18n;
+    if (hostI18n?.language) {
+      return hostI18n.language.split("-")[0];
+    }
+  } catch {
+  }
+  const stored = localStorage.getItem("i18n_language");
+  return stored || "de";
+}
+function translateNotify(key, params) {
+  const lang = getCurrentLanguage();
+  const translations = DefaultTranslations[lang] || DefaultTranslations["de"];
+  let text = translations[key] || key;
+  if (params) {
+    for (const [param, value] of Object.entries(params)) {
+      text = text.replace(new RegExp(`\\{${param}\\}`, "g"), String(value));
+    }
+  }
+  return text;
+}
 var PluginState = class {
   constructor() {
     this.nodes = /* @__PURE__ */ new Map();
@@ -1051,7 +1281,7 @@ function getMqttApi(ctx) {
       ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
         available: availableSources
       });
-      ctx.ui.notify(`MQTT Broker "${mqttSource}" nicht gefunden`, "warning");
+      ctx.ui.notify(translateNotify("notify.mqttBrokerNotFound", { source: mqttSource }), "warning");
     }
     return ctx.mqtt.withSource(mqttSource);
   }
@@ -1231,7 +1461,7 @@ function handleAxisData(ctx, nodeId, rawPayload) {
           hasData: !!payload.data,
           hasPack: !!parsedPayload.pack
         });
-        ctx.ui.notify("MQTT Format-Fehler: Release 11 erwartet, aber anderes Format empfangen", "error");
+        ctx.ui.notify(translateNotify("notify.mqttFormatError", { expected: "Release 11" }), "error");
       }
     } else {
       const payload = parsedPayload;
@@ -1243,7 +1473,7 @@ function handleAxisData(ctx, nodeId, rawPayload) {
           hasPack: !!payload.pack,
           hasData: !!parsedPayload.data
         });
-        ctx.ui.notify("MQTT Format-Fehler: Release 10 erwartet, aber anderes Format empfangen", "error");
+        ctx.ui.notify(translateNotify("notify.mqttFormatError", { expected: "Release 10" }), "error");
       }
     }
     if (!success) {
@@ -1328,7 +1558,7 @@ function setupSubscriptions(ctx, nodeId) {
   const availableSources = ctx.mqtt.getSources();
   if (availableSources.length === 0) {
     ctx.log.error("No MQTT sources available", { nodeId });
-    ctx.ui.notify("Keine MQTT-Broker konfiguriert", "error");
+    ctx.ui.notify(translateNotify("notify.noMqttBroker"), "error");
     return;
   }
   ctx.log.info("Setting up axis subscription", { nodeId, mainTopic });
@@ -1384,7 +1614,7 @@ async function sendStepCommand(nodeId, stepValue) {
         stepValue,
         status: response.status
       });
-      ctx.ui.notify(`Step ${stepValue > 0 ? "+" : ""}${stepValue} gesendet`, "success");
+      ctx.ui.notify(translateNotify("notify.stepSent", { value: `${stepValue > 0 ? "+" : ""}${stepValue}` }), "success");
       return true;
     } else {
       ctx.log.error("Step command failed", {
@@ -1392,12 +1622,12 @@ async function sendStepCommand(nodeId, stepValue) {
         status: response.status,
         statusText: response.statusText
       });
-      ctx.ui.notify(`Step-Befehl fehlgeschlagen: ${response.statusText}`, "error");
+      ctx.ui.notify(translateNotify("notify.stepCommandFailed", { error: response.statusText }), "error");
       return false;
     }
   } catch (error) {
     ctx.log.error("Step command error", { nodeId, error });
-    ctx.ui.notify("Fehler beim Senden des Step-Befehls", "error");
+    ctx.ui.notify(translateNotify("notify.stepCommandError"), "error");
     return false;
   }
 }
@@ -1432,7 +1662,7 @@ async function sendSwitchOnCommand(nodeId) {
     });
     if (response.status >= 200 && response.status < 300) {
       ctx.log.info("Switch on command sent successfully", { nodeId, status: response.status });
-      ctx.ui.notify("Switch On gesendet", "success");
+      ctx.ui.notify(translateNotify("notify.switchOnSent"), "success");
       return true;
     } else {
       ctx.log.error("Switch on command failed", {
@@ -1440,12 +1670,12 @@ async function sendSwitchOnCommand(nodeId) {
         status: response.status,
         statusText: response.statusText
       });
-      ctx.ui.notify(`Switch On fehlgeschlagen: ${response.statusText}`, "error");
+      ctx.ui.notify(translateNotify("notify.switchOnFailed", { error: response.statusText }), "error");
       return false;
     }
   } catch (error) {
     ctx.log.error("Switch on command error", { nodeId, error });
-    ctx.ui.notify("Fehler beim Senden des Switch On-Befehls", "error");
+    ctx.ui.notify(translateNotify("notify.switchOnError"), "error");
     return false;
   }
 }
@@ -1480,7 +1710,7 @@ async function sendHomingCommand(nodeId) {
     });
     if (response.status >= 200 && response.status < 300) {
       ctx.log.info("Homing command sent successfully", { nodeId, status: response.status });
-      ctx.ui.notify("Homing gestartet", "success");
+      ctx.ui.notify(translateNotify("notify.homingStarted"), "success");
       return true;
     } else {
       ctx.log.error("Homing command failed", {
@@ -1488,12 +1718,12 @@ async function sendHomingCommand(nodeId) {
         status: response.status,
         statusText: response.statusText
       });
-      ctx.ui.notify(`Homing fehlgeschlagen: ${response.statusText}`, "error");
+      ctx.ui.notify(translateNotify("notify.homingFailed", { error: response.statusText }), "error");
       return false;
     }
   } catch (error) {
     ctx.log.error("Homing command error", { nodeId, error });
-    ctx.ui.notify("Fehler beim Senden des Homing-Befehls", "error");
+    ctx.ui.notify(translateNotify("notify.homingError"), "error");
     return false;
   }
 }
@@ -1544,7 +1774,7 @@ async function sendMoveToPositionCommand(nodeId, targetPosition) {
         targetPosition,
         status: response.status
       });
-      ctx.ui.notify(`Move To ${targetPosition} mm gesendet`, "success");
+      ctx.ui.notify(translateNotify("notify.moveToSent", { position: targetPosition }), "success");
       return true;
     } else {
       ctx.log.error("Move to position command failed", {
@@ -1552,12 +1782,12 @@ async function sendMoveToPositionCommand(nodeId, targetPosition) {
         status: response.status,
         statusText: response.statusText
       });
-      ctx.ui.notify(`Move To fehlgeschlagen: ${response.statusText}`, "error");
+      ctx.ui.notify(translateNotify("notify.moveToFailed", { error: response.statusText }), "error");
       return false;
     }
   } catch (error) {
     ctx.log.error("Move to position command error", { nodeId, error });
-    ctx.ui.notify("Fehler beim Senden des Move To-Befehls", "error");
+    ctx.ui.notify(translateNotify("notify.moveToError"), "error");
     return false;
   }
 }
@@ -1589,7 +1819,7 @@ function acknowledgeError(nodeId, errorIndex) {
       nodeId,
       axisName: nodeState.axisName
     });
-    ctx.ui.notify(`${nodeState.axisName}: Fehler quittiert`, "success");
+    ctx.ui.notify(translateNotify("notify.errorAcknowledged", { name: nodeState.axisName }), "success");
   }
 }
 function acknowledgeAllErrors(nodeId) {
@@ -1615,7 +1845,7 @@ function acknowledgeAllErrors(nodeId) {
     axisName: nodeState.axisName,
     newState: "Normal"
   });
-  ctx.ui.notify(`${nodeState.axisName}: ${errorCount} Fehler quittiert`, "success");
+  ctx.ui.notify(translateNotify("notify.errorsAcknowledgedCount", { name: nodeState.axisName, count: errorCount }), "success");
 }
 function getNodeState(nodeId) {
   return pluginState.getNode(nodeId);
@@ -1693,13 +1923,13 @@ var plugin = {
     const moveCommandNo = config.moveCommandNo || 5031;
     if (!axisName) {
       ctx.log.warn(`No axis name configured for node ${node.id}`);
-      ctx.ui.notify(`Bitte Achsname f\xFCr ${node.name} konfigurieren`, "warning");
+      ctx.ui.notify(translateNotify("notify.configureAxisName", { name: node.name }), "warning");
       return;
     }
     ctx.log.info(`Node bound: ${node.name} (${node.id}) -> Axis: ${axisName}, AxisCmd: ${axisCommandNo}, MoveCmd: ${moveCommandNo}`);
     pluginState.addNode(node.id, axisName, axisCommandNo, moveCommandNo);
     setupSubscriptions(ctx, node.id);
-    ctx.ui.notify(`Monitoring: ${axisName}`, "success");
+    ctx.ui.notify(translateNotify("notify.monitoringActive", { name: axisName }), "success");
   },
   onNodeUnbound(ctx, node) {
     ctx.log.info(`Node unbound: ${node.name} (${node.id})`);

@@ -29,6 +29,7 @@ import type {
 import { AxisDetailsPopup } from './components/AxisDetailsPopup';
 import {
   MotionState,
+  DefaultTranslations,
   type NodeState,
   type ErrorPayload,
   type ErrorEntry,
@@ -45,6 +46,43 @@ import {
   createEmptyStatusMask,
   normalizeAxisName,
 } from './utils';
+
+/**
+ * Get current language from host i18n
+ */
+function getCurrentLanguage(): string {
+  // Try to get language from host i18n (available via window in proxy sandbox)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hostI18n = (window as any).__i18n__ || (window as any).i18n;
+    if (hostI18n?.language) {
+      return hostI18n.language.split('-')[0]; // Handle 'de-DE' -> 'de'
+    }
+  } catch {
+    // Ignore errors
+  }
+  // Fallback: check localStorage
+  const stored = localStorage.getItem('i18n_language');
+  return stored || 'de';
+}
+
+/**
+ * Translate a notification key using DefaultTranslations with optional parameters
+ */
+function translateNotify(key: string, params?: Record<string, string | number>): string {
+  const lang = getCurrentLanguage();
+  const translations = DefaultTranslations[lang] || DefaultTranslations['de'];
+  let text = translations[key] || key;
+
+  // Replace placeholders like {name} with actual values
+  if (params) {
+    for (const [param, value] of Object.entries(params)) {
+      text = text.replace(new RegExp(`\\{${param}\\}`, 'g'), String(value));
+    }
+  }
+
+  return text;
+}
 
 /**
  * Plugin state manager
@@ -182,7 +220,7 @@ function getMqttApi(ctx: PluginContext): typeof ctx.mqtt {
       ctx.log.warn(`Configured MQTT source "${mqttSource}" not found`, {
         available: availableSources,
       });
-      ctx.ui.notify(`MQTT Broker "${mqttSource}" nicht gefunden`, 'warning');
+      ctx.ui.notify(translateNotify('notify.mqttBrokerNotFound', { source: mqttSource }), 'warning');
     }
     return ctx.mqtt.withSource(mqttSource);
   }
@@ -453,7 +491,7 @@ function handleAxisData(
           hasData: !!payload.data,
           hasPack: !!(parsedPayload as AxisPayloadRelease10).pack,
         });
-        ctx.ui.notify('MQTT Format-Fehler: Release 11 erwartet, aber anderes Format empfangen', 'error');
+        ctx.ui.notify(translateNotify('notify.mqttFormatError', { expected: 'Release 11' }), 'error');
       }
     } else {
       // Try Release 10 format
@@ -466,7 +504,7 @@ function handleAxisData(
           hasPack: !!payload.pack,
           hasData: !!(parsedPayload as AxisPayloadRelease11).data,
         });
-        ctx.ui.notify('MQTT Format-Fehler: Release 10 erwartet, aber anderes Format empfangen', 'error');
+        ctx.ui.notify(translateNotify('notify.mqttFormatError', { expected: 'Release 10' }), 'error');
       }
     }
 
@@ -578,7 +616,7 @@ function setupSubscriptions(ctx: PluginContext, nodeId: string): void {
   const availableSources = ctx.mqtt.getSources();
   if (availableSources.length === 0) {
     ctx.log.error('No MQTT sources available', { nodeId });
-    ctx.ui.notify('Keine MQTT-Broker konfiguriert', 'error');
+    ctx.ui.notify(translateNotify('notify.noMqttBroker'), 'error');
     return;
   }
 
@@ -656,7 +694,7 @@ export async function sendStepCommand(
         stepValue,
         status: response.status,
       });
-      ctx.ui.notify(`Step ${stepValue > 0 ? '+' : ''}${stepValue} gesendet`, 'success');
+      ctx.ui.notify(translateNotify('notify.stepSent', { value: `${stepValue > 0 ? '+' : ''}${stepValue}` }), 'success');
       return true;
     } else {
       ctx.log.error('Step command failed', {
@@ -664,12 +702,12 @@ export async function sendStepCommand(
         status: response.status,
         statusText: response.statusText,
       });
-      ctx.ui.notify(`Step-Befehl fehlgeschlagen: ${response.statusText}`, 'error');
+      ctx.ui.notify(translateNotify('notify.stepCommandFailed', { error: response.statusText }), 'error');
       return false;
     }
   } catch (error) {
     ctx.log.error('Step command error', { nodeId, error });
-    ctx.ui.notify('Fehler beim Senden des Step-Befehls', 'error');
+    ctx.ui.notify(translateNotify('notify.stepCommandError'), 'error');
     return false;
   }
 }
@@ -717,7 +755,7 @@ export async function sendSwitchOnCommand(nodeId: string): Promise<boolean> {
 
     if (response.status >= 200 && response.status < 300) {
       ctx.log.info('Switch on command sent successfully', { nodeId, status: response.status });
-      ctx.ui.notify('Switch On gesendet', 'success');
+      ctx.ui.notify(translateNotify('notify.switchOnSent'), 'success');
       return true;
     } else {
       ctx.log.error('Switch on command failed', {
@@ -725,12 +763,12 @@ export async function sendSwitchOnCommand(nodeId: string): Promise<boolean> {
         status: response.status,
         statusText: response.statusText,
       });
-      ctx.ui.notify(`Switch On fehlgeschlagen: ${response.statusText}`, 'error');
+      ctx.ui.notify(translateNotify('notify.switchOnFailed', { error: response.statusText }), 'error');
       return false;
     }
   } catch (error) {
     ctx.log.error('Switch on command error', { nodeId, error });
-    ctx.ui.notify('Fehler beim Senden des Switch On-Befehls', 'error');
+    ctx.ui.notify(translateNotify('notify.switchOnError'), 'error');
     return false;
   }
 }
@@ -778,7 +816,7 @@ export async function sendHomingCommand(nodeId: string): Promise<boolean> {
 
     if (response.status >= 200 && response.status < 300) {
       ctx.log.info('Homing command sent successfully', { nodeId, status: response.status });
-      ctx.ui.notify('Homing gestartet', 'success');
+      ctx.ui.notify(translateNotify('notify.homingStarted'), 'success');
       return true;
     } else {
       ctx.log.error('Homing command failed', {
@@ -786,12 +824,12 @@ export async function sendHomingCommand(nodeId: string): Promise<boolean> {
         status: response.status,
         statusText: response.statusText,
       });
-      ctx.ui.notify(`Homing fehlgeschlagen: ${response.statusText}`, 'error');
+      ctx.ui.notify(translateNotify('notify.homingFailed', { error: response.statusText }), 'error');
       return false;
     }
   } catch (error) {
     ctx.log.error('Homing command error', { nodeId, error });
-    ctx.ui.notify('Fehler beim Senden des Homing-Befehls', 'error');
+    ctx.ui.notify(translateNotify('notify.homingError'), 'error');
     return false;
   }
 }
@@ -858,7 +896,7 @@ export async function sendMoveToPositionCommand(
         targetPosition,
         status: response.status,
       });
-      ctx.ui.notify(`Move To ${targetPosition} mm gesendet`, 'success');
+      ctx.ui.notify(translateNotify('notify.moveToSent', { position: targetPosition }), 'success');
       return true;
     } else {
       ctx.log.error('Move to position command failed', {
@@ -866,12 +904,12 @@ export async function sendMoveToPositionCommand(
         status: response.status,
         statusText: response.statusText,
       });
-      ctx.ui.notify(`Move To fehlgeschlagen: ${response.statusText}`, 'error');
+      ctx.ui.notify(translateNotify('notify.moveToFailed', { error: response.statusText }), 'error');
       return false;
     }
   } catch (error) {
     ctx.log.error('Move to position command error', { nodeId, error });
-    ctx.ui.notify('Fehler beim Senden des Move To-Befehls', 'error');
+    ctx.ui.notify(translateNotify('notify.moveToError'), 'error');
     return false;
   }
 }
@@ -925,7 +963,7 @@ export function acknowledgeError(nodeId: string, errorIndex: number): void {
       axisName: nodeState.axisName,
     });
 
-    ctx.ui.notify(`${nodeState.axisName}: Fehler quittiert`, 'success');
+    ctx.ui.notify(translateNotify('notify.errorAcknowledged', { name: nodeState.axisName }), 'success');
   }
 }
 
@@ -965,7 +1003,7 @@ export function acknowledgeAllErrors(nodeId: string): void {
     newState: 'Normal',
   });
 
-  ctx.ui.notify(`${nodeState.axisName}: ${errorCount} Fehler quittiert`, 'success');
+  ctx.ui.notify(translateNotify('notify.errorsAcknowledgedCount', { name: nodeState.axisName, count: errorCount }), 'success');
 }
 
 /**
@@ -1085,7 +1123,7 @@ const plugin: Plugin = {
 
     if (!axisName) {
       ctx.log.warn(`No axis name configured for node ${node.id}`);
-      ctx.ui.notify(`Bitte Achsname für ${node.name} konfigurieren`, 'warning');
+      ctx.ui.notify(translateNotify('notify.configureAxisName', { name: node.name }), 'warning');
       return;
     }
 
@@ -1094,7 +1132,7 @@ const plugin: Plugin = {
     pluginState.addNode(node.id, axisName, axisCommandNo, moveCommandNo);
     setupSubscriptions(ctx, node.id);
 
-    ctx.ui.notify(`Monitoring: ${axisName}`, 'success');
+    ctx.ui.notify(translateNotify('notify.monitoringActive', { name: axisName }), 'success');
   },
 
   onNodeUnbound(ctx: PluginContext, node: BoundNode): void {

@@ -200,20 +200,17 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
 
   return (
     <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <h2 style={styles.title}>{t('ui.valve')}: {nodeState.valveName}</h2>
-        <div style={styles.headerInfo}>
-          <span style={styles.formatLabel}>{mqttFormat}</span>
-          <span
-            style={{
-              ...styles.statusBadge,
-              backgroundColor: getPositionStateColor(nodeState.specificState),
-            }}
-          >
-            {positionStateName}
-          </span>
-        </div>
+      {/* Status Badge Row */}
+      <div style={styles.statusRow}>
+        <span style={styles.formatLabel}>{mqttFormat}</span>
+        <span
+          style={{
+            ...styles.statusBadge,
+            backgroundColor: getPositionStateColor(nodeState.specificState),
+          }}
+        >
+          {positionStateName}
+        </span>
       </div>
 
       {/* Tab Navigation */}
@@ -577,20 +574,11 @@ const styles: Record<string, React.CSSProperties> = {
     overflowY: 'auto',
     fontFamily: 'Arial, sans-serif',
   },
-  header: {
-    marginBottom: '12px',
-    paddingBottom: '12px',
-    borderBottom: '2px solid #ddd',
-  },
-  title: {
-    margin: '0 0 8px 0',
-    fontSize: '20px',
-    color: '#333',
-  },
-  headerInfo: {
+  statusRow: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
+    marginBottom: '12px',
   },
   formatLabel: {
     fontSize: '11px',

@@ -355,25 +355,18 @@ var ValveDetailsPopup = ({ data }) => {
   const genericStateName = translateKey(genericKey, i18n.language);
   const unacknowledgedCount = getUnacknowledgedErrorCount(nodeId);
   return /* @__PURE__ */ jsxs("div", { style: styles.container, children: [
-    /* @__PURE__ */ jsxs("div", { style: styles.header, children: [
-      /* @__PURE__ */ jsxs("h2", { style: styles.title, children: [
-        t("ui.valve"),
-        ": ",
-        nodeState.valveName
-      ] }),
-      /* @__PURE__ */ jsxs("div", { style: styles.headerInfo, children: [
-        /* @__PURE__ */ jsx("span", { style: styles.formatLabel, children: mqttFormat }),
-        /* @__PURE__ */ jsx(
-          "span",
-          {
-            style: {
-              ...styles.statusBadge,
-              backgroundColor: getPositionStateColor(nodeState.specificState)
-            },
-            children: positionStateName
-          }
-        )
-      ] })
+    /* @__PURE__ */ jsxs("div", { style: styles.statusRow, children: [
+      /* @__PURE__ */ jsx("span", { style: styles.formatLabel, children: mqttFormat }),
+      /* @__PURE__ */ jsx(
+        "span",
+        {
+          style: {
+            ...styles.statusBadge,
+            backgroundColor: getPositionStateColor(nodeState.specificState)
+          },
+          children: positionStateName
+        }
+      )
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.tabContainer, children: [
       /* @__PURE__ */ jsx(
@@ -725,20 +718,11 @@ var styles = {
     overflowY: "auto",
     fontFamily: "Arial, sans-serif"
   },
-  header: {
-    marginBottom: "12px",
-    paddingBottom: "12px",
-    borderBottom: "2px solid #ddd"
-  },
-  title: {
-    margin: "0 0 8px 0",
-    fontSize: "20px",
-    color: "#333"
-  },
-  headerInfo: {
+  statusRow: {
     display: "flex",
     alignItems: "center",
-    gap: "12px"
+    gap: "12px",
+    marginBottom: "12px"
   },
   formatLabel: {
     fontSize: "11px",

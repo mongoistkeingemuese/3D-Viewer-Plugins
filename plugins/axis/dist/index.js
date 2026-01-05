@@ -463,25 +463,18 @@ var AxisDetailsPopup = ({ data }) => {
   const { activityBits, statusMask } = nodeState;
   const unacknowledgedCount = getUnacknowledgedErrorCount(nodeId);
   return /* @__PURE__ */ jsxs("div", { style: styles.container, children: [
-    /* @__PURE__ */ jsxs("div", { style: styles.header, children: [
-      /* @__PURE__ */ jsxs("h2", { style: styles.title, children: [
-        t("ui.axis"),
-        ": ",
-        nodeState.axisName
-      ] }),
-      /* @__PURE__ */ jsxs("div", { style: styles.headerInfo, children: [
-        /* @__PURE__ */ jsx("span", { style: styles.formatLabel, children: mqttFormat === "release11" ? "Release 11" : "Release 10" }),
-        /* @__PURE__ */ jsx(
-          "span",
-          {
-            style: {
-              ...styles.statusBadge,
-              backgroundColor: getMotionStateColor(nodeState.currentState)
-            },
-            children: motionStateName
-          }
-        )
-      ] })
+    /* @__PURE__ */ jsxs("div", { style: styles.statusRow, children: [
+      /* @__PURE__ */ jsx("span", { style: styles.formatLabel, children: mqttFormat === "release11" ? "Release 11" : "Release 10" }),
+      /* @__PURE__ */ jsx(
+        "span",
+        {
+          style: {
+            ...styles.statusBadge,
+            backgroundColor: getMotionStateColor(nodeState.currentState)
+          },
+          children: motionStateName
+        }
+      )
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.tabContainer, children: [
       /* @__PURE__ */ jsx(
@@ -795,13 +788,13 @@ var AxisDetailsPopup = ({ data }) => {
               const msg = p.msg?.txt || p.msg?.text || p.msg || "No message";
               const ack = err.acknowledged ? "\u2713" : "\u25CB";
               const sel = selectedErrorIdx === idx ? "\u25B6" : " ";
-              return `${sel}[${idx}] ${ack} ${err.level}: ${msg}
-`;
+              return /* @__PURE__ */ jsx("span", { children: `${sel}[${idx}] ${ack} ${err.level}: ${msg}
+` }, `err-${idx}`);
             } catch {
-              return ` [${idx}] \u25CB ${err.level}: Parse error
-`;
+              return /* @__PURE__ */ jsx("span", { children: ` [${idx}] \u25CB ${err.level}: Parse error
+` }, `err-${idx}`);
             }
-          }).join("") }),
+          }) }),
           /* @__PURE__ */ jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "8px" }, children: Array.from({ length: nodeState.errors.length }, (_, idx) => /* @__PURE__ */ jsxs(
             "button",
             {
@@ -893,20 +886,11 @@ var styles = {
     overflowY: "auto",
     fontFamily: "Arial, sans-serif"
   },
-  header: {
-    marginBottom: "12px",
-    paddingBottom: "12px",
-    borderBottom: "2px solid #ddd"
-  },
-  title: {
-    margin: "0 0 8px 0",
-    fontSize: "20px",
-    color: "#333"
-  },
-  headerInfo: {
+  statusRow: {
     display: "flex",
     alignItems: "center",
-    gap: "12px"
+    gap: "12px",
+    marginBottom: "12px"
   },
   formatLabel: {
     fontSize: "11px",

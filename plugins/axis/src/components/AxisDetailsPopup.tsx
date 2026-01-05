@@ -226,22 +226,19 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
 
   return (
     <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <h2 style={styles.title}>{t('ui.axis')}: {nodeState.axisName}</h2>
-        <div style={styles.headerInfo}>
-          <span style={styles.formatLabel}>
-            {mqttFormat === 'release11' ? 'Release 11' : 'Release 10'}
-          </span>
-          <span
-            style={{
-              ...styles.statusBadge,
-              backgroundColor: getMotionStateColor(nodeState.currentState),
-            }}
-          >
-            {motionStateName}
-          </span>
-        </div>
+      {/* Status Badge Row */}
+      <div style={styles.statusRow}>
+        <span style={styles.formatLabel}>
+          {mqttFormat === 'release11' ? 'Release 11' : 'Release 10'}
+        </span>
+        <span
+          style={{
+            ...styles.statusBadge,
+            backgroundColor: getMotionStateColor(nodeState.currentState),
+          }}
+        >
+          {motionStateName}
+        </span>
       </div>
 
       {/* Tab Navigation */}
@@ -541,11 +538,11 @@ export const AxisDetailsPopup: React.FC<AxisDetailsPopupProps> = ({ data }) => {
     const msg = p.msg?.txt || p.msg?.text || p.msg || 'No message';
     const ack = err.acknowledged ? '✓' : '○';
     const sel = selectedErrorIdx === idx ? '▶' : ' ';
-    return `${sel}[${idx}] ${ack} ${err.level}: ${msg}\n`;
+    return <span key={`err-${idx}`}>{`${sel}[${idx}] ${ack} ${err.level}: ${msg}\n`}</span>;
   } catch {
-    return ` [${idx}] ○ ${err.level}: Parse error\n`;
+    return <span key={`err-${idx}`}>{` [${idx}] ○ ${err.level}: Parse error\n`}</span>;
   }
-}).join('')}
+})}
                 </pre>
 
                 {/* Error Selection Buttons */}
@@ -655,20 +652,11 @@ const styles: Record<string, React.CSSProperties> = {
     overflowY: 'auto',
     fontFamily: 'Arial, sans-serif',
   },
-  header: {
-    marginBottom: '12px',
-    paddingBottom: '12px',
-    borderBottom: '2px solid #ddd',
-  },
-  title: {
-    margin: '0 0 8px 0',
-    fontSize: '20px',
-    color: '#333',
-  },
-  headerInfo: {
+  statusRow: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
+    marginBottom: '12px',
   },
   formatLabel: {
     fontSize: '11px',

@@ -1319,7 +1319,7 @@ function updateNodeVisuals(ctx, nodeId, genericState, specificState) {
   }
   node.emissive = "#000000";
   node.emissiveIntensity = 0;
-  if (specificState === 1 /* MovingToBasePosition */ || specificState === 2 /* MovingToWorkPosition */) {
+  if (specificState === 1 /* MovingToBasePosition */ || specificState === 2 /* MovingToWorkPosition */ || genericState === 1 /* Executing */) {
     node.emissive = highlightColor;
     node.emissiveIntensity = intensity;
   }
@@ -1417,6 +1417,53 @@ function handleValveData(ctx, nodeId, rawPayload) {
     ctx.log.error("Failed to process valve data", { nodeId, error });
   }
 }
+function applyErrorToNode(ctx, nodeState, payload, payloadString, matchReason) {
+  const errorEntry = {
+    timestamp: payload.utc,
+    level: payload.lvl,
+    source: payload.src,
+    rawPayload: payloadString,
+    acknowledged: false
+  };
+  nodeState.errors.unshift(errorEntry);
+  if (nodeState.errors.length > 20) {
+    nodeState.errors = nodeState.errors.slice(0, 20);
+  }
+  let msgText = "Unknown error";
+  if (typeof payload.msg === "string") {
+    msgText = payload.msg;
+  } else if (payload.msg?.txt) {
+    msgText = payload.msg.txt;
+  } else if (payload.msg?.text) {
+    msgText = payload.msg.text;
+  }
+  if (payload.lvl === "ERR") {
+    ctx.log.error(`[${nodeState.valveName}] ${msgText}`, {
+      nodeId: nodeState.nodeId,
+      nodeName: nodeState.valveName,
+      matchReason,
+      payload
+    });
+    nodeState.genericState = 3 /* Error */;
+    updateNodeVisuals(ctx, nodeState.nodeId, 3 /* Error */, nodeState.specificState);
+    ctx.ui.notify(`Error: ${nodeState.valveName} - ${msgText}`, "error");
+  } else if (payload.lvl === "WARN") {
+    ctx.log.warn(`[${nodeState.valveName}] ${msgText}`, {
+      nodeId: nodeState.nodeId,
+      nodeName: nodeState.valveName,
+      matchReason,
+      payload
+    });
+    ctx.ui.notify(`Warning: ${nodeState.valveName} - ${msgText}`, "warning");
+  } else {
+    ctx.log.info(`[${nodeState.valveName}] ${msgText}`, {
+      nodeId: nodeState.nodeId,
+      nodeName: nodeState.valveName,
+      matchReason,
+      payload
+    });
+  }
+}
 function handleErrorMessage(ctx, rawPayload) {
   try {
     const payloadString = typeof rawPayload === "string" ? rawPayload : JSON.stringify(rawPayload, null, 2);
@@ -1426,56 +1473,48 @@ function handleErrorMessage(ctx, rawPayload) {
     } else {
       payload = rawPayload;
     }
-    ctx.log.info("Error message received", { src: payload.src, lvl: payload.lvl });
+    ctx.log.info("Error message received", {
+      src: payload.src,
+      lvl: payload.lvl,
+      typ: payload.typ,
+      exe: payload.exe
+    });
     const source = normalizeValveName(payload.src || "");
     const allNodes = pluginState.getAllNodes();
+    const matchedNodeIds = /* @__PURE__ */ new Set();
     allNodes.forEach((nodeState) => {
       const expectedValveName = normalizeValveName(nodeState.valveName);
       if (source === expectedValveName) {
-        const errorEntry = {
-          timestamp: payload.utc,
-          level: payload.lvl,
-          source: payload.src,
-          rawPayload: payloadString,
-          acknowledged: false
-        };
-        nodeState.errors.unshift(errorEntry);
-        if (nodeState.errors.length > 20) {
-          nodeState.errors = nodeState.errors.slice(0, 20);
-        }
-        let msgText = "Unknown error";
-        if (typeof payload.msg === "string") {
-          msgText = payload.msg;
-        } else if (payload.msg?.txt) {
-          msgText = payload.msg.txt;
-        } else if (payload.msg?.text) {
-          msgText = payload.msg.text;
-        }
-        if (payload.lvl === "ERR") {
-          ctx.log.error(`[${nodeState.valveName}] ${msgText}`, {
-            nodeId: nodeState.nodeId,
-            nodeName: nodeState.valveName,
-            payload
-          });
-          nodeState.genericState = 3 /* Error */;
-          updateNodeVisuals(ctx, nodeState.nodeId, 3 /* Error */, nodeState.specificState);
-          ctx.ui.notify(`Error: ${nodeState.valveName} - ${msgText}`, "error");
-        } else if (payload.lvl === "WARN") {
-          ctx.log.warn(`[${nodeState.valveName}] ${msgText}`, {
-            nodeId: nodeState.nodeId,
-            nodeName: nodeState.valveName,
-            payload
-          });
-          ctx.ui.notify(`Warning: ${nodeState.valveName} - ${msgText}`, "warning");
-        } else {
-          ctx.log.info(`[${nodeState.valveName}] ${msgText}`, {
-            nodeId: nodeState.nodeId,
-            nodeName: nodeState.valveName,
-            payload
-          });
-        }
+        matchedNodeIds.add(nodeState.nodeId);
+        applyErrorToNode(ctx, nodeState, payload, payloadString, "src-match");
       }
     });
+    if (matchedNodeIds.size === 0 && payload.typ === "Valve" && payload.exe) {
+      const exeNumber = parseInt(payload.exe, 10);
+      if (!isNaN(exeNumber)) {
+        allNodes.forEach((nodeState) => {
+          if (nodeState.functionNo === exeNumber) {
+            matchedNodeIds.add(nodeState.nodeId);
+            applyErrorToNode(ctx, nodeState, payload, payloadString, "exe-functionNo-match");
+            ctx.log.info("Error matched by exe/functionNo", {
+              exe: payload.exe,
+              functionNo: nodeState.functionNo,
+              valveName: nodeState.valveName
+            });
+          }
+        });
+      }
+    }
+    if (matchedNodeIds.size === 0 && payload.typ === "Valve") {
+      ctx.log.warn("No specific valve match found, broadcasting to all valve nodes", {
+        src: payload.src,
+        typ: payload.typ,
+        exe: payload.exe
+      });
+      allNodes.forEach((nodeState) => {
+        applyErrorToNode(ctx, nodeState, payload, payloadString, "typ-broadcast");
+      });
+    }
   } catch (error) {
     ctx.log.error("Failed to process error message", { error });
   }

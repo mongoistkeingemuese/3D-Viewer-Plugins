@@ -311,9 +311,11 @@ function updateNodeVisuals(
   node.emissiveIntensity = 0;
 
   // Highlight during movement (uses configured intensity)
+  // Triggers on: specificState Moving OR genericState Executing
   if (
     specificState === ValvePosition.MovingToBasePosition ||
-    specificState === ValvePosition.MovingToWorkPosition
+    specificState === ValvePosition.MovingToWorkPosition ||
+    genericState === GenericState.Executing
   ) {
     node.emissive = highlightColor;
     node.emissiveIntensity = intensity;

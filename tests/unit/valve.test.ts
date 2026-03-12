@@ -4,7 +4,7 @@
  * Tests error handling, acknowledgment, and MQTT error matching.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createMockContext, type MockPluginContext } from '@3dviewer/plugin-sdk/testing';
 import type { BoundNode } from '@3dviewer/plugin-sdk';
 import plugin, {
@@ -44,7 +44,7 @@ function setupPlugin(ctx: MockPluginContext, options?: {
   plugin.onLoad!(ctx);
 
   // Bind node
-  const boundNode: BoundNode = { id: nodeId, name: nodeName };
+  const boundNode: BoundNode = { id: nodeId, name: nodeName, metadata: {} };
   plugin.onNodeBound!(ctx, boundNode);
 
   return nodeId;
@@ -142,7 +142,7 @@ describe('Valve Plugin', () => {
       expect(state!.genericState).toBe(GenericState.Error);
     });
 
-    it('should set node emissive to error color', async () => {
+    it('should set node emissive to error color with blink', async () => {
       ctx.http.setResponse(COMMAND_URL, { status: 500 });
 
       await sendMoveToBase(nodeId);
@@ -151,6 +151,8 @@ describe('Valve Plugin', () => {
       expect(node).toBeDefined();
       expect(node!.emissive).toBe('#ff0000');
       expect(node!.emissiveIntensity).toBe(1.0);
+      expect(node!.blinkActive).toBe(true);
+      expect(node!.blinkFrequency).toBe(500);
     });
 
     it('should log error with nodeId for Viewer Log integration', async () => {
@@ -255,7 +257,7 @@ describe('Valve Plugin', () => {
     });
 
     it('should broadcast to all valve nodes when typ=Valve and no match (pass 3)', () => {
-      const nodeId1 = setupPlugin(ctx, {
+      setupPlugin(ctx, {
         nodeId: 'valve-1',
         nodeName: 'V1',
         valveName: 'Ventil_1',
@@ -265,7 +267,7 @@ describe('Valve Plugin', () => {
       ctx.nodes.addNode('valve-2', 'V2');
       ctx.config.instance.set('valve-2', 'valveName', 'Ventil_2');
       ctx.config.instance.set('valve-2', 'functionNo', 200);
-      plugin.onNodeBound!(ctx, { id: 'valve-2', name: 'V2' });
+      plugin.onNodeBound!(ctx, { id: 'valve-2', name: 'V2', metadata: {} });
 
       // Error with no matching src or exe
       ctx.mqtt.simulateMessage('machine/errors', createMqttErrorPayload({
@@ -368,21 +370,23 @@ describe('Valve Plugin', () => {
       expect(state!.errors.every(e => e.acknowledged)).toBe(true);
     });
 
-    it('should reset visual state when all errors acknowledged', () => {
+    it('should reset visual state and stop blink when all errors acknowledged', () => {
       acknowledgeAllErrors(nodeId);
 
       const node = ctx.nodes.get('valve-1');
       expect(node!.emissiveIntensity).toBe(0);
+      expect(node!.blinkActive).toBe(false);
     });
 
-    it('should not reset visual state if unacknowledged errors remain', () => {
+    it('should keep blinking if unacknowledged errors remain', () => {
       // Acknowledge only the first error
       acknowledgeError(nodeId, 0);
 
       const node = ctx.nodes.get('valve-1');
-      // Still has unacknowledged error → stays red
+      // Still has unacknowledged error → stays red + blinking
       expect(node!.emissive).toBe('#ff0000');
       expect(node!.emissiveIntensity).toBe(1.0);
+      expect(node!.blinkActive).toBe(true);
     });
 
     it('should handle Viewer Log acknowledgment via onLogAcknowledged', () => {

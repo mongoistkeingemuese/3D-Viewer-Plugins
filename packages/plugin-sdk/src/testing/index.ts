@@ -350,6 +350,8 @@ export function createMockNodeProxy(id: string, name: string): NodeProxy {
     visible: true,
     emissive: '#000000',
     emissiveIntensity: 0,
+    blinkActive: false,
+    blinkFrequency: 500,
     duration: 300,
   };
 }

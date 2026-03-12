@@ -298,19 +298,23 @@ function updateNodeVisuals(
   const nodeState = pluginState.getNode(nodeId);
   const hasUnacknowledgedErrors = nodeState?.errors.some(e => !e.acknowledged) ?? false;
 
-  // Error state has HIGHEST priority - always 100% intensity
-  // Error state MUST NOT be overwritten until acknowledged
+  // Error state has HIGHEST priority - blink red until acknowledged
   if (hasUnacknowledgedErrors || genericState === GenericState.Error) {
     node.emissive = errorColor;
-    node.emissiveIntensity = 1.0; // Always 100% for errors
+    node.emissiveIntensity = 1.0;
+    node.blinkActive = true;
+    node.blinkFrequency = 500;
     return;
   }
+
+  // No errors - disable blink
+  node.blinkActive = false;
 
   // Reset emissive for non-error states
   node.emissive = '#000000';
   node.emissiveIntensity = 0;
 
-  // Highlight during movement (uses configured intensity)
+  // Highlight during movement (uses configured intensity, static glow)
   // Triggers on: specificState Moving OR genericState Executing
   if (
     specificState === ValvePosition.MovingToBasePosition ||

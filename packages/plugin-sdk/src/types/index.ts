@@ -268,6 +268,10 @@ export interface NodeProxy {
   emissive: string;
   emissiveIntensity: number;
 
+  // Blink properties (emissive flashing effect)
+  blinkActive: boolean;
+  blinkFrequency: number;
+
   // Text properties (writable, for text nodes)
   text?: string;
   fontSize?: number;

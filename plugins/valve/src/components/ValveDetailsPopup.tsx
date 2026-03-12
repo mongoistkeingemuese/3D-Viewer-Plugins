@@ -20,6 +20,7 @@ import {
   getCurrentMqttFormat,
   getUnacknowledgedErrorCount,
   acknowledgeAllErrors,
+  acknowledgeError,
 } from '../index';
 import {
   GenericState,
@@ -514,20 +515,43 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
 
                 {/* Selected Error Detail */}
                 {selectedErrorIdx !== null && nodeState.errors[selectedErrorIdx] && (
-                  <pre style={{
-                    margin: 0,
-                    padding: '10px',
-                    backgroundColor: '#1a1a1a',
-                    color: '#0f0',
-                    fontSize: '11px',
-                    fontFamily: 'Consolas, Monaco, monospace',
-                    borderRadius: '4px',
-                    border: '2px solid #dc3545',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-all',
-                    maxHeight: '200px',
-                    overflow: 'auto',
-                  }}>
+                  <>
+                    {!nodeState.errors[selectedErrorIdx].acknowledged && (
+                      <button
+                        onClick={() => {
+                          acknowledgeError(nodeId, selectedErrorIdx);
+                          setUpdateCounter((c) => c + 1);
+                        }}
+                        style={{
+                          marginBottom: '8px',
+                          padding: '8px 16px',
+                          backgroundColor: '#ffc107',
+                          color: '#000',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          fontSize: '12px',
+                          width: '100%',
+                        }}
+                      >
+                        {t('ui.acknowledgeError')} #{selectedErrorIdx}
+                      </button>
+                    )}
+                    <pre style={{
+                      margin: 0,
+                      padding: '10px',
+                      backgroundColor: '#1a1a1a',
+                      color: '#0f0',
+                      fontSize: '11px',
+                      fontFamily: 'Consolas, Monaco, monospace',
+                      borderRadius: '4px',
+                      border: `2px solid ${nodeState.errors[selectedErrorIdx].acknowledged ? '#28a745' : '#dc3545'}`,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-all',
+                      maxHeight: '200px',
+                      overflow: 'auto',
+                    }}>
 {(() => {
   const err = nodeState.errors[selectedErrorIdx];
   try {
@@ -536,7 +560,8 @@ export const ValveDetailsPopup: React.FC<ValveDetailsPopupProps> = ({ data }) =>
     return err.rawPayload || 'No payload';
   }
 })()}
-                  </pre>
+                    </pre>
+                  </>
                 )}
               </>
             )}

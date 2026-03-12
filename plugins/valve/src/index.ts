@@ -644,8 +644,37 @@ async function sendValveCommand(
       });
       return true;
     } else {
-      ctx.log.error('Valve command failed', {
+      const msgText = `${translateNotify('notify.commandFailed')}: ${response.status} ${response.statusText}`;
+
+      // Add to plugin error log for acknowledgment in plugin UI
+      const errorPayload = {
+        src: 'HTTP',
+        lvl: 'ERR',
+        msg: { txt: msgText },
+        command: functionCommand,
+        status: response.status,
+        statusText: response.statusText,
+        url,
+      };
+      const errorEntry: ErrorEntry = {
+        timestamp: Date.now(),
+        level: 'ERR',
+        source: 'HTTP',
+        rawPayload: JSON.stringify(errorPayload, null, 2),
+        acknowledged: false,
+      };
+      nodeState.errors.unshift(errorEntry);
+      if (nodeState.errors.length > 20) {
+        nodeState.errors = nodeState.errors.slice(0, 20);
+      }
+
+      // Set error visual state
+      nodeState.genericState = GenericState.Error;
+      updateNodeVisuals(ctx, nodeId, GenericState.Error, nodeState.specificState);
+
+      ctx.log.error(`[${nodeState.valveName}] ${msgText}`, {
         nodeId,
+        nodeName: nodeState.valveName,
         status: response.status,
         statusText: response.statusText,
       });
@@ -653,8 +682,40 @@ async function sendValveCommand(
       return false;
     }
   } catch (error) {
-    ctx.log.error('Valve command error', { nodeId, error });
-    ctx.ui.notify(translateNotify('notify.sendError'), 'error');
+    const msgText = translateNotify('notify.sendError');
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Add to plugin error log for acknowledgment in plugin UI
+    const errorPayload = {
+      src: 'HTTP',
+      lvl: 'ERR',
+      msg: { txt: `${msgText}: ${errorMessage}` },
+      command: functionCommand,
+      error: errorMessage,
+      url,
+    };
+    const errorEntry: ErrorEntry = {
+      timestamp: Date.now(),
+      level: 'ERR',
+      source: 'HTTP',
+      rawPayload: JSON.stringify(errorPayload, null, 2),
+      acknowledged: false,
+    };
+    nodeState.errors.unshift(errorEntry);
+    if (nodeState.errors.length > 20) {
+      nodeState.errors = nodeState.errors.slice(0, 20);
+    }
+
+    // Set error visual state
+    nodeState.genericState = GenericState.Error;
+    updateNodeVisuals(ctx, nodeId, GenericState.Error, nodeState.specificState);
+
+    ctx.log.error(`[${nodeState.valveName}] ${msgText}: ${errorMessage}`, {
+      nodeId,
+      nodeName: nodeState.valveName,
+      error: errorMessage,
+    });
+    ctx.ui.notify(msgText, 'error');
     return false;
   }
 }
@@ -799,28 +860,26 @@ export function acknowledgeAllErrors(nodeId: string): void {
     return;
   }
 
-  // Log the acknowledgement
-  ctx.log.info('All errors acknowledged and cleared', {
+  // Mark all errors as acknowledged (preserve history)
+  const unacknowledgedCount = nodeState.errors.filter(e => !e.acknowledged).length;
+  if (unacknowledgedCount === 0) {
+    return;
+  }
+
+  nodeState.errors.forEach(e => { e.acknowledged = true; });
+
+  ctx.log.info('All errors acknowledged', {
     nodeId,
     valveName: nodeState.valveName,
-    count: errorCount,
+    count: unacknowledgedCount,
     acknowledgedAt: new Date().toISOString(),
   });
-
-  // Clear all errors
-  nodeState.errors = [];
 
   // Reset node visual state to Idle
   nodeState.genericState = GenericState.Idle;
   updateNodeVisuals(ctx, nodeId, GenericState.Idle, nodeState.specificState);
 
-  ctx.log.info('Node state reset after acknowledgement', {
-    nodeId,
-    valveName: nodeState.valveName,
-    newState: 'Idle',
-  });
-
-  ctx.ui.notify(translateNotify('notify.errorsAcknowledgedCount', { name: nodeState.valveName, count: errorCount }), 'success');
+  ctx.ui.notify(translateNotify('notify.errorsAcknowledgedCount', { name: nodeState.valveName, count: unacknowledgedCount }), 'success');
 }
 
 /**

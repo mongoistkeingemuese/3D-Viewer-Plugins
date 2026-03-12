@@ -618,7 +618,6 @@ async function sendValveCommand(
     functionNo: nodeState.functionNo,
     functionCommand,
     functionInvokerCommand: 'Start',
-    inputs: [],
   };
 
   try {

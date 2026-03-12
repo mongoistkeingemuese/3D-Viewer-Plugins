@@ -18,7 +18,7 @@ var {
   Suspense
 } = React;
 
-// plugins/valve/src/types.ts
+// src/types.ts
 var GenericStateKeys = {
   [-1]: "state.unknown",
   [0]: "state.idle",
@@ -198,7 +198,7 @@ var DefaultTranslations = {
   }
 };
 
-// plugins/valve/src/utils.ts
+// src/utils.ts
 function hexToInt(hexString) {
   if (!hexString)
     return 0;
@@ -247,7 +247,7 @@ var jsx = React2.createElement;
 var jsxs = React2.createElement;
 var Fragment2 = React2.Fragment;
 
-// plugins/valve/src/components/ValveDetailsPopup.tsx
+// src/components/ValveDetailsPopup.tsx
 function usePluginI18n() {
   const hook = window.usePluginI18n;
   if (hook) {
@@ -355,25 +355,18 @@ var ValveDetailsPopup = ({ data }) => {
   const genericStateName = translateKey(genericKey, i18n.language);
   const unacknowledgedCount = getUnacknowledgedErrorCount(nodeId);
   return /* @__PURE__ */ jsxs("div", { style: styles.container, children: [
-    /* @__PURE__ */ jsxs("div", { style: styles.header, children: [
-      /* @__PURE__ */ jsxs("h2", { style: styles.title, children: [
-        t("ui.valve"),
-        ": ",
-        nodeState.valveName
-      ] }),
-      /* @__PURE__ */ jsxs("div", { style: styles.headerInfo, children: [
-        /* @__PURE__ */ jsx("span", { style: styles.formatLabel, children: mqttFormat }),
-        /* @__PURE__ */ jsx(
-          "span",
-          {
-            style: {
-              ...styles.statusBadge,
-              backgroundColor: getPositionStateColor(nodeState.specificState)
-            },
-            children: positionStateName
-          }
-        )
-      ] })
+    /* @__PURE__ */ jsxs("div", { style: styles.statusRow, children: [
+      /* @__PURE__ */ jsx("span", { style: styles.formatLabel, children: mqttFormat }),
+      /* @__PURE__ */ jsx(
+        "span",
+        {
+          style: {
+            ...styles.statusBadge,
+            backgroundColor: getPositionStateColor(nodeState.specificState)
+          },
+          children: positionStateName
+        }
+      )
     ] }),
     /* @__PURE__ */ jsxs("div", { style: styles.tabContainer, children: [
       /* @__PURE__ */ jsx(
@@ -725,20 +718,11 @@ var styles = {
     overflowY: "auto",
     fontFamily: "Arial, sans-serif"
   },
-  header: {
-    marginBottom: "12px",
-    paddingBottom: "12px",
-    borderBottom: "2px solid #ddd"
-  },
-  title: {
-    margin: "0 0 8px 0",
-    fontSize: "20px",
-    color: "#333"
-  },
-  headerInfo: {
+  statusRow: {
     display: "flex",
     alignItems: "center",
-    gap: "12px"
+    gap: "12px",
+    marginBottom: "12px"
   },
   formatLabel: {
     fontSize: "11px",
@@ -1125,7 +1109,7 @@ var styles = {
   }
 };
 
-// plugins/valve/src/index.ts
+// src/index.ts
 function getPositionName(position) {
   const key = ValvePositionKeys[position] || "position.undefined";
   return DefaultTranslations.en[key] || key;
@@ -1517,8 +1501,7 @@ async function sendValveCommand(nodeId, functionCommand) {
   const payload = {
     functionNo: nodeState.functionNo,
     functionCommand,
-    functionInvokerCommand: "Start",
-    inputs: []
+    functionInvokerCommand: "Start"
   };
   try {
     ctx.log.info("Sending valve command", {
@@ -1805,4 +1788,3 @@ export {
   sendPressureFree,
   sendTogglePosition
 };
-//# sourceMappingURL=index.js.map

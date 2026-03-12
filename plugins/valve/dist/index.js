@@ -1501,8 +1501,7 @@ async function sendValveCommand(nodeId, functionCommand) {
   const payload = {
     functionNo: nodeState.functionNo,
     functionCommand,
-    functionInvokerCommand: "Start",
-    inputs: []
+    functionInvokerCommand: "Start"
   };
   try {
     ctx.log.info("Sending valve command", {

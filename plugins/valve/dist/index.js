@@ -1315,8 +1315,11 @@ function updateNodeVisuals(ctx, nodeId, genericState, specificState) {
   if (hasUnacknowledgedErrors || genericState === 3 /* Error */) {
     node.emissive = errorColor;
     node.emissiveIntensity = 1;
+    node.blinkActive = true;
+    node.blinkFrequency = 500;
     return;
   }
+  node.blinkActive = false;
   node.emissive = "#000000";
   node.emissiveIntensity = 0;
   if (specificState === 1 /* MovingToBasePosition */ || specificState === 2 /* MovingToWorkPosition */ || genericState === 1 /* Executing */) {

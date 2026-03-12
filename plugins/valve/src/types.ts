@@ -94,12 +94,23 @@ export interface ValvePayload {
  * - { txt: string, val: object }: structured message
  * - { text: string }: alternative format
  * - { val: { txt: string } }: nested format
+ *
+ * Matching strategy (3-pass):
+ * 1. src === valveName (exact match by component name)
+ * 2. typ === "Valve" AND exe matches functionNo (match by type + function number)
+ * 3. typ === "Valve" with no specific match (broadcast to all valve nodes)
  */
 export interface ErrorPayload {
   utc: number;
   lvl: string;
   src: string;
   typ: string;
+  exe?: string;   // Execution/function number (e.g., "100")
+  seq?: {          // Sequence info from PLC
+    id?: string;
+    cmd?: string;
+    mod?: string;
+  };
   msg: string | {
     txt?: string;
     text?: string;

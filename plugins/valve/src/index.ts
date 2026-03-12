@@ -450,7 +450,74 @@ function handleValveData(
 }
 
 /**
+ * Apply error to a specific node (shared logic for all matching passes)
+ */
+function applyErrorToNode(
+  ctx: PluginContext,
+  nodeState: NodeState,
+  payload: ErrorPayload,
+  payloadString: string,
+  matchReason: string
+): void {
+  const errorEntry: ErrorEntry = {
+    timestamp: payload.utc,
+    level: payload.lvl,
+    source: payload.src,
+    rawPayload: payloadString,
+    acknowledged: false,
+  };
+
+  nodeState.errors.unshift(errorEntry);
+  if (nodeState.errors.length > 20) {
+    nodeState.errors = nodeState.errors.slice(0, 20);
+  }
+
+  // Extract message text for logging
+  let msgText = 'Unknown error';
+  if (typeof payload.msg === 'string') {
+    msgText = payload.msg;
+  } else if (payload.msg?.txt) {
+    msgText = payload.msg.txt;
+  } else if (payload.msg?.text) {
+    msgText = payload.msg.text;
+  }
+
+  // Log to 3D Viewer log based on level - include nodeId for acknowledgment
+  if (payload.lvl === 'ERR') {
+    ctx.log.error(`[${nodeState.valveName}] ${msgText}`, {
+      nodeId: nodeState.nodeId,
+      nodeName: nodeState.valveName,
+      matchReason,
+      payload: payload,
+    });
+    nodeState.genericState = GenericState.Error;
+    updateNodeVisuals(ctx, nodeState.nodeId, GenericState.Error, nodeState.specificState);
+    ctx.ui.notify(`Error: ${nodeState.valveName} - ${msgText}`, 'error');
+  } else if (payload.lvl === 'WARN') {
+    ctx.log.warn(`[${nodeState.valveName}] ${msgText}`, {
+      nodeId: nodeState.nodeId,
+      nodeName: nodeState.valveName,
+      matchReason,
+      payload: payload,
+    });
+    ctx.ui.notify(`Warning: ${nodeState.valveName} - ${msgText}`, 'warning');
+  } else {
+    ctx.log.info(`[${nodeState.valveName}] ${msgText}`, {
+      nodeId: nodeState.nodeId,
+      nodeName: nodeState.valveName,
+      matchReason,
+      payload: payload,
+    });
+  }
+}
+
+/**
  * Handle incoming error messages from MQTT
+ *
+ * 3-pass matching strategy:
+ * 1. src === valveName (exact match by component name)
+ * 2. typ === "Valve" AND exe matches functionNo (match by type + function number)
+ * 3. typ === "Valve" with no specific match (broadcast to all valve nodes)
  */
 function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
   try {
@@ -467,63 +534,55 @@ function handleErrorMessage(ctx: PluginContext, rawPayload: unknown): void {
       payload = rawPayload as ErrorPayload;
     }
 
-    ctx.log.info('Error message received', { src: payload.src, lvl: payload.lvl });
+    ctx.log.info('Error message received', {
+      src: payload.src,
+      lvl: payload.lvl,
+      typ: payload.typ,
+      exe: payload.exe,
+    });
 
     const source = normalizeValveName(payload.src || '');
     const allNodes = pluginState.getAllNodes();
+    const matchedNodeIds = new Set<string>();
 
+    // Pass 1: Match by src === valveName (existing exact match)
     allNodes.forEach((nodeState) => {
       const expectedValveName = normalizeValveName(nodeState.valveName);
       if (source === expectedValveName) {
-        const errorEntry: ErrorEntry = {
-          timestamp: payload.utc,
-          level: payload.lvl,
-          source: payload.src,
-          rawPayload: payloadString,
-          acknowledged: false,
-        };
-
-        nodeState.errors.unshift(errorEntry);
-        if (nodeState.errors.length > 20) {
-          nodeState.errors = nodeState.errors.slice(0, 20);
-        }
-
-        // Extract message text for logging
-        let msgText = 'Unknown error';
-        if (typeof payload.msg === 'string') {
-          msgText = payload.msg;
-        } else if (payload.msg?.txt) {
-          msgText = payload.msg.txt;
-        } else if (payload.msg?.text) {
-          msgText = payload.msg.text;
-        }
-
-        // Log to 3D Viewer log based on level - include nodeId for acknowledgment
-        if (payload.lvl === 'ERR') {
-          ctx.log.error(`[${nodeState.valveName}] ${msgText}`, {
-            nodeId: nodeState.nodeId,
-            nodeName: nodeState.valveName,
-            payload: payload,
-          });
-          nodeState.genericState = GenericState.Error;
-          updateNodeVisuals(ctx, nodeState.nodeId, GenericState.Error, nodeState.specificState);
-          ctx.ui.notify(`Error: ${nodeState.valveName} - ${msgText}`, 'error');
-        } else if (payload.lvl === 'WARN') {
-          ctx.log.warn(`[${nodeState.valveName}] ${msgText}`, {
-            nodeId: nodeState.nodeId,
-            nodeName: nodeState.valveName,
-            payload: payload,
-          });
-          ctx.ui.notify(`Warning: ${nodeState.valveName} - ${msgText}`, 'warning');
-        } else {
-          ctx.log.info(`[${nodeState.valveName}] ${msgText}`, {
-            nodeId: nodeState.nodeId,
-            nodeName: nodeState.valveName,
-            payload: payload,
-          });
-        }
+        matchedNodeIds.add(nodeState.nodeId);
+        applyErrorToNode(ctx, nodeState, payload, payloadString, 'src-match');
       }
     });
+
+    // Pass 2: If no src match and typ === "Valve", try exe/functionNo match
+    if (matchedNodeIds.size === 0 && payload.typ === 'Valve' && payload.exe) {
+      const exeNumber = parseInt(payload.exe, 10);
+      if (!isNaN(exeNumber)) {
+        allNodes.forEach((nodeState) => {
+          if (nodeState.functionNo === exeNumber) {
+            matchedNodeIds.add(nodeState.nodeId);
+            applyErrorToNode(ctx, nodeState, payload, payloadString, 'exe-functionNo-match');
+            ctx.log.info('Error matched by exe/functionNo', {
+              exe: payload.exe,
+              functionNo: nodeState.functionNo,
+              valveName: nodeState.valveName,
+            });
+          }
+        });
+      }
+    }
+
+    // Pass 3: If still no match and typ === "Valve", broadcast to all valve nodes
+    if (matchedNodeIds.size === 0 && payload.typ === 'Valve') {
+      ctx.log.warn('No specific valve match found, broadcasting to all valve nodes', {
+        src: payload.src,
+        typ: payload.typ,
+        exe: payload.exe,
+      });
+      allNodes.forEach((nodeState) => {
+        applyErrorToNode(ctx, nodeState, payload, payloadString, 'typ-broadcast');
+      });
+    }
   } catch (error) {
     ctx.log.error('Failed to process error message', { error });
   }
